@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 // Register each tool slug here when it is added
 const TOOL_SLUGS = ['expenses-manager', 'coverage-tracker'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
