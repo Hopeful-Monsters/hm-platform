@@ -38,6 +38,10 @@ export async function proxy(request: NextRequest) {
 
   // Check tool access for authenticated users
   if (toolSlug && user) {
+    if (user.user_metadata?.status !== 'approved') {
+      return NextResponse.redirect(new URL('/auth/no-access', request.url));
+    }
+
     const { data: access } = await supabase
       .from('tool_access')
       .select('plan, expires_at')

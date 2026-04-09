@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import SignOutButton from '@/components/SignOutButton';
 
-const TOOL_SLUG = 'expenses-manager'; // ← change per tool
+const TOOL_SLUG = 'coverage-tracker'; // ← change per tool
 
 export default async function ToolLayout({
   children,
@@ -28,7 +28,7 @@ export default async function ToolLayout({
   return (
     <div>
       <header className="p-4 bg-gray-100 flex justify-between items-center">
-        <h1>Expenses Manager</h1>
+        <h1>Coverage Tracker</h1>
         <SignOutButton />
       </header>
       {children}
