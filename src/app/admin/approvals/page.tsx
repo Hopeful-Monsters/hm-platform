@@ -7,16 +7,23 @@ import { revalidatePath } from 'next/cache'
 async function approveUser(formData: FormData) {
   'use server'
   const userId = formData.get('userId') as string
+  const selectedTools = formData.getAll('tools') as string[]
+
   const service = createServiceClient()
 
   await service.auth.admin.updateUserById(userId, {
     user_metadata: { status: 'approved' }
   })
 
-  await service.from('tool_access').insert([
-    { user_id: userId, tool_slug: 'coverage-tracker', plan: 'basic' },
-    { user_id: userId, tool_slug: 'expenses-manager', plan: 'basic' }
-  ])
+  // Insert tool access for selected tools only
+  if (selectedTools.length > 0) {
+    const toolInserts = selectedTools.map(toolSlug => ({
+      user_id: userId,
+      tool_slug: toolSlug,
+      plan: 'basic'
+    }))
+    await service.from('tool_access').insert(toolInserts)
+  }
 
   const { data: userData } = await service.auth.admin.getUserById(userId)
   if (userData.user?.email) {
@@ -25,7 +32,7 @@ async function approveUser(formData: FormData) {
       from: 'noreply@hopefulmonsters.com.au',
       to: userData.user.email,
       subject: 'Account Approved',
-      text: 'Your account has been approved. You can now access the tools at hopefulmonsters.com.au'
+      text: `Your account has been approved. You now have access to: ${selectedTools.join(', ')}`
     })
   }
 
@@ -87,15 +94,28 @@ export default async function ApprovalsPage() {
         ) : (
           <ul className="space-y-4">
             {pendingUsers.map((u) => (
-              <li key={u.id} className="flex flex-col gap-3 rounded-xl bg-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <li key={u.id} className="flex flex-col gap-4 rounded-xl bg-gray-100 p-6">
                 <div>
                   <p className="font-semibold">{u.email}</p>
                   <p className="text-sm text-zinc-600">Status: {u.user_metadata?.status || 'unknown'}</p>
                 </div>
-                <form action={approveUser} className="flex gap-2">
+                <form action={approveUser} className="space-y-4">
                   <input type="hidden" name="userId" value={u.id} />
+                  <div>
+                    <p className="text-sm font-medium text-zinc-700 mb-2">Grant access to:</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" name="tools" value="coverage-tracker" defaultChecked className="rounded" />
+                        <span className="text-sm">Coverage Tracker</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" name="tools" value="expenses-manager" defaultChecked className="rounded" />
+                        <span className="text-sm">Expenses Manager</span>
+                      </label>
+                    </div>
+                  </div>
                   <button type="submit" className="rounded-full bg-green-600 px-4 py-2 text-white hover:bg-green-700">
-                    Approve
+                    Approve User
                   </button>
                 </form>
               </li>

@@ -6,6 +6,17 @@ export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const status = user?.user_metadata?.status
+  const role = user?.user_metadata?.role
+
+  // Get user's tool access
+  let userTools: string[] = []
+  if (user && status === 'approved') {
+    const { data: toolAccess } = await supabase
+      .from('tool_access')
+      .select('tool_slug')
+      .eq('user_id', user.id)
+    userTools = toolAccess?.map(access => access.tool_slug) || []
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 font-sans">
@@ -13,21 +24,35 @@ export default async function Home() {
         <div className="flex flex-col gap-6 text-center">
           <h1 className="text-4xl font-bold text-zinc-900">Hopeful Monsters Platform</h1>
           {user ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <p className="text-xl text-zinc-700">Welcome back, {user.email}.</p>
               {status === 'approved' ? (
-                <p className="text-zinc-600">You are signed in and can access your tools below.</p>
+                <div className="space-y-4">
+                  <p className="text-zinc-600">You have access to the following tools:</p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                    {userTools.includes('coverage-tracker') && (
+                      <Link href="/coverage-tracker" className="rounded-full bg-green-600 px-6 py-3 text-white transition hover:bg-green-700">
+                        Coverage Tracker
+                      </Link>
+                    )}
+                    {userTools.includes('expenses-manager') && (
+                      <Link href="/expenses-manager" className="rounded-full bg-blue-600 px-6 py-3 text-white transition hover:bg-blue-700">
+                        Expenses Manager
+                      </Link>
+                    )}
+                    {role === 'admin' && (
+                      <Link href="/admin" className="rounded-full bg-purple-600 px-6 py-3 text-white transition hover:bg-purple-700">
+                        Admin Dashboard
+                      </Link>
+                    )}
+                  </div>
+                </div>
               ) : (
-                <p className="text-zinc-600">Your account is signed in but still pending approval. An admin will approve your access soon.</p>
+                <div className="space-y-4">
+                  <p className="text-zinc-600">Your account is signed in but still pending approval.</p>
+                  <p className="text-sm text-zinc-500">An admin will approve your access soon. Check back later or contact support.</p>
+                </div>
               )}
-              <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-                <Link href="/auth/login" className="rounded-full bg-blue-600 px-6 py-3 text-white transition hover:bg-blue-700">
-                  Reload Status
-                </Link>
-                <Link href="/auth/no-access" className="rounded-full border border-blue-600 px-6 py-3 text-blue-600 transition hover:bg-blue-50">
-                  Check Access
-                </Link>
-              </div>
               <div className="flex justify-center">
                 <SignOutButton />
               </div>
