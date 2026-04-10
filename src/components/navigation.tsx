@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import SignOutButton from './SignOutButton'
 
 interface NavItem {
   href: string
@@ -92,10 +93,12 @@ export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavPro
               right: 0,
               top: 0,
               bottom: 0,
-              zIndex: 50,
+              zIndex: 999,
               width: 280,
               background: 'var(--surface)',
               borderLeft: '2px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             {/* Mobile nav header */}
@@ -107,6 +110,7 @@ export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavPro
                 justifyContent: 'space-between',
                 padding: '0 20px',
                 borderBottom: '2px solid var(--border)',
+                flexShrink: 0,
               }}
             >
               <span className="eyebrow" style={{ color: 'var(--accent-label)' }}>Menu</span>
@@ -125,7 +129,7 @@ export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavPro
             </div>
 
             {/* Mobile nav items */}
-            <nav style={{ padding: '16px 0' }}>
+            <nav style={{ padding: '16px 0', flex: 1 }}>
               {items.map(item => {
                 const isActive = item.href === '/'
                   ? pathname === '/'
@@ -154,6 +158,19 @@ export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavPro
                 )
               })}
             </nav>
+
+            {/* Sign Out at bottom */}
+            <div
+              style={{
+                borderTop: '2px solid var(--border)',
+                padding: '12px 16px',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                flexShrink: 0,
+              }}
+            >
+              <SignOutButton compact />
+            </div>
           </motion.div>
         </>
       )}

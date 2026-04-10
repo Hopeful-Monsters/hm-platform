@@ -12,9 +12,9 @@
   --text:          #0A0A0A;
   --text-muted:    #666666;
   --text-dim:      #999999;
-  --accent:        #FFE600;
-  --accent-fg:     #0A0A0A;
-  --accent-label:  #0A0A0A; /* Eyebrow labels: black in light, yellow in dark */
+  --accent:        #CC9900;
+  --accent-fg:     #FFFFFF;
+  --accent-label:  #996600; /* Eye brow labels: darker in light mode for contrast */
   --pink:          #FF3EBF;
   --nav-h:         54px;
   --tool-nav-h:    48px;

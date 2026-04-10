@@ -95,34 +95,9 @@ function showErr(id: string, msg: string) {
 
 function loadCfg() {
   try { cfg = JSON.parse(localStorage.getItem('elSettings') || '{}') } catch { cfg = {} }
-  refreshBadge()
 }
 
-function saveSettings() {
-  cfg = {
-    ...cfg,
-    initials: (document.getElementById('s_initials') as HTMLInputElement).value.trim().toUpperCase(),
-  }
-  try { localStorage.setItem('elSettings', JSON.stringify(cfg)) } catch {}
-  refreshBadge(); closeSettings()
-}
 
-function openSettings() {
-  (document.getElementById('s_initials') as HTMLInputElement).value = cfg.initials || ''
-  document.getElementById('settingsModal')?.classList.add('open')
-}
-
-function closeSettings() {
-  document.getElementById('settingsModal')?.classList.remove('open')
-}
-
-function refreshBadge() {
-  const ok = !!cfg.initials
-  const b  = document.getElementById('cfgBadge')
-  if (!b) return
-  b.textContent = ok ? '✓ Configured' : '⚠ Set your initials'
-  b.className   = 'badge ' + (ok ? 'badge-ok' : 'badge-warn')
-}
 
 // ─────────────────────────────────────────────────────────────────
 // Worker + Jobs
@@ -1179,9 +1154,6 @@ export default function ExpensesManagerPage() {
 
     // Expose functions on window for inline onclick handlers in innerHTML strings
     const w = window as any // eslint-disable-line @typescript-eslint/no-explicit-any
-    w.openSettings          = openSettings
-    w.closeSettings         = closeSettings
-    w.saveSettings          = saveSettings
     w.loadJobs              = loadJobs
     w.pickJob               = pickJob
     w.filterJobs            = filterJobs
@@ -1210,11 +1182,6 @@ export default function ExpensesManagerPage() {
     w.supplierKeyNav        = supplierKeyNav
     w.selectSupplier        = selectSupplier
 
-    // Settings modal backdrop dismiss
-    document.getElementById('settingsModal')?.addEventListener('click', e => {
-      if (e.target === document.getElementById('settingsModal')) closeSettings()
-    })
-
     // Init
     loadCfg()
     cfg.gcid     = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID          || ''
@@ -1232,7 +1199,6 @@ export default function ExpensesManagerPage() {
           if (derived) {
             cfg.initials = derived
             try { localStorage.setItem('elSettings', JSON.stringify(cfg)) } catch {}
-            refreshBadge()
           }
         }
       }).catch(() => {})
@@ -1252,7 +1218,7 @@ export default function ExpensesManagerPage() {
 
     return () => {
       const names = [
-        'openSettings','closeSettings','saveSettings','loadJobs','pickJob',
+        'loadJobs','pickJob',
         'filterJobs','goStep','handleFileSelect','clearQueue','removeQueueItem','extractAll',
         'authDrive','onDriveToggle','handleBulkSubmit','reset','toggleReviewCard',
         'updateReviewField','updateReviewMarkup','updateReviewGstPct','calcReviewGST',
@@ -1267,47 +1233,8 @@ export default function ExpensesManagerPage() {
   return (
     <div data-tool="expenses-manager">
 
-      {/* ── Settings modal ───────────────────────────────────────── */}
-      <div id="settingsModal" className="modal-bg">
-        <div className="modal">
-          <div className="modal-hdr">
-            <div className="modal-title">Settings</div>
-            <button className="btn btn-ghost btn-sm" onClick={closeSettings}>✕</button>
-          </div>
-          <div className="modal-body">
-            <div className="sec-lbl">Your Details</div>
-            <div className="fg">
-              <label className="lbl" htmlFor="s_initials">
-                Initials <span className="req">*</span>
-              </label>
-              <input
-                type="text"
-                id="s_initials"
-                className="fc"
-                placeholder="e.g. BE"
-                maxLength={4}
-                style={{ maxWidth: 80 }}
-              />
-              <div className="hint">Used in the Google Drive filename</div>
-            </div>
-          </div>
-          <div className="modal-ftr">
-            <button className="btn btn-secondary" onClick={closeSettings}>Cancel</button>
-            <button className="btn btn-primary"   onClick={saveSettings}>Save Settings</button>
-          </div>
-        </div>
-      </div>
-
       {/* ── Main content ─────────────────────────────────────────── */}
       <main className="main">
-
-        {/* Settings bar */}
-        <div className="em-settings-bar">
-          <span id="cfgBadge" className="badge" />
-          <button className="btn btn-ghost btn-sm" onClick={openSettings} title="Settings">
-            ⚙ Settings
-          </button>
-        </div>
 
         {/* Step indicator */}
         <div className="steps">

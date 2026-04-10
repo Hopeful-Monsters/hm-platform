@@ -15,7 +15,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import SignOutButton from './SignOutButton'
 
 interface Tab {
   href: string
@@ -41,7 +40,7 @@ export default function ToolHeader({ toolName, tabs = [] }: ToolHeaderProps) {
         height: 'var(--tool-nav-h)',
         position: 'sticky',
         top: 'var(--nav-h)',
-        zIndex: 100,
+        zIndex: 30,
       }}
     >
       {/* Tool name */}
@@ -104,19 +103,7 @@ export default function ToolHeader({ toolName, tabs = [] }: ToolHeaderProps) {
         </nav>
       )}
 
-      {/* Right — spacer + sign out */}
-      <div
-        style={{
-          marginLeft: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 16px',
-          borderLeft: '2px solid var(--border)',
-          flexShrink: 0,
-        }}
-      >
-        <SignOutButton compact />
-      </div>
+
     </div>
   )
 }

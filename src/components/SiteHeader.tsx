@@ -111,33 +111,12 @@ export default function SiteHeader() {
           )}
         </div>
 
-        {/* Right — status, theme toggle, sign out / auth */}
+        {/* Right — theme toggle, sign out / auth */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <ThemeToggle />
 
           {!loading && user ? (
             <>
-              {/* Approval status badge */}
-              <span
-                className="hidden sm:inline"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 700,
-                  fontSize: 11,
-                  letterSpacing: '0.25em',
-                  textTransform: 'uppercase',
-                  padding: '4px 10px',
-                  background: user.user_metadata?.status === 'approved'
-                    ? 'var(--surface-2)'
-                    : '#1a1a00',
-                  color: user.user_metadata?.status === 'approved'
-                    ? 'var(--accent)'
-                    : '#888',
-                }}
-              >
-                {user.user_metadata?.status === 'approved' ? 'Approved' : 'Pending'}
-              </span>
-
               <SignOutButton />
             </>
           ) : !loading ? (
