@@ -169,7 +169,7 @@ export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavPro
                 flexShrink: 0,
               }}
             >
-              <SignOutButton compact />
+              <SignOutButton />
             </div>
           </motion.div>
         </>

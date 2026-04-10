@@ -12,7 +12,7 @@
   --text:          #0A0A0A;
   --text-muted:    #666666;
   --text-dim:      #999999;
-  --accent:        #CC9900;
+  --accent:        #ef3e23;
   --accent-fg:     #FFFFFF;
   --accent-label:  #996600; /* Eye brow labels: darker in light mode for contrast */
   --pink:          #FF3EBF;
@@ -28,7 +28,7 @@
   --border-2:      #2A2A2A;
   --text:          #FFFFFF;
   --text-muted:    #777777;
-  --text-dim:      #444444;
+  --text-dim:      #666666; /* Improved contrast from #444444 to #666666 */
   --accent:        #FFE600;
   --accent-fg:     #0A0A0A;
   --accent-label:  #FFE600;
@@ -186,6 +186,17 @@ textarea.hm-input {
 .btn-hm:disabled {
   opacity: 0.4;
   pointer-events: none;
+}
+
+/* ══ ANIMATIONS ═════════════════════════════════════════════════ */
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
 }
 
 /* ══ WATERMARK TEXT EFFECT ═══════════════════════════════════════ */

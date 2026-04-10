@@ -117,7 +117,6 @@ export default function SiteHeader() {
 
           {!loading && user ? (
             <>
-              <SignOutButton />
             </>
           ) : !loading ? (
             <>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 const adminLinks = [
@@ -10,6 +11,12 @@ const adminLinks = [
 export default async function AdminSidebar() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  return <AdminSidebarClient userEmail={user?.email} />
+}
+
+function AdminSidebarClient({ userEmail }: { userEmail?: string }) {
+  const pathname = usePathname()
 
   return (
     <aside
@@ -46,32 +53,35 @@ export default async function AdminSidebar() {
 
       {/* Nav links */}
       <nav style={{ flex: 1, padding: '12px 0' }}>
-        {adminLinks.map(link => (
-          <Link
-            key={link.href}
-            href={link.href}
-            style={{
-              display: 'block',
-              fontFamily: 'var(--font-heading)',
-              fontWeight: 700,
-              fontSize: 16,
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              padding: '10px 20px',
-              borderLeft: '3px solid transparent',
-              transition: 'color 0.15s, border-color 0.15s',
-            }}
-            className="hover:text-[var(--text)] hover:border-l-[var(--accent)]"
-          >
-            {link.label}
-          </Link>
-        ))}
+        {adminLinks.map(link => {
+          const isActive = pathname === link.href
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              style={{
+                display: 'block',
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 700,
+                fontSize: 16,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+                textDecoration: 'none',
+                padding: '10px 20px',
+                borderLeft: `3px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
+                transition: 'color 0.15s, border-color 0.15s',
+              }}
+              className={isActive ? '' : 'hover:text-[var(--text)] hover:border-l-[var(--accent)]'}
+            >
+              {link.label}
+            </Link>
+          )
+        })}
       </nav>
 
       {/* Signed-in user */}
-      {user?.email && (
+      {userEmail && (
         <div
           style={{
             padding: '16px 20px',
