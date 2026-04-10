@@ -226,3 +226,15 @@ textarea.hm-input {
 ::-webkit-scrollbar-track { background: var(--surface-2); }
 ::-webkit-scrollbar-thumb { background: var(--border-2); }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* ══ CARD HOVER ══════════════════════════════════════════════════ */
+/* Used in Server Components — pure CSS, no JS event handlers      */
+
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}

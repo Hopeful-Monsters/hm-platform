@@ -29,6 +29,7 @@ function ToolCard({
   return (
     <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
       <div
+        className="card-hover"
         style={{
           background: 'var(--surface)',
           borderLeft: '4px solid var(--accent)',
@@ -37,18 +38,6 @@ function ToolCard({
           borderLeftColor: 'var(--accent)',
           padding: '32px 28px',
           height: '100%',
-          transition: 'transform 0.15s, box-shadow 0.15s',
-          cursor: 'pointer',
-        }}
-        onMouseEnter={e => {
-          const el = e.currentTarget as HTMLDivElement
-          el.style.transform = 'translateY(-3px)'
-          el.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)'
-        }}
-        onMouseLeave={e => {
-          const el = e.currentTarget as HTMLDivElement
-          el.style.transform = 'translateY(0)'
-          el.style.boxShadow = 'none'
         }}
       >
         <p className="eyebrow" style={{ marginBottom: 12 }}>Tool</p>
@@ -390,13 +379,13 @@ export default async function Home() {
             {role === 'admin' && (
               <Link href="/admin" style={{ textDecoration: 'none', display: 'block' }}>
                 <div
+                  className="card-hover"
                   style={{
                     background: 'var(--surface)',
                     border: '2px solid var(--border)',
                     borderLeft: '4px solid var(--pink)',
                     padding: '32px 28px',
                     height: '100%',
-                    cursor: 'pointer',
                   }}
                 >
                   <p className="eyebrow" style={{ marginBottom: 12 }}>Admin only</p>

@@ -55,6 +55,7 @@ export default async function AdminPage() {
         {adminCards.map(card => (
           <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>
             <div
+              className="card-hover"
               style={{
                 background: 'var(--surface)',
                 border: '2px solid var(--border)',
@@ -62,18 +63,6 @@ export default async function AdminPage() {
                 borderLeftColor: card.accentColor,
                 padding: '28px 24px',
                 height: '100%',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLDivElement
-                el.style.transform = 'translateY(-2px)'
-                el.style.boxShadow = '0 6px 24px rgba(0,0,0,0.15)'
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLDivElement
-                el.style.transform = 'translateY(0)'
-                el.style.boxShadow = 'none'
               }}
             >
               <h2
