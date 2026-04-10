@@ -1,39 +1,44 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Barlow_Condensed, Inter } from 'next/font/google'
+import './globals.css'
 import SiteHeader from '@/components/SiteHeader'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
 import { Toaster } from '@/components/ui/toaster'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const barlowCondensed = Barlow_Condensed({
+  subsets: ['latin'],
+  weight: ['700', '800', '900'],
+  style: ['normal', 'italic'],
+  variable: '--font-barlow-condensed',
+  display: 'swap',
+})
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '900'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: "Hopeful Monsters",
-  description: "Hopeful Monsters platform for tool access and approvals",
-};
+  title: 'Hopeful Monsters',
+  description: 'Tools for culture-led brands.',
+}
 
 export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${barlowCondensed.variable} ${inter.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col bg-background font-sans antialiased">
+      <body className="min-h-full flex flex-col antialiased">
         <ErrorBoundary>
-          <ThemeProvider>
+          <ThemeProvider defaultTheme="dark">
             <SiteHeader />
             <main className="flex-1">{children}</main>
             <Toaster />
@@ -41,5 +46,5 @@ export default async function RootLayout({
         </ErrorBoundary>
       </body>
     </html>
-  );
+  )
 }

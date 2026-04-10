@@ -1,14 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -30,9 +32,7 @@ export default function LoginPage() {
     setError('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
     if (error) {
       setError(error.message)
@@ -41,47 +41,136 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
-        <h2 className="text-center text-3xl font-bold">Sign In</h2>
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        <form onSubmit={handleEmailLogin} className="space-y-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            required
-            className="w-full p-2 border rounded"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            required
-            className="w-full p-2 border rounded"
-          />
-          <button
+    <div
+      style={{
+        minHeight: 'calc(100vh - var(--nav-h))',
+        background: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '48px 24px',
+      }}
+    >
+      <div className="animate-fade-up" style={{ maxWidth: 480, width: '100%' }}>
+        {/* Eyebrow */}
+        <p className="eyebrow" style={{ marginBottom: 12 }}>Welcome back</p>
+
+        {/* Heading */}
+        <h1
+          className="display-lg"
+          style={{ color: 'var(--text)', marginBottom: 32 }}
+        >
+          Sign<br />
+          <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>In.</span>
+        </h1>
+
+        {/* Error */}
+        {error && (
+          <div
+            style={{
+              background: '#180000',
+              borderLeft: '4px solid #FF4444',
+              padding: '12px 16px',
+              marginBottom: 20,
+              fontSize: 13,
+              color: '#FF8888',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Email form */}
+        <form onSubmit={handleEmailLogin} style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 16 }}>
+            <label className="hm-label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              className="hm-input"
+            />
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <label className="hm-label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="hm-input"
+            />
+          </div>
+
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-500 text-white p-2 rounded disabled:opacity-50"
+            size="lg"
+            style={{ width: '100%' }}
           >
-            {loading ? 'Signing In...' : 'Sign In'}
-          </button>
+            {loading ? 'Signing In…' : 'Sign In →'}
+          </Button>
         </form>
-        <div className="text-center">
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full bg-red-500 text-white p-2 rounded disabled:opacity-50"
+
+        {/* Divider */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          <span
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: 'var(--text-dim)',
+            }}
           >
-            Sign In with Google
-          </button>
+            or
+          </span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
-        <div className="text-center">
-          <a href="/auth/signup" className="text-blue-500">Don't have an account? Sign Up</a>
-        </div>
+
+        {/* Google OAuth */}
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          disabled={loading}
+          onClick={handleGoogleLogin}
+          style={{ width: '100%', marginBottom: 28 }}
+        >
+          Continue with Google
+        </Button>
+
+        {/* Footer */}
+        <p
+          style={{
+            fontSize: 13,
+            color: 'var(--text-muted)',
+            textAlign: 'center',
+          }}
+        >
+          No account?{' '}
+          <Link
+            href="/auth/signup"
+            style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
+          >
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   )

@@ -1,37 +1,49 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import SignOutButton from '@/components/SignOutButton';
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import ToolHeader from '@/components/ToolHeader'
 
-const TOOL_SLUG = 'coverage-tracker'; // ← change per tool
-
-export default async function ToolLayout({
+/**
+ * Coverage Tracker layout shell.
+ *
+ * Access gating: proxy.ts handles this before we get here.
+ * These checks are defense-in-depth only — no extra DB call needed.
+ *
+ * Adding tool sections:
+ *   Pass a `tabs` array to <ToolHeader /> as the tool grows:
+ *   tabs={[
+ *     { href: '/coverage-tracker',          label: 'Dashboard' },
+ *     { href: '/coverage-tracker/entries',  label: 'Entries' },
+ *     { href: '/coverage-tracker/reports',  label: 'Reports' },
+ *   ]}
+ */
+export default async function CoverageTrackerLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth/login');
-
-  if (user.user_metadata?.status !== 'approved') redirect('/auth/no-access');
-
-  const { data: access } = await supabase
-    .from('tool_access')
-    .select('plan, expires_at')
-    .eq('user_id', user.id)
-    .eq('tool_slug', TOOL_SLUG)
-    .single();
-
-  if (!access) redirect('/auth/no-access');
+  if (!user) redirect('/auth/login')
+  if (user.user_metadata?.status !== 'approved') redirect('/auth/no-access')
 
   return (
-    <div>
-      <header className="p-4 bg-gray-100 flex justify-between items-center">
-        <h1>Coverage Tracker</h1>
-        <SignOutButton />
-      </header>
-      {children}
+    <div
+      style={{
+        minHeight: 'calc(100vh - var(--nav-h))',
+        background: 'var(--bg)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <ToolHeader
+        toolName="Coverage Tracker"
+        toolSlug="coverage-tracker"
+        // tabs={[]} — add tabs here as pages are built
+      />
+      <div style={{ flex: 1 }}>
+        {children}
+      </div>
     </div>
-  );
+  )
 }

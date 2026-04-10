@@ -2,138 +2,208 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import { Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import SignOutButton from './SignOutButton'
 import ThemeToggle from './ThemeToggle'
-import { Button } from './ui/button'
-import { MobileNav, DesktopNav } from './navigation'
+import { DesktopNav, MobileNav } from './navigation'
+
+// HM logo mark — circle + spark SVG from brand reference
+function HMLogo() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 60 60" fill="none" aria-hidden>
+      <circle cx="28" cy="36" r="22" fill="#FFE600" />
+      <path d="M44 22 Q50 14 56 8" stroke="#FFE600" strokeWidth="3.5" strokeLinecap="round" />
+      <circle cx="57" cy="7" r="3" fill="#FF3EBF" />
+    </svg>
+  )
+}
 
 export default function SiteHeader() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser]           = useState<{ email?: string; id: string; user_metadata?: Record<string, string> } | null>(null)
+  const [loading, setLoading]     = useState(true)
+  const [userTools, setUserTools] = useState<string[]>([])
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
 
-    // Get initial user
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
-    }
+    let cancelled = false
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!cancelled) {
+        setUser(user)
+        setLoading(false)
+      }
+    })
 
-    getUser()
-
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (_, session) => {
         setUser(session?.user ?? null)
         setLoading(false)
       }
     )
-
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
-  // Get user's tool access for navigation filtering
-  const [userTools, setUserTools] = useState<string[]>([])
   useEffect(() => {
-    if (user && user.user_metadata?.status === 'approved') {
-      const getUserTools = async () => {
-        const supabase = createClient()
-        const { data: toolAccess } = await supabase
-          .from('tool_access')
-          .select('tool_slug')
-          .eq('user_id', user.id)
-        setUserTools(toolAccess?.map(access => access.tool_slug) || [])
-      }
-      getUserTools()
+    if (!user || user.user_metadata?.status !== 'approved') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUserTools([])
+      return
     }
+    const supabase = createClient()
+    supabase
+      .from('tool_access')
+      .select('tool_slug')
+      .eq('user_id', user.id)
+      .then(({ data }) => setUserTools(data?.map(r => r.tool_slug) ?? []))
   }, [user])
 
-  if (loading) {
-    return (
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 max-w-screen-2xl items-center">
-          <div className="flex items-center gap-4">
-            <div className="h-8 w-32 animate-pulse rounded bg-muted"></div>
-          </div>
-          <div className="ml-auto h-8 w-8 animate-pulse rounded bg-muted"></div>
-        </div>
-      </header>
-    )
+  const navStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 'var(--nav-h)',
+    background: 'var(--bg)',
+    borderBottom: '2px solid var(--border)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 24px',
+    zIndex: 1000,
+    gap: 16,
   }
 
   return (
     <>
-      <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-      >
-        <div className="container flex h-16 max-w-screen-2xl items-center px-4">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-              <div className="h-8 w-8 rounded bg-primary"></div>
-              <span className="hidden sm:inline">Hopeful Monsters</span>
-            </Link>
+      <header style={navStyle}>
+        {/* Left — logo + desktop nav */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, minWidth: 0 }}>
+          <Link
+            href="/"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 900,
+              fontSize: 17,
+              letterSpacing: '0.2em',
+              color: 'var(--accent)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            <HMLogo />
+            <span className="hidden sm:inline">HOPEFUL MONSTERS.</span>
+          </Link>
 
-            <DesktopNav userRole={user?.user_metadata?.role} userTools={userTools} />
-          </div>
-
-          <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
-
-            {user ? (
-              <>
-                <div className="hidden items-center gap-2 md:flex">
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs text-green-700 dark:bg-green-900 dark:text-green-300">
-                    {user.user_metadata?.status === 'approved' ? 'Approved' : 'Pending'}
-                  </span>
-                  {user.user_metadata?.role === 'admin' && (
-                    <Link href="/admin">
-                      <Button variant="outline" size="sm">
-                        Admin
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-                <SignOutButton />
-              </>
-            ) : (
-              <div className="hidden items-center gap-2 md:flex">
-                <Link href="/auth/login">
-                  <Button variant="ghost" size="sm">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button size="sm">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
-            )}
-
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
+          {!loading && (
+            <DesktopNav
+              userRole={user?.user_metadata?.role}
+              userTools={userTools}
+            />
+          )}
         </div>
-      </motion.header>
+
+        {/* Right — status, theme toggle, sign out / auth */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <ThemeToggle />
+
+          {!loading && user ? (
+            <>
+              {/* Approval status badge */}
+              <span
+                className="hidden sm:inline"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 700,
+                  fontSize: 11,
+                  letterSpacing: '0.25em',
+                  textTransform: 'uppercase',
+                  padding: '4px 10px',
+                  background: user.user_metadata?.status === 'approved'
+                    ? 'var(--surface-2)'
+                    : '#1a1a00',
+                  color: user.user_metadata?.status === 'approved'
+                    ? 'var(--accent)'
+                    : '#888',
+                }}
+              >
+                {user.user_metadata?.status === 'approved' ? 'Approved' : 'Pending'}
+              </span>
+
+              <SignOutButton />
+            </>
+          ) : !loading ? (
+            <>
+              <Link
+                href="/auth/login"
+                className="hidden sm:flex"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 900,
+                  fontSize: 14,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  textDecoration: 'none',
+                  padding: '6px 12px',
+                }}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/signup"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: 900,
+                  fontSize: 14,
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                  background: 'var(--accent)',
+                  color: 'var(--accent-fg)',
+                  textDecoration: 'none',
+                  padding: '7px 16px',
+                  display: 'inline-block',
+                }}
+              >
+                Sign Up
+              </Link>
+            </>
+          ) : null}
+
+          {/* Mobile menu toggle */}
+          <button
+            className="flex md:hidden"
+            onClick={() => setMobileOpen(true)}
+            style={{
+              background: 'none',
+              border: '2px solid var(--border-2)',
+              color: 'var(--text-muted)',
+              padding: 6,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Menu size={16} />
+          </button>
+        </div>
+      </header>
+
+      {/* Spacer to offset fixed header */}
+      <div style={{ height: 'var(--nav-h)' }} />
 
       <MobileNav
-        isOpen={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
+        isOpen={mobileOpen}
+        onClose={() => setMobileOpen(false)}
         userRole={user?.user_metadata?.role}
         userTools={userTools}
       />

@@ -1,42 +1,41 @@
 'use client'
 
 import { useTheme } from './ThemeProvider'
+import { Sun, Moon } from 'lucide-react'
 
 export default function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
-
-  const toggleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark')
-    } else if (theme === 'dark') {
-      setTheme('system')
-    } else {
-      setTheme('light')
-    }
-  }
-
-  const getIcon = () => {
-    if (theme === 'system') {
-      return resolvedTheme === 'dark' ? '🌙' : '☀️'
-    }
-    return theme === 'dark' ? '🌙' : '☀️'
-  }
-
-  const getLabel = () => {
-    if (theme === 'system') {
-      return `System (${resolvedTheme})`
-    }
-    return theme === 'dark' ? 'Dark' : 'Light'
-  }
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === 'dark'
 
   return (
     <button
-      onClick={toggleTheme}
-      className="flex items-center gap-2 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-      title={`Current: ${getLabel()}. Click to cycle themes.`}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      style={{
+        background: 'none',
+        border: '2px solid var(--border-2)',
+        color: 'var(--text-muted)',
+        padding: '6px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'border-color 0.15s, color 0.15s',
+        borderRadius: 0,
+        flexShrink: 0,
+      }}
+      onMouseEnter={e => {
+        const el = e.currentTarget
+        el.style.borderColor = 'var(--accent)'
+        el.style.color = 'var(--accent)'
+      }}
+      onMouseLeave={e => {
+        const el = e.currentTarget
+        el.style.borderColor = 'var(--border-2)'
+        el.style.color = 'var(--text-muted)'
+      }}
     >
-      <span className="text-lg">{getIcon()}</span>
-      <span className="hidden sm:inline">{getLabel()}</span>
+      {isDark ? <Sun size={16} /> : <Moon size={16} />}
     </button>
   )
 }

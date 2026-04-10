@@ -1,14 +1,103 @@
 import Link from 'next/link'
-import { ArrowRight, Shield, BarChart3, Users, CheckCircle } from 'lucide-react'
-import SignOutButton from '@/components/SignOutButton'
-import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/server'
+import { Button } from '@/components/ui/button'
+import SignOutButton from '@/components/SignOutButton'
+
+// HM logo mark — inline for RSC
+function HMLogo() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 60 60" fill="none" aria-hidden>
+      <circle cx="28" cy="36" r="22" fill="#FFE600" />
+      <path d="M44 22 Q50 14 56 8" stroke="#FFE600" strokeWidth="3.5" strokeLinecap="round" />
+      <circle cx="57" cy="7" r="3" fill="#FF3EBF" />
+    </svg>
+  )
+}
+
+// ── Tool card ─────────────────────────────────────────────────────
+function ToolCard({
+  href,
+  label,
+  description,
+  cta,
+}: {
+  href: string
+  label: string
+  description: string
+  cta: string
+}) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
+      <div
+        style={{
+          background: 'var(--surface)',
+          borderLeft: '4px solid var(--accent)',
+          border: '2px solid var(--border)',
+          borderLeftWidth: 4,
+          borderLeftColor: 'var(--accent)',
+          padding: '32px 28px',
+          height: '100%',
+          transition: 'transform 0.15s, box-shadow 0.15s',
+          cursor: 'pointer',
+        }}
+        onMouseEnter={e => {
+          const el = e.currentTarget as HTMLDivElement
+          el.style.transform = 'translateY(-3px)'
+          el.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)'
+        }}
+        onMouseLeave={e => {
+          const el = e.currentTarget as HTMLDivElement
+          el.style.transform = 'translateY(0)'
+          el.style.boxShadow = 'none'
+        }}
+      >
+        <p className="eyebrow" style={{ marginBottom: 12 }}>Tool</p>
+        <h3
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontWeight: 900,
+            fontSize: 30,
+            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
+            color: 'var(--text)',
+            lineHeight: 0.95,
+            marginBottom: 12,
+          }}
+        >
+          {label}
+        </h3>
+        <p
+          style={{
+            fontSize: 14,
+            color: 'var(--text-muted)',
+            lineHeight: 1.65,
+            marginBottom: 24,
+          }}
+        >
+          {description}
+        </p>
+        <span
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontWeight: 900,
+            fontSize: 14,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: 'var(--accent)',
+          }}
+        >
+          {cta} →
+        </span>
+      </div>
+    </Link>
+  )
+}
 
 export default async function Home() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const status = user?.user_metadata?.status
-  const role = user?.user_metadata?.role
+  const role   = user?.user_metadata?.role
 
   let userTools: string[] = []
   if (user && status === 'approved') {
@@ -16,181 +105,335 @@ export default async function Home() {
       .from('tool_access')
       .select('tool_slug')
       .eq('user_id', user.id)
-    userTools = toolAccess?.map(access => access.tool_slug) || []
+    userTools = toolAccess?.map(a => a.tool_slug) ?? []
   }
 
+  // ── Unauthenticated landing ──────────────────────────────────────
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center mb-16">
-            <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
-              Hopeful Monsters
+      <>
+        {/* Hero — yellow */}
+        <section
+          style={{
+            background: 'var(--accent)',
+            padding: '80px 32px 64px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Watermark */}
+          <span
+            className="watermark"
+            style={{
+              fontSize: '38vw',
+              lineHeight: 1,
+              color: 'rgba(0,0,0,0.045)',
+              bottom: -40,
+              right: -20,
+            }}
+          >
+            HM
+          </span>
+
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: 680 }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'var(--accent-fg)',
+                color: 'var(--accent)',
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                padding: '6px 14px',
+                marginBottom: 24,
+              }}
+            >
+              <HMLogo />
+              Hopeful Monsters Platform
+            </div>
+
+            <h1
+              className="display-xl"
+              style={{ color: 'var(--accent-fg)', marginBottom: 24 }}
+            >
+              Tools for<br />
+              <span
+                style={{
+                  WebkitTextStroke: '3px var(--accent-fg)',
+                  color: 'transparent',
+                  fontStyle: 'italic',
+                }}
+              >
+                bold
+              </span>{' '}brands.
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              A comprehensive platform for managing expenses, tracking coverage, and streamlining administrative workflows.
+
+            <p
+              style={{
+                fontSize: 18,
+                color: 'rgba(0,0,0,0.65)',
+                lineHeight: 1.6,
+                maxWidth: 460,
+                marginBottom: 36,
+                fontWeight: 500,
+              }}
+            >
+              A curated set of tools for expenses, coverage tracking, and
+              administrative workflows — built for teams that move fast.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/auth/signup">
-                <Button size="lg" className="text-lg px-8 py-6">
-                  Get Started
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/auth/login">
-                <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                  Sign In
-                </Button>
-              </Link>
-            </div>
-          </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border hover:-translate-y-1 transition-transform">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
-                <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Expenses Manager</h3>
-              <p className="text-muted-foreground">
-                Track and manage expenses with detailed analytics and reporting tools.
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border hover:-translate-y-1 transition-transform">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Coverage Tracker</h3>
-              <p className="text-muted-foreground">
-                Monitor coverage metrics and ensure compliance with comprehensive tracking.
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border hover:-translate-y-1 transition-transform">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
-                <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Admin Dashboard</h3>
-              <p className="text-muted-foreground">
-                Powerful administrative tools for user management and system oversight.
-              </p>
-            </div>
-          </div>
-
-          <div className="text-center bg-white dark:bg-gray-800 rounded-2xl p-12 shadow-xl border">
-            <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
-            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join our platform and gain access to powerful tools designed to streamline your workflow.
-              Sign up today and get approved access to all features.
-            </p>
-            <Link href="/auth/signup">
-              <Button size="lg" className="text-lg px-8 py-6">
-                Create Account
-                <ArrowRight className="ml-2 h-5 w-5" />
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <Button asChild size="lg" style={{ background: 'var(--accent-fg)', color: 'var(--accent)' }}>
+                <Link href="/auth/signup">Get Started →</Link>
               </Button>
-            </Link>
+              <Button
+                asChild
+                size="lg"
+                style={{
+                  background: 'transparent',
+                  border: '2px solid var(--accent-fg)',
+                  color: 'var(--accent-fg)',
+                }}
+              >
+                <Link href="/auth/login">Sign In</Link>
+              </Button>
+            </div>
           </div>
+        </section>
+
+        {/* Feature grid */}
+        <section
+          style={{
+            background: 'var(--bg)',
+            padding: '64px 32px',
+            maxWidth: 1100,
+            margin: '0 auto',
+          }}
+        >
+          <p className="eyebrow" style={{ marginBottom: 16 }}>What&rsquo;s inside</p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: 2,
+            }}
+          >
+            <ToolCard
+              href="/auth/signup"
+              label="Expenses Manager"
+              description="Track, categorise, and report on expenses with detailed analytics. Built for campaign and project-level visibility."
+              cta="Request access"
+            />
+            <ToolCard
+              href="/auth/signup"
+              label="Coverage Tracker"
+              description="Monitor earned media, coverage metrics, and compliance across clients and campaigns in one place."
+              cta="Request access"
+            />
+          </div>
+        </section>
+
+        {/* Bottom CTA */}
+        <section
+          style={{
+            background: 'var(--surface)',
+            borderTop: '2px solid var(--border)',
+            padding: '64px 32px',
+            textAlign: 'center',
+          }}
+        >
+          <p className="eyebrow" style={{ marginBottom: 16 }}>Access is by approval</p>
+          <h2 className="display-md" style={{ color: 'var(--text)', marginBottom: 16 }}>
+            Ready to get started?
+          </h2>
+          <p
+            style={{
+              fontSize: 16,
+              color: 'var(--text-muted)',
+              maxWidth: 440,
+              margin: '0 auto 32px',
+              lineHeight: 1.65,
+            }}
+          >
+            Sign up and we&rsquo;ll review your request. Approved accounts get access to all tools
+            they&rsquo;ve been granted.
+          </p>
+          <Button asChild size="lg">
+            <Link href="/auth/signup">Create Account →</Link>
+          </Button>
+        </section>
+      </>
+    )
+  }
+
+  // ── Pending approval ────────────────────────────────────────────
+  if (status !== 'approved') {
+    return (
+      <div
+        style={{
+          minHeight: 'calc(100vh - var(--nav-h))',
+          background: 'var(--bg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '48px 24px',
+          textAlign: 'center',
+        }}
+      >
+        <div className="animate-fade-up" style={{ maxWidth: 480 }}>
+          <p className="eyebrow" style={{ marginBottom: 12 }}>Almost there</p>
+          <h1
+            className="display-lg"
+            style={{ color: 'var(--text)', marginBottom: 20 }}
+          >
+            Pending<br />
+            <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>Approval.</span>
+          </h1>
+          <p
+            style={{
+              fontSize: 16,
+              color: 'var(--text-muted)',
+              lineHeight: 1.65,
+              marginBottom: 32,
+            }}
+          >
+            Your account has been created. An admin will review and approve your access
+            shortly — you&rsquo;ll receive an email when you&rsquo;re in.
+          </p>
+          <SignOutButton />
         </div>
       </div>
     )
   }
 
+  // ── Approved dashboard ──────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="h-10 w-10 text-white" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Welcome back, {user.email?.split('@')[0]}!
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            {status === 'approved'
-              ? 'You have access to your personalized dashboard'
-              : 'Your account is pending approval'
-            }
+    <>
+      {/* Welcome hero — yellow */}
+      <section
+        style={{
+          background: 'var(--accent)',
+          padding: '48px 32px 40px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <span
+          className="watermark"
+          style={{
+            fontSize: '30vw',
+            lineHeight: 1,
+            color: 'rgba(0,0,0,0.045)',
+            bottom: -30,
+            right: -10,
+          }}
+        >
+          HM
+        </span>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <p className="eyebrow" style={{ marginBottom: 8, color: 'rgba(0,0,0,0.45)' }}>
+            Your dashboard
           </p>
+          <h1
+            className="display-lg"
+            style={{ color: 'var(--accent-fg)', lineHeight: 0.9 }}
+          >
+            Welcome back,<br />
+            {user.email?.split('@')[0]}.
+          </h1>
         </div>
+      </section>
 
-        {status === 'approved' ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {userTools.includes('coverage-tracker') && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border hover:shadow-xl transition-shadow">
-                <Link href="/coverage-tracker">
-                  <div>
-                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center mb-4">
-                      <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">Coverage Tracker</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Monitor and manage coverage metrics with detailed analytics.
-                    </p>
-                    <Button className="w-full">
-                      Open Tracker
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </Link>
-              </div>
-            )}
+      {/* Tool grid */}
+      <section
+        style={{
+          background: 'var(--bg)',
+          padding: '48px 32px',
+          maxWidth: 1100,
+          margin: '0 auto',
+        }}
+      >
+        <p className="eyebrow" style={{ marginBottom: 20 }}>Your tools</p>
 
-            {userTools.includes('expenses-manager') && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border hover:shadow-xl transition-shadow">
-                <Link href="/expenses-manager">
-                  <div>
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
-                      <BarChart3 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">Expenses Manager</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Track and analyze expenses with comprehensive reporting tools.
-                    </p>
-                    <Button className="w-full">
-                      Open Manager
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </Link>
-              </div>
-            )}
-
-            {role === 'admin' && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg border hover:shadow-xl transition-shadow">
-                <Link href="/admin">
-                  <div>
-                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mb-4">
-                      <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">Admin Dashboard</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Manage users, approvals, and system settings.
-                    </p>
-                    <Button className="w-full">
-                      Open Dashboard
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </Link>
-              </div>
-            )}
-          </div>
+        {userTools.length === 0 && role !== 'admin' ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
+            No tools assigned yet. Contact an admin to get access.
+          </p>
         ) : (
-          <div className="max-w-2xl mx-auto text-center bg-white dark:bg-gray-800 rounded-xl p-12 shadow-lg border">
-            <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Users className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <h2 className="text-2xl font-bold mb-4">Account Pending Approval</h2>
-            <p className="text-muted-foreground mb-8">
-              Your account has been created successfully! An administrator will review and approve your access soon.
-              You'll receive an email notification once approved.
-            </p>
-            <div className="flex justify-center">
-              <SignOutButton />
-            </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: 2,
+            }}
+          >
+            {userTools.includes('expenses-manager') && (
+              <ToolCard
+                href="/expenses-manager"
+                label="Expenses Manager"
+                description="Track, categorise, and report on expenses with detailed analytics."
+                cta="Open"
+              />
+            )}
+            {userTools.includes('coverage-tracker') && (
+              <ToolCard
+                href="/coverage-tracker"
+                label="Coverage Tracker"
+                description="Monitor earned media and coverage metrics across clients and campaigns."
+                cta="Open"
+              />
+            )}
+            {role === 'admin' && (
+              <Link href="/admin" style={{ textDecoration: 'none', display: 'block' }}>
+                <div
+                  style={{
+                    background: 'var(--surface)',
+                    border: '2px solid var(--border)',
+                    borderLeft: '4px solid var(--pink)',
+                    padding: '32px 28px',
+                    height: '100%',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <p className="eyebrow" style={{ marginBottom: 12 }}>Admin only</p>
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontWeight: 900,
+                      fontSize: 30,
+                      textTransform: 'uppercase',
+                      color: 'var(--text)',
+                      lineHeight: 0.95,
+                      marginBottom: 12,
+                    }}
+                  >
+                    Admin Dashboard
+                  </h3>
+                  <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: 24 }}>
+                    Manage users, approve requests, and control tool access.
+                  </p>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontWeight: 900,
+                      fontSize: 14,
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase',
+                      color: 'var(--pink)',
+                    }}
+                  >
+                    Open →
+                  </span>
+                </div>
+              </Link>
+            )}
           </div>
         )}
-      </div>
-    </div>
+      </section>
+    </>
   )
 }

@@ -4,27 +4,27 @@ import { redirect } from 'next/navigation'
 import { Resend } from 'resend'
 import { revalidatePath } from 'next/cache'
 
+// ── Server Actions ────────────────────────────────────────────────
+
 async function promoteToAdmin(formData: FormData) {
   'use server'
-  const userId = formData.get('userId') as string
+  const userId  = formData.get('userId') as string
   const service = createServiceClient()
-  const { data: userData } = await service.auth.admin.getUserById(userId)
 
-  const existingMetadata = userData.user?.user_metadata ?? {}
+  const { data: userData } = await service.auth.admin.getUserById(userId)
+  const existing = userData.user?.user_metadata ?? {}
+
   await service.auth.admin.updateUserById(userId, {
-    user_metadata: {
-      ...existingMetadata,
-      role: 'admin'
-    }
+    user_metadata: { ...existing, role: 'admin' },
   })
 
   if (userData.user?.email) {
     const resend = new Resend(process.env.RESEND_API_KEY!)
     await resend.emails.send({
-      from: 'noreply@hopefulmonsters.com.au',
-      to: userData.user.email,
-      subject: 'Admin Access Granted',
-      text: 'You have been granted administrator access on hopefulmonsters.com.au.'
+      from:    'noreply@hopefulmonsters.com.au',
+      to:      userData.user.email,
+      subject: 'Admin Access Granted — Hopeful Monsters',
+      text:    'You have been granted administrator access on hopefulmonsters.com.au.',
     })
   }
 
@@ -33,26 +33,42 @@ async function promoteToAdmin(formData: FormData) {
 
 async function updateToolAccess(formData: FormData) {
   'use server'
-  const userId = formData.get('userId') as string
+  const userId       = formData.get('userId') as string
   const selectedTools = formData.getAll('tools') as string[]
 
   const service = createServiceClient()
-
-  // Remove all existing tool access for this user
   await service.from('tool_access').delete().eq('user_id', userId)
 
-  // Add new tool access
   if (selectedTools.length > 0) {
-    const toolInserts = selectedTools.map(toolSlug => ({
-      user_id: userId,
-      tool_slug: toolSlug,
-      plan: 'basic'
-    }))
-    await service.from('tool_access').insert(toolInserts)
+    await service.from('tool_access').insert(
+      selectedTools.map(toolSlug => ({ user_id: userId, tool_slug: toolSlug, plan: 'basic' }))
+    )
   }
 
   revalidatePath('/admin/users')
 }
+
+// ── Style helpers ─────────────────────────────────────────────────
+
+const metaStyle: React.CSSProperties = {
+  fontFamily:    'var(--font-heading)',
+  fontSize:      11,
+  fontWeight:    700,
+  letterSpacing: '0.3em',
+  textTransform: 'uppercase',
+  color:         'var(--text-dim)',
+}
+
+const checkboxLabelStyle: React.CSSProperties = {
+  display:    'flex',
+  alignItems: 'center',
+  gap:        8,
+  fontSize:   13,
+  color:      'var(--text-muted)',
+  cursor:     'pointer',
+}
+
+// ── Page ──────────────────────────────────────────────────────────
 
 export default async function UsersPage() {
   const supabase = await createClient()
@@ -60,89 +76,172 @@ export default async function UsersPage() {
   if (!user || user.user_metadata?.role !== 'admin') redirect('/auth/login')
 
   const service = createServiceClient()
-  const { data: users } = await service.auth.admin.listUsers()
+  const { data: users }          = await service.auth.admin.listUsers()
   const { data: toolAccessData } = await service.from('tool_access').select('*')
 
-  // Create a map of user_id -> tools
-  const userToolsMap = new Map()
-  toolAccessData?.forEach(access => {
-    if (!userToolsMap.has(access.user_id)) {
-      userToolsMap.set(access.user_id, [])
-    }
-    userToolsMap.get(access.user_id).push(access.tool_slug)
+  // Map user_id → tool slugs
+  const userToolsMap = new Map<string, string[]>()
+  toolAccessData?.forEach(row => {
+    if (!userToolsMap.has(row.user_id)) userToolsMap.set(row.user_id, [])
+    userToolsMap.get(row.user_id)!.push(row.tool_slug)
   })
 
   return (
-    <div className="space-y-8">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-900">User Management</h1>
-          <p className="text-zinc-600">Review all users, manage tool access, and promote admins.</p>
-        </div>
-        <a href="/admin/approvals" className="rounded-full border border-zinc-300 bg-zinc-50 px-5 py-2 text-sm text-zinc-700 hover:bg-zinc-100">
-          Back to Approvals
-        </a>
+    <div>
+      {/* Page header */}
+      <div style={{ marginBottom: 36 }}>
+        <p className="eyebrow" style={{ marginBottom: 8 }}>Admin / Users</p>
+        <h1
+          style={{
+            fontFamily:    'var(--font-heading)',
+            fontWeight:    900,
+            fontSize:      48,
+            textTransform: 'uppercase',
+            color:         'var(--text)',
+            lineHeight:    0.92,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          User Management
+        </h1>
       </div>
 
-      <div className="grid gap-6">
-        {users.users.map((u) => {
-          const userTools = userToolsMap.get(u.id) || []
-          return (
-            <div key={u.id} className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-2">
-                  <p className="font-semibold">{u.email || 'No email'}</p>
-                  <p className="text-sm text-zinc-600">Status: {u.user_metadata?.status || 'unknown'}</p>
-                  <p className="text-sm text-zinc-600">Role: {u.user_metadata?.role || 'user'}</p>
-                  <p className="text-sm text-zinc-600">Tools: {userTools.length > 0 ? userTools.join(', ') : 'None'}</p>
-                </div>
-                <div className="flex flex-col gap-3 sm:min-w-[200px]">
-                  {u.user_metadata?.role !== 'admin' ? (
-                    <form action={promoteToAdmin} className="flex">
-                      <input type="hidden" name="userId" value={u.id} />
-                      <button type="submit" className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
-                        Promote to Admin
-                      </button>
-                    </form>
-                  ) : (
-                    <span className="rounded-full bg-green-600 px-4 py-2 text-sm text-white">Admin</span>
-                  )}
+      {/* Table header */}
+      <div
+        style={{
+          display:             'grid',
+          gridTemplateColumns: '1fr 160px 180px',
+          gap:                 0,
+          padding:             '8px 16px',
+          borderBottom:        '2px solid var(--border)',
+          marginBottom:        2,
+        }}
+      >
+        {['User', 'Role / Status', 'Tool Access'].map(col => (
+          <span key={col} style={metaStyle}>{col}</span>
+        ))}
+      </div>
 
-                  <form action={updateToolAccess} className="space-y-2">
-                    <input type="hidden" name="userId" value={u.id} />
-                    <p className="text-sm font-medium">Tool Access:</p>
-                    <div className="space-y-1">
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          name="tools"
-                          value="coverage-tracker"
-                          defaultChecked={userTools.includes('coverage-tracker')}
-                          className="rounded"
-                        />
-                        Coverage Tracker
-                      </label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          name="tools"
-                          value="expenses-manager"
-                          defaultChecked={userTools.includes('expenses-manager')}
-                          className="rounded"
-                        />
-                        Expenses Manager
-                      </label>
-                    </div>
-                    <button type="submit" className="rounded-full bg-zinc-600 px-4 py-2 text-sm text-white hover:bg-zinc-700">
-                      Update Access
-                    </button>
-                  </form>
-                </div>
-              </div>
+      {/* User rows */}
+      {users.users.map(u => {
+        const userTools = userToolsMap.get(u.id) ?? []
+        const isAdmin   = u.user_metadata?.role === 'admin'
+
+        return (
+          <div
+            key={u.id}
+            style={{
+              display:             'grid',
+              gridTemplateColumns: '1fr 160px 180px',
+              gap:                 0,
+              alignItems:          'start',
+              padding:             '16px',
+              borderBottom:        '1px solid var(--border)',
+              background:          'var(--surface)',
+              marginBottom:        1,
+            }}
+          >
+            {/* User info */}
+            <div>
+              <p
+                style={{
+                  fontFamily:    'var(--font-heading)',
+                  fontWeight:    700,
+                  fontSize:      17,
+                  textTransform: 'uppercase',
+                  color:         'var(--text)',
+                  marginBottom:  3,
+                }}
+              >
+                {u.email ?? 'No email'}
+              </p>
+              <p style={metaStyle}>
+                Status: {u.user_metadata?.status ?? 'unknown'}
+              </p>
             </div>
-          )
-        })}
-      </div>
+
+            {/* Role */}
+            <div style={{ paddingTop: 2 }}>
+              {isAdmin ? (
+                <span
+                  style={{
+                    fontFamily:    'var(--font-heading)',
+                    fontWeight:    700,
+                    fontSize:      12,
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    background:    '#001820',
+                    color:         '#00B4D8',
+                    padding:       '4px 10px',
+                    display:       'inline-block',
+                  }}
+                >
+                  Admin
+                </span>
+              ) : (
+                <form action={promoteToAdmin}>
+                  <input type="hidden" name="userId" value={u.id} />
+                  <button
+                    type="submit"
+                    style={{
+                      fontFamily:    'var(--font-heading)',
+                      fontWeight:    900,
+                      fontSize:      12,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      background:    'transparent',
+                      color:         'var(--text-dim)',
+                      border:        '2px solid var(--border-2)',
+                      padding:       '4px 10px',
+                      cursor:        'pointer',
+                    }}
+                  >
+                    Make Admin
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {/* Tool access */}
+            <form action={updateToolAccess} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <input type="hidden" name="userId" value={u.id} />
+              {[
+                { value: 'coverage-tracker', label: 'Coverage Tracker' },
+                { value: 'expenses-manager', label: 'Expenses Manager' },
+              ].map(tool => (
+                <label key={tool.value} style={checkboxLabelStyle}>
+                  <input
+                    type="checkbox"
+                    name="tools"
+                    value={tool.value}
+                    defaultChecked={userTools.includes(tool.value)}
+                    style={{ accentColor: 'var(--accent)', width: 13, height: 13 }}
+                  />
+                  {tool.label}
+                </label>
+              ))}
+              <button
+                type="submit"
+                style={{
+                  fontFamily:    'var(--font-heading)',
+                  fontWeight:    900,
+                  fontSize:      11,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  background:    'var(--surface-2)',
+                  color:         'var(--text-muted)',
+                  border:        '2px solid var(--border)',
+                  padding:       '5px 12px',
+                  cursor:        'pointer',
+                  marginTop:     4,
+                }}
+              >
+                Update
+              </button>
+            </form>
+          </div>
+        )
+      })}
     </div>
   )
 }

@@ -1,33 +1,107 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
+const adminLinks = [
+  { href: '/admin',            label: 'Dashboard' },
+  { href: '/admin/approvals',  label: 'Approvals' },
+  { href: '/admin/users',      label: 'Users' },
+]
+
 export default async function AdminSidebar() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <aside className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <div className="mb-6">
-        <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">Admin</p>
-        <h2 className="mt-2 text-2xl font-bold text-zinc-900">Control Panel</h2>
+    <aside
+      style={{
+        background: 'var(--surface)',
+        borderRight: '2px solid var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100%',
+      }}
+    >
+      {/* Sidebar header */}
+      <div
+        style={{
+          padding: '24px 20px 20px',
+          borderBottom: '2px solid var(--border)',
+        }}
+      >
+        <p className="eyebrow" style={{ marginBottom: 8 }}>Control Panel</p>
+        <p
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontWeight: 900,
+            fontSize: 28,
+            textTransform: 'uppercase',
+            letterSpacing: '-0.01em',
+            color: 'var(--text)',
+            lineHeight: 0.92,
+          }}
+        >
+          Admin
+        </p>
       </div>
-      <nav className="space-y-2">
-        <Link href="/admin" className="block rounded-2xl px-4 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100">
-          Dashboard
-        </Link>
-        <Link href="/admin/approvals" className="block rounded-2xl px-4 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100">
-          Pending Approvals
-        </Link>
-        <Link href="/admin/users" className="block rounded-2xl px-4 py-3 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100">
-          User Management
-        </Link>
+
+      {/* Nav links */}
+      <nav style={{ flex: 1, padding: '12px 0' }}>
+        {adminLinks.map(link => (
+          <Link
+            key={link.href}
+            href={link.href}
+            style={{
+              display: 'block',
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 700,
+              fontSize: 16,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'var(--text-muted)',
+              textDecoration: 'none',
+              padding: '10px 20px',
+              borderLeft: '3px solid transparent',
+              transition: 'color 0.15s, border-color 0.15s',
+            }}
+            className="hover:text-[var(--text)] hover:border-l-[var(--accent)]"
+          >
+            {link.label}
+          </Link>
+        ))}
       </nav>
-      {user?.email ? (
-        <div className="mt-8 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">
-          <p className="font-semibold text-zinc-900">Signed in as</p>
-          <p>{user.email}</p>
+
+      {/* Signed-in user */}
+      {user?.email && (
+        <div
+          style={{
+            padding: '16px 20px',
+            borderTop: '2px solid var(--border)',
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontWeight: 700,
+              fontSize: 10,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: 'var(--text-dim)',
+              marginBottom: 4,
+            }}
+          >
+            Signed in as
+          </p>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--text-muted)',
+              wordBreak: 'break-all',
+            }}
+          >
+            {user.email}
+          </p>
         </div>
-      ) : null}
+      )}
     </aside>
   )
 }

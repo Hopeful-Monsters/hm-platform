@@ -1,100 +1,154 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
-import {
-  Menu,
-  X,
-  Home,
-  Users,
-  BarChart3,
-  Settings,
-  Shield,
-  LogOut
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { useAppStore } from "@/store/app-store"
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface NavItem {
   href: string
   label: string
-  icon: React.ComponentType<{ className?: string }>
   adminOnly?: boolean
+  toolSlug?: string
 }
 
 const navItems: NavItem[] = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/expenses-manager", label: "Expenses", icon: BarChart3 },
-  { href: "/coverage-tracker", label: "Coverage", icon: Shield },
-  { href: "/admin", label: "Admin", icon: Settings, adminOnly: true },
+  { href: '/',                  label: 'Home' },
+  { href: '/expenses-manager',  label: 'Expenses',  toolSlug: 'expenses-manager' },
+  { href: '/coverage-tracker',  label: 'Coverage',  toolSlug: 'coverage-tracker' },
+  { href: '/admin',             label: 'Admin',     adminOnly: true },
 ]
 
-interface MobileNavProps {
-  isOpen: boolean
-  onClose: () => void
+interface NavProps {
   userRole?: string
   userTools: string[]
 }
 
-function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavProps) {
-  const pathname = usePathname()
-
-  const filteredItems = navItems.filter(item => {
+function filterItems(items: NavItem[], userRole?: string, userTools: string[] = []) {
+  return items.filter(item => {
     if (item.adminOnly && userRole !== 'admin') return false
-    if (item.href === '/expenses-manager' && !userTools.includes('expenses-manager')) return false
-    if (item.href === '/coverage-tracker' && !userTools.includes('coverage-tracker')) return false
+    if (item.toolSlug && !userTools.includes(item.toolSlug)) return false
     return true
   })
+}
+
+export function DesktopNav({ userRole, userTools }: NavProps) {
+  const pathname = usePathname()
+  const items = filterItems(navItems, userRole, userTools)
+
+  return (
+    <nav className="hidden md:flex items-center gap-0">
+      {items.map(item => {
+        const isActive = item.href === '/'
+          ? pathname === '/'
+          : pathname.startsWith(item.href)
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'label-nav px-4 py-2 transition-colors duration-150',
+              isActive
+                ? 'text-[var(--accent)] border-b-2 border-[var(--accent)]'
+                : 'text-[var(--text-dim)] hover:text-[var(--text)] border-b-2 border-transparent'
+            )}
+          >
+            {item.label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
+
+interface MobileNavProps extends NavProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavProps) {
+  const pathname = usePathname()
+  const items = filterItems(navItems, userRole, userTools)
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
             onClick={onClose}
           />
-
-          {/* Mobile menu */}
           <motion.div
-            initial={{ x: "100%" }}
+            initial={{ x: '100%' }}
             animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 z-50 h-full w-80 bg-background border-l shadow-xl"
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+            style={{
+              position: 'fixed',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 50,
+              width: 280,
+              background: 'var(--surface)',
+              borderLeft: '2px solid var(--border)',
+            }}
           >
-            <div className="flex h-16 items-center justify-between border-b px-6">
-              <h2 className="text-lg font-semibold">Menu</h2>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="h-5 w-5" />
-              </Button>
+            {/* Mobile nav header */}
+            <div
+              style={{
+                height: 'var(--nav-h)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 20px',
+                borderBottom: '2px solid var(--border)',
+              }}
+            >
+              <span className="eyebrow" style={{ color: 'var(--accent-label)' }}>Menu</span>
+              <button
+                onClick={onClose}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: 4,
+                }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <nav className="flex flex-col p-6 space-y-2">
-              {filteredItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-
+            {/* Mobile nav items */}
+            <nav style={{ padding: '16px 0' }}>
+              {items.map(item => {
+                const isActive = item.href === '/'
+                  ? pathname === '/'
+                  : pathname.startsWith(item.href)
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={onClose}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    )}
+                    style={{
+                      display: 'block',
+                      padding: '12px 20px',
+                      fontFamily: 'var(--font-heading)',
+                      fontWeight: 900,
+                      fontSize: 20,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+                      borderLeft: isActive ? '4px solid var(--accent)' : '4px solid transparent',
+                      textDecoration: 'none',
+                      transition: 'color 0.15s, border-color 0.15s',
+                    }}
                   >
-                    <Icon className="h-4 w-4" />
                     {item.label}
                   </Link>
                 )
@@ -106,46 +160,3 @@ function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavProps) {
     </AnimatePresence>
   )
 }
-
-interface DesktopNavProps {
-  userRole?: string
-  userTools: string[]
-}
-
-function DesktopNav({ userRole, userTools }: DesktopNavProps) {
-  const pathname = usePathname()
-
-  const filteredItems = navItems.filter(item => {
-    if (item.adminOnly && userRole !== 'admin') return false
-    if (item.href === '/expenses-manager' && !userTools.includes('expenses-manager')) return false
-    if (item.href === '/coverage-tracker' && !userTools.includes('coverage-tracker')) return false
-    return true
-  })
-
-  return (
-    <nav className="hidden items-center gap-1 md:flex">
-      {filteredItems.map((item) => {
-        const Icon = item.icon
-        const isActive = pathname === item.href
-
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        )
-      })}
-    </nav>
-  )
-}
-
-export { MobileNav, DesktopNav }

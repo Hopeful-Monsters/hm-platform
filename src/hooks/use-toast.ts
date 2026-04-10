@@ -2,17 +2,6 @@
 
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
-import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "@/lib/utils"
-import {
-  Toast,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -24,6 +13,7 @@ type ToasterToast = ToastPrimitives.ToastProps & {
   action?: React.ReactElement
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used only as `typeof actionTypes` for type derivation
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
