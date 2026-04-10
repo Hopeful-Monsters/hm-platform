@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import './expenses-manager.css'
 
 // ─────────────────────────────────────────────────────────────────
@@ -1216,8 +1217,34 @@ export default function ExpensesManagerPage() {
 
     // Init
     loadCfg()
-    cfg.gcid     = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID     || ''
-    cfg.folderId = process.env.NEXT_PUBLIC_EXPENSES_DRIVE_FOLDER_ID || ''
+    cfg.gcid     = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID          || ''
+    cfg.folderId = process.env.NEXT_PUBLIC_EXPENSES_DRIVE_FOLDER_ID  || ''
+
+    // Auto-derive initials from user metadata if not already saved
+    if (!cfg.initials) {
+      createClient().auth.getUser().then(({ data }) => {
+        const meta = data.user?.user_metadata
+        if (meta?.first_name || meta?.last_name) {
+          const derived = [
+            (meta.first_name as string || '').charAt(0),
+            (meta.last_name  as string || '').charAt(0),
+          ].join('').toUpperCase()
+          if (derived) {
+            cfg.initials = derived
+            try { localStorage.setItem('elSettings', JSON.stringify(cfg)) } catch {}
+            refreshBadge()
+          }
+        }
+      }).catch(() => {})
+    }
+
+    // Explicitly disable queue buttons via DOM (not JSX) so React's
+    // synthetic event system never treats them as disabled=true
+    const eab = document.getElementById('extractAllBtn') as HTMLButtonElement | null
+    const pb  = document.getElementById('proceedBtn')   as HTMLButtonElement | null
+    if (eab) eab.disabled = true
+    if (pb)  pb.disabled  = true
+
     setupDrop()
     setStep(1)
     loadJobs()
@@ -1375,10 +1402,10 @@ export default function ExpensesManagerPage() {
               <div className="queue-list" id="queueList" />
             </div>
             <div className="step-ftr" style={{ marginTop: 16 }}>
-              <button className="btn btn-secondary" id="extractAllBtn" onClick={extractAll} disabled>
+              <button className="btn btn-secondary" id="extractAllBtn" onClick={extractAll}>
                 Extract Details
               </button>
-              <button className="btn btn-primary" id="proceedBtn" onClick={() => goStep(3)} disabled>
+              <button className="btn btn-primary" id="proceedBtn" onClick={() => goStep(3)}>
                 Review &amp; Submit →
               </button>
             </div>

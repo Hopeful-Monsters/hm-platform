@@ -6,11 +6,13 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 export default function SignupPage() {
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const [success, setSuccess]   = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [lastName,  setLastName]  = useState('')
+  const [email,     setEmail]     = useState('')
+  const [password,  setPassword]  = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+  const [success,   setSuccess]   = useState(false)
   const supabase = createClient()
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -20,12 +22,17 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { status: 'pending' } },
+      options: {
+        data: {
+          status:     'pending',
+          first_name: firstName.trim(),
+          last_name:  lastName.trim(),
+        },
+      },
     })
     if (error) {
       setError(error.message)
     } else {
-      // Notify admin — fire-and-forget
       fetch('/api/auth/notify-admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,6 +127,33 @@ export default function SignupPage() {
         )}
 
         <form onSubmit={handleEmailSignup} style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <div style={{ flex: 1 }}>
+              <label className="hm-label" htmlFor="firstName">First Name</label>
+              <input
+                id="firstName"
+                type="text"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder="Jane"
+                required
+                className="hm-input"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label className="hm-label" htmlFor="lastName">Last Name</label>
+              <input
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                placeholder="Smith"
+                required
+                className="hm-input"
+              />
+            </div>
+          </div>
+
           <div style={{ marginBottom: 16 }}>
             <label className="hm-label" htmlFor="email">Email</label>
             <input
