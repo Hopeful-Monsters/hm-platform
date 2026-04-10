@@ -99,18 +99,15 @@ function loadCfg() {
 
 function saveSettings() {
   cfg = {
-    workerUrl: (document.getElementById('s_workerUrl') as HTMLInputElement).value.trim().replace(/\/$/, ''),
-    initials:  (document.getElementById('s_initials')  as HTMLInputElement).value.trim().toUpperCase(),
+    ...cfg,
+    initials: (document.getElementById('s_initials') as HTMLInputElement).value.trim().toUpperCase(),
   }
   try { localStorage.setItem('elSettings', JSON.stringify(cfg)) } catch {}
   refreshBadge(); closeSettings()
-  if (cfg.workerUrl) initFromWorker(); else showState('noKey')
 }
 
 function openSettings() {
-  (document.getElementById('s_workerUrl') as HTMLInputElement).value = cfg.workerUrl || '';
-  (document.getElementById('s_initials')  as HTMLInputElement).value = cfg.initials  || ''
-  ;(document.getElementById('workerTestResult') as HTMLElement).textContent = ''
+  (document.getElementById('s_initials') as HTMLInputElement).value = cfg.initials || ''
   document.getElementById('settingsModal')?.classList.add('open')
 }
 
@@ -119,49 +116,21 @@ function closeSettings() {
 }
 
 function refreshBadge() {
-  const ok = !!(cfg.workerUrl && cfg.initials)
+  const ok = !!cfg.initials
   const b  = document.getElementById('cfgBadge')
   if (!b) return
-  b.textContent = ok ? '✓ Configured' : '⚠ Setup required'
+  b.textContent = ok ? '✓ Configured' : '⚠ Set your initials'
   b.className   = 'badge ' + (ok ? 'badge-ok' : 'badge-warn')
-}
-
-async function testWorker() {
-  const url = (document.getElementById('s_workerUrl') as HTMLInputElement).value.trim().replace(/\/$/, '')
-  const el  = document.getElementById('workerTestResult') as HTMLElement
-  if (!url) { el.textContent = 'Enter a Worker URL first.'; el.style.color = 'var(--warning)'; return }
-  el.textContent = 'Testing…'; el.style.color = 'var(--g500)'
-  try {
-    const data = await fetch(`${url}/`).then(r => r.json())
-    el.textContent = data.status === 'ok' ? '✓ Worker is reachable' : `Unexpected: ${JSON.stringify(data)}`
-    el.style.color = data.status === 'ok' ? 'var(--success)' : 'var(--warning)'
-  } catch (err: unknown) {
-    el.textContent = `✗ ${(err as Error).message}`; el.style.color = 'var(--error)'
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────
 // Worker + Jobs
 // ─────────────────────────────────────────────────────────────────
 
-async function initFromWorker() {
-  try {
-    const res = await fetch(`${cfg.workerUrl}/config`)
-    if (res.ok) {
-      const d = await res.json()
-      cfg.gcid     = d.googleClientId || ''
-      cfg.folderId = d.driveFolderId  || ''
-    }
-  } catch {}
-  loadJobs()
-  trySilentDriveAuth()
-}
-
 async function loadJobs() {
-  if (!cfg.workerUrl) { showState('noKey'); return }
   showState('loading')
   try {
-    const res = await fetch(`${cfg.workerUrl}/jobs`, {
+    const res = await fetch('/api/expenses-manager/jobs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wildcardSearch: '', offset: 0, maxResults: 500, filterGroupCollection: { conditionMatchTypeId: 1, filterGroupCollections: [] } }),
@@ -177,9 +146,8 @@ async function loadJobs() {
 }
 
 async function loadAllCompanies() {
-  if (!cfg.workerUrl) return
   try {
-    const res = await fetch(`${cfg.workerUrl}/companies/all`)
+    const res = await fetch('/api/expenses-manager/companies/all')
     if (!res.ok) return
     const data = await res.json()
     if (data.companies?.length) allCompanies = data.companies
@@ -317,7 +285,7 @@ function renderQueueList() {
   const readyCount   = queue.filter(i => i.status === 'ready' || i.status === 'done').length
   const pendingCount = queue.filter(i => i.status === 'pending').length
   setText('queueReadyCount', String(readyCount))
-  if (extractBtn) extractBtn.disabled = pendingCount === 0 || !cfg.workerUrl
+  if (extractBtn) extractBtn.disabled = pendingCount === 0
   if (proceedBtn) proceedBtn.disabled = readyCount === 0
 
   list.innerHTML = queue.map(item => {
@@ -374,7 +342,6 @@ function renderQueueList() {
 // ─────────────────────────────────────────────────────────────────
 
 async function extractAll() {
-  if (!cfg.workerUrl) { showErr('s2_error', 'Worker URL not configured.'); return }
   const btn = document.getElementById('extractAllBtn') as HTMLButtonElement | null
   if (btn) btn.disabled = true
   for (const item of queue.filter(i => i.status === 'pending')) {
@@ -390,7 +357,7 @@ async function extractItem(item: QueueItem) {
   while (!item.b64 && waited < 5000) { await sleep(100); waited += 100 }
   if (!item.b64) { item.status = 'error'; item.error = 'Could not read file.'; return }
   try {
-    const res = await fetch(`${cfg.workerUrl}/extract`, {
+    const res = await fetch('/api/expenses-manager/extract', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mimeType: item.mimeType, data: item.b64 }),
     })
@@ -420,10 +387,10 @@ async function extractItem(item: QueueItem) {
 
 async function checkCompany(item: QueueItem) {
   const name = item.extracted?.supplier?.trim()
-  if (!name || !cfg.workerUrl) return
+  if (!name) return
   item.company = { status: 'checking', matchedId: null, matchedName: null, similar: [], chosenId: null, chosenName: null, errorMsg: null }
   try {
-    const res = await fetch(`${cfg.workerUrl}/companies/search`, {
+    const res = await fetch('/api/expenses-manager/companies/search', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: name }),
     })
@@ -463,7 +430,7 @@ async function createCompany(itemId: number, name: string) {
   const btn = document.getElementById(`co_create_${itemId}`) as HTMLButtonElement | null
   if (btn) { btn.disabled = true; btn.textContent = 'Creating…' }
   try {
-    const res = await fetch(`${cfg.workerUrl}/companies/create`, {
+    const res = await fetch('/api/expenses-manager/companies/create', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
     })
@@ -773,10 +740,10 @@ async function rebuildSupplierDropdown(id: number, filter: string) {
   const f = (filter || '').toLowerCase()
   let matches = allCompanies.filter(c => !f || c.name.toLowerCase().includes(f)).slice(0, 8)
 
-  if (f.length >= 2 && matches.length === 0 && cfg.workerUrl) {
+  if (f.length >= 2 && matches.length === 0) {
     dd.innerHTML = `<div class="supplier-opt" style="color:var(--g400);font-size:12px;padding:8px 11px;font-style:italic;">Searching…</div>`
     try {
-      const res = await fetch(`${cfg.workerUrl}/companies/search`, {
+      const res = await fetch('/api/expenses-manager/companies/search', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: filter }),
       })
@@ -1087,7 +1054,7 @@ async function handleBulkSubmit() {
       const sellRate = Math.round(total * (1 + markup / 100) * 100) / 100
       const descText = d.description || `Submitted by ${cfg.initials || 'XX'}`
 
-      const stRes = await fetch(`${cfg.workerUrl}/expenses`, {
+      const stRes = await fetch('/api/expenses-manager/expenses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1214,7 +1181,6 @@ export default function ExpensesManagerPage() {
     w.openSettings          = openSettings
     w.closeSettings         = closeSettings
     w.saveSettings          = saveSettings
-    w.testWorker            = testWorker
     w.loadJobs              = loadJobs
     w.pickJob               = pickJob
     w.filterJobs            = filterJobs
@@ -1250,13 +1216,16 @@ export default function ExpensesManagerPage() {
 
     // Init
     loadCfg()
+    cfg.gcid     = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID     || ''
+    cfg.folderId = process.env.NEXT_PUBLIC_EXPENSES_DRIVE_FOLDER_ID || ''
     setupDrop()
     setStep(1)
-    if (cfg.workerUrl) initFromWorker(); else showState('noKey')
+    loadJobs()
+    trySilentDriveAuth()
 
     return () => {
       const names = [
-        'openSettings','closeSettings','saveSettings','testWorker','loadJobs','pickJob',
+        'openSettings','closeSettings','saveSettings','loadJobs','pickJob',
         'filterJobs','goStep','handleFileSelect','clearQueue','removeQueueItem','extractAll',
         'authDrive','onDriveToggle','handleBulkSubmit','reset','toggleReviewCard',
         'updateReviewField','updateReviewMarkup','updateReviewGstPct','calcReviewGST',
@@ -1279,24 +1248,6 @@ export default function ExpensesManagerPage() {
             <button className="btn btn-ghost btn-sm" onClick={closeSettings}>✕</button>
           </div>
           <div className="modal-body">
-            <div className="sec-lbl">Connection</div>
-            <div className="fg">
-              <label className="lbl" htmlFor="s_workerUrl">
-                Worker URL <span className="req">*</span>
-              </label>
-              <input
-                type="url"
-                id="s_workerUrl"
-                className="fc"
-                placeholder="https://expense-logger-proxy.your-subdomain.workers.dev"
-              />
-              <div id="workerTestResult" />
-              <div className="hint">Your Cloudflare Worker URL — API keys never leave the server.</div>
-            </div>
-            <button className="btn btn-secondary btn-sm" onClick={testWorker} type="button" style={{ marginBottom: 4 }}>
-              Test connection
-            </button>
-            <div className="divider" />
             <div className="sec-lbl">Your Details</div>
             <div className="fg">
               <label className="lbl" htmlFor="s_initials">
@@ -1357,11 +1308,11 @@ export default function ExpensesManagerPage() {
           </div>
           <div className="card-body">
             <div id="s1_noKey" className="empty hidden">
-              <div className="empty-ico">⚙️</div>
-              <div style={{ fontWeight: 500, marginBottom: 4 }}>Setup required</div>
-              <div style={{ fontSize: 12, color: 'var(--g400)' }}>Configure your Worker URL in Settings</div>
-              <button className="btn btn-primary btn-sm" style={{ marginTop: 12 }} onClick={openSettings}>
-                Open Settings
+              <div className="empty-ico">⚠️</div>
+              <div style={{ fontWeight: 500, marginBottom: 4 }}>Could not load jobs</div>
+              <div style={{ fontSize: 12, color: 'var(--g400)' }}>Check that STREAMTIME_KEY is set in your environment</div>
+              <button className="btn btn-secondary btn-sm" style={{ marginTop: 12 }} onClick={loadJobs}>
+                Retry
               </button>
             </div>
             <div id="s1_loading" className="empty hidden">
