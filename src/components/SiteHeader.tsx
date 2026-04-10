@@ -1,56 +1,142 @@
-import Link from 'next/link'
-import SignOutButton from './SignOutButton'
-import { createClient } from '@/lib/supabase/server'
+'use client'
 
-export default async function SiteHeader() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Menu } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import SignOutButton from './SignOutButton'
+import ThemeToggle from './ThemeToggle'
+import { Button } from './ui/button'
+import { MobileNav, DesktopNav } from './navigation'
+
+export default function SiteHeader() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    // Get initial user
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+
+    getUser()
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Get user's tool access for navigation filtering
+  const [userTools, setUserTools] = useState<string[]>([])
+  useEffect(() => {
+    if (user && user.user_metadata?.status === 'approved') {
+      const getUserTools = async () => {
+        const supabase = createClient()
+        const { data: toolAccess } = await supabase
+          .from('tool_access')
+          .select('tool_slug')
+          .eq('user_id', user.id)
+        setUserTools(toolAccess?.map(access => access.tool_slug) || [])
+      }
+      getUserTools()
+    }
+  }, [user])
+
+  if (loading) {
+    return (
+      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 max-w-screen-2xl items-center">
+          <div className="flex items-center gap-4">
+            <div className="h-8 w-32 animate-pulse rounded bg-muted"></div>
+          </div>
+          <div className="ml-auto h-8 w-8 animate-pulse rounded bg-muted"></div>
+        </div>
+      </header>
+    )
+  }
 
   return (
-    <header className="border-b border-zinc-200 bg-white/90 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-xl font-bold text-zinc-900">
-            Hopeful Monsters
-          </Link>
-          <nav className="hidden items-center gap-4 text-sm text-zinc-600 md:flex">
-            <Link href="/" className="hover:text-zinc-900">
-              Home
+    <>
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      >
+        <div className="container flex h-16 max-w-screen-2xl items-center px-4">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+              <div className="h-8 w-8 rounded bg-primary"></div>
+              <span className="hidden sm:inline">Hopeful Monsters</span>
             </Link>
-            <Link href="/expenses-manager" className="hover:text-zinc-900">
-              Expenses
-            </Link>
-            <Link href="/coverage-tracker" className="hover:text-zinc-900">
-              Coverage
-            </Link>
-          </nav>
-        </div>
 
-        <div className="flex items-center gap-3">
-          {user ? (
-            <>
-              <span className="hidden rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 md:inline-flex">
-                {user.user_metadata?.status === 'approved' ? 'Approved' : 'Pending'}
-              </span>
-              {user.user_metadata?.role === 'admin' && (
-                <Link href="/admin" className="rounded-full border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-100">
-                  Admin
+            <DesktopNav userRole={user?.user_metadata?.role} userTools={userTools} />
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+
+            {user ? (
+              <>
+                <div className="hidden items-center gap-2 md:flex">
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs text-green-700 dark:bg-green-900 dark:text-green-300">
+                    {user.user_metadata?.status === 'approved' ? 'Approved' : 'Pending'}
+                  </span>
+                  {user.user_metadata?.role === 'admin' && (
+                    <Link href="/admin">
+                      <Button variant="outline" size="sm">
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+                <SignOutButton />
+              </>
+            ) : (
+              <div className="hidden items-center gap-2 md:flex">
+                <Link href="/auth/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
                 </Link>
-              )}
-              <SignOutButton />
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/auth/login" className="rounded-full border border-blue-600 bg-blue-50 px-4 py-2 text-sm text-blue-600 hover:bg-blue-100">
-                Sign In
-              </Link>
-              <Link href="/auth/signup" className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
-                Sign Up
-              </Link>
-            </div>
-          )}
+                <Link href="/auth/signup">
+                  <Button size="sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-      </div>
-    </header>
+      </motion.header>
+
+      <MobileNav
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        userRole={user?.user_metadata?.role}
+        userTools={userTools}
+      />
+    </>
   )
 }
