@@ -796,7 +796,7 @@ function trySilentDriveAuth() {
   if (!cfg.gcid || !localStorage.getItem('driveAuthorised')) return
   let attempts = 0
   const tryAuth = () => {
-    const g = (window as any).google as Record<string, unknown> | undefined
+    const g = (window as unknown as Record<string, unknown>).google as Record<string, unknown> | undefined
     if (!g?.accounts) {
       if (++attempts < 50) { setTimeout(tryAuth, 100); return }
       return
