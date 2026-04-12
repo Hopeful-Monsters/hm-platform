@@ -62,6 +62,7 @@ let selectedJob: Job | null = null
 let allCompanies: Array<{ id: string | number; name: string }> = []
 let driveToken: string | null = null
 let queue: QueueItem[] = []
+let step = 1
 let nextQueueId = 1
 const driveFolderCache: Record<string, string> = {}
 const driveFolderInflight: Record<string, Promise<string | null>> = {}
