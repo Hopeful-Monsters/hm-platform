@@ -86,7 +86,7 @@ function fmtSize(b: number): string {
 }
 function showErr(id: string, msg: string) {
   const el = document.getElementById(id); if (!el) return
-  el.innerHTML = msg; el.classList.remove('hidden')
+  el.textContent = msg; el.classList.remove('hidden')
 }
 
 // ─────────────────────────────────────────────────────────────────
