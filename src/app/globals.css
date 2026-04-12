@@ -1,26 +1,251 @@
 @import "tailwindcss";
 
+/* ══ DESIGN TOKENS ═══════════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light mode — default */
+  --bg:            #F7F7F2;
+  --surface:       #FFFFFF;
+  --surface-2:     #F0F0EB;
+  --border:        #E0E0D8;
+  --border-2:      #CFCFC8;
+  --text:          #0A0A0A;
+  --text-muted:    #666666;
+  --text-dim:      #999999;
+  --accent:        #ef3e23;
+  --accent-fg:     #FFFFFF;
+  --accent-label:  #996600; /* Eye brow labels: darker in light mode for contrast */
+  --pink:          #FF3EBF;
+  --nav-h:         54px;
+  --tool-nav-h:    48px;
 }
+
+.dark {
+  --bg:            #0A0A0A;
+  --surface:       #111111;
+  --surface-2:     #1C1C1C;
+  --border:        #1C1C1C;
+  --border-2:      #2A2A2A;
+  --text:          #FFFFFF;
+  --text-muted:    #777777;
+  --text-dim:      #666666; /* Improved contrast from #444444 to #666666 */
+  --accent:        #FFE600;
+  --accent-fg:     #0A0A0A;
+  --accent-label:  #FFE600;
+  --pink:          #FF3EBF;
+}
+
+/* ══ TAILWIND TOKEN EXPOSURE ═════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background:  var(--bg);
+  --color-foreground:  var(--text);
+  --color-surface:     var(--surface);
+  --color-surface-2:   var(--surface-2);
+  --color-hm-border:   var(--border);
+  --color-hm-border-2: var(--border-2);
+  --color-accent:      var(--accent);
+  --color-accent-fg:   var(--accent-fg);
+  --color-muted:       var(--text-muted);
+  --color-dim:         var(--text-dim);
+  --color-pink:        var(--pink);
+
+  /* Font stacks — use font-heading and font-sans as Tailwind utilities */
+  --font-heading: var(--font-barlow-condensed), 'Barlow Condensed', sans-serif;
+  --font-sans:    var(--font-inter), 'Inter', sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ══ BASE ════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans, 'Inter', sans-serif);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══ TYPOGRAPHY UTILITIES ════════════════════════════════════════ */
+
+.eyebrow {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--accent-label);
+}
+
+.display-xl {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: clamp(64px, 11vw, 110px);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+}
+
+.display-lg {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: clamp(44px, 7vw, 72px);
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+}
+
+.display-md {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: clamp(30px, 5vw, 50px);
+  line-height: 0.92;
+}
+
+.display-sm {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: clamp(22px, 3.5vw, 34px);
+  line-height: 0.95;
+}
+
+.label-nav {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* ══ FORM ELEMENTS ═══════════════════════════════════════════════ */
+
+.hm-input {
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  padding: 14px 16px;
+  outline: none;
+  border-radius: 0;
+  -webkit-appearance: none;
+  transition: border-color 0.2s;
+}
+
+.hm-input:focus {
+  border-color: var(--accent);
+}
+
+.hm-input::placeholder {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+textarea.hm-input {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.6;
+}
+
+.hm-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--accent-label);
+  margin-bottom: 8px;
+}
+
+/* ══ HM BUTTON BASE ══════════════════════════════════════════════ */
+
+.btn-hm {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.1s;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 0;
+}
+
+.btn-hm:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ══ ANIMATIONS ═════════════════════════════════════════════════ */
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ══ WATERMARK TEXT EFFECT ═══════════════════════════════════════ */
+
+.watermark {
+  position: absolute;
+  font-family: var(--font-heading);
+  font-weight: 900;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* ══ ANIMATIONS ══════════════════════════════════════════════════ */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0.65); opacity: 0; }
+  70%  { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ticker {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100%); }
+}
+
+.animate-fade-up { animation: fadeUp 0.4s ease forwards; }
+.animate-pop-in  { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* ══ SCROLLBAR ═══════════════════════════════════════════════════ */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-2); }
+::-webkit-scrollbar-thumb { background: var(--border-2); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* ══ CARD HOVER ══════════════════════════════════════════════════ */
+/* Used in Server Components — pure CSS, no JS event handlers      */
+
+.card-hover {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }

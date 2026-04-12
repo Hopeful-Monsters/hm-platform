@@ -26,7 +26,19 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Determine which tool (if any) this request is for
+  // ── Admin route protection ─────────────────────────────────────
+  if (pathname.startsWith('/admin')) {
+    if (!user) {
+      const loginUrl = new URL('/auth/login', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    if (user.user_metadata?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/auth/no-access', request.url));
+    }
+  }
+
+  // ── Tool route protection ──────────────────────────────────────
   const toolSlug = TOOL_SLUGS.find(slug => pathname.startsWith(`/${slug}`));
 
   // Redirect unauthenticated users trying to access tools
@@ -38,6 +50,10 @@ export async function proxy(request: NextRequest) {
 
   // Check tool access for authenticated users
   if (toolSlug && user) {
+    if (user.user_metadata?.status !== 'approved') {
+      return NextResponse.redirect(new URL('/auth/no-access', request.url));
+    }
+
     const { data: access } = await supabase
       .from('tool_access')
       .select('plan, expires_at')
