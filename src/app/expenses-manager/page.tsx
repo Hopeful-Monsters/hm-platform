@@ -581,6 +581,10 @@ function buildReviewCard(item: QueueItem): string {
   </div>`
 }
 
+function escapeJsSingleQuoted(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+}
+
 function buildCompanyBlock(item: QueueItem): string {
   const co = item.company
   if (!co) return ''
@@ -594,7 +598,7 @@ function buildCompanyBlock(item: QueueItem): string {
     return `<div class="co-row warn">Company check failed: ${esc(co.errorMsg || 'unknown error')}</div>`
 
   const supplierName  = item.extracted?.supplier?.trim() || ''
-  const safeSupplier  = esc(supplierName).replace(/'/g, "\\'")
+  const safeSupplier  = escapeJsSingleQuoted(esc(supplierName))
 
   if (co.status === 'notfound') return `
     <div class="co-row warn">⚠ <strong>${esc(supplierName)}</strong> not found in Streamtime</div>
@@ -606,7 +610,7 @@ function buildCompanyBlock(item: QueueItem): string {
 
   if (co.status === 'similar') {
     const rows = co.similar.map(r => `
-      <div class="co-similar-item" onclick="useCompany(${item.id},${r.id},'${esc(String(r.name)).replace(/'/g, "\\'")}')">
+      <div class="co-similar-item" onclick="useCompany(${item.id},${r.id},'${escapeJsSingleQuoted(esc(String(r.name)))}')">
         <span class="co-similar-name">${esc(r.name)}</span>
         <span style="font-family:var(--font-heading);font-size:11px;font-weight:900;color:var(--accent-label);">Use →</span>
       </div>`).join('')
