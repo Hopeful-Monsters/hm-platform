@@ -61,7 +61,6 @@ let jobsById: Record<string, Job> = {}
 let selectedJob: Job | null = null
 let allCompanies: Array<{ id: string | number; name: string }> = []
 let driveToken: string | null = null
-let step = 1
 let queue: QueueItem[] = []
 let nextQueueId = 1
 const driveFolderCache: Record<string, string> = {}
@@ -796,7 +795,7 @@ function trySilentDriveAuth() {
   if (!cfg.gcid || !localStorage.getItem('driveAuthorised')) return
   let attempts = 0
   const tryAuth = () => {
-    const g = (window as any).google as Record<string, unknown> | undefined
+    const g = (window as unknown as Record<string, unknown>).google as Record<string, unknown> | undefined
     if (!g?.accounts) {
       if (++attempts < 50) { setTimeout(tryAuth, 100); return }
       return

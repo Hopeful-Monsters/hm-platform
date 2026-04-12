@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import SignOutButton from './SignOutButton'
 import ThemeToggle from './ThemeToggle'
 import { DesktopNav, MobileNav } from './navigation'
 
