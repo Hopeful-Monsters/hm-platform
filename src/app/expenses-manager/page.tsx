@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import DOMPurify from 'dompurify'
 import './expenses-manager.css'
 
 // ─────────────────────────────────────────────────────────────────
@@ -447,12 +448,13 @@ function renderReviewList() {
   if (!reviewable.length) {
     container.innerHTML = '<div class="alert alert-warning">No extracted expenses to review.</div>'; return
   }
-  container.innerHTML = reviewable.map(buildReviewCard).join('')
+  const reviewHtml = reviewable.map(buildReviewCard).join('')
+  container.innerHTML = DOMPurify.sanitize(reviewHtml)
 }
 
 function refreshReviewCard(item: QueueItem) {
   const el = document.getElementById(`review_${item.id}`)
-  if (el) el.outerHTML = buildReviewCard(item)
+  if (el) el.outerHTML = DOMPurify.sanitize(buildReviewCard(item))
 }
 
 function buildReviewCard(item: QueueItem): string {
