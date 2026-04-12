@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Barlow_Condensed, Inter } from 'next/font/google'
+import { Analytics } from "@vercel/analytics/next";
 import './globals.css'
 import SiteHeader from '@/components/SiteHeader'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -42,6 +43,7 @@ export default async function RootLayout({
             <SiteHeader />
             <main className="flex-1">{children}</main>
             <Toaster />
+            <Analytics />
           </ThemeProvider>
         </ErrorBoundary>
       </body>
