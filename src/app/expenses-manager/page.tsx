@@ -741,7 +741,7 @@ async function rebuildSupplierDropdown(id: number, filter: string) {
   }
 
   const showNew = filter && !allCompanies.some(c => c.name.toLowerCase() === f)
-  const opts = matches.map(c => `<div class="supplier-opt" onmousedown="selectSupplier(${id},'${esc(c.name).replace(/'/g, "\\'")}',${c.id})" data-id="${c.id}">
+  const opts = matches.map(c => `<div class="supplier-opt" onmousedown="selectSupplier(${id},'${esc(c.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}',${c.id})" data-id="${c.id}">
     <span class="supplier-opt-name">${esc(c.name)}</span>
   </div>`).join('')
   const newOpt = showNew ? `<div class="supplier-opt" onmousedown="createCompanyFromInput(${id})">
