@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import ToolHeader from '@/components/ToolHeader'
 
 /**
- * Expenses Manager layout shell.
+ * Coverage Tracker layout shell.
  *
  * Access gating: proxy.ts handles this before we get here.
  * These checks are defense-in-depth only — no extra DB call needed.
@@ -11,12 +11,12 @@ import ToolHeader from '@/components/ToolHeader'
  * Adding tool sections:
  *   Pass a `tabs` array to <ToolHeader /> as the tool grows:
  *   tabs={[
- *     { href: '/expenses-manager',         label: 'Overview' },
- *     { href: '/expenses-manager/submit',  label: 'Submit' },
- *     { href: '/expenses-manager/reports', label: 'Reports' },
+ *     { href: '/coverage-tracker',          label: 'Dashboard' },
+ *     { href: '/coverage-tracker/entries',  label: 'Entries' },
+ *     { href: '/coverage-tracker/reports',  label: 'Reports' },
  *   ]}
  */
-export default async function ExpensesManagerLayout({
+export default async function CoverageTrackerLayout({
   children,
 }: {
   children: React.ReactNode
@@ -37,8 +37,8 @@ export default async function ExpensesManagerLayout({
       }}
     >
       <ToolHeader
-        toolName="Expenses Manager"
-        toolSlug="expenses-manager"
+        toolName="Coverage Tracker"
+        toolSlug="coverage-tracker"
         // tabs={[]} — add tabs here as pages are built
       />
       <div style={{ flex: 1 }}>
