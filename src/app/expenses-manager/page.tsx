@@ -481,7 +481,7 @@ function buildReviewCard(item: QueueItem): string {
   const ddOptions = allCompanies
     .filter(c => !supplierFilter || c.name.toLowerCase().includes(supplierFilter))
     .slice(0, 8)
-    .map(c => `<div class="supplier-opt" onmousedown="selectSupplier(${item.id},'${esc(c.name).replace(/'/g, "\\'")}',${c.id})" data-id="${c.id}">
+    .map(c => `<div class="supplier-opt" onmousedown="selectSupplier(${item.id},${JSON.stringify(c.name)},${c.id})" data-id="${c.id}">
       <span class="supplier-opt-name">${esc(c.name)}</span>
     </div>`).join('')
 
