@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -15,12 +13,12 @@ export default function SignupPage() {
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
   const [success,   setSuccess]   = useState(false)
-  const supabase = createClient()
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -48,6 +46,7 @@ export default function SignupPage() {
   const handleGoogleSignup = async () => {
     setLoading(true)
     setError('')
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
