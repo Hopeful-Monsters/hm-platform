@@ -302,7 +302,7 @@ function renderQueueList() {
     return `<div class="qrow" id="qrow_${item.id}">
       <div class="qrow-ico">${processing ? '<span class="spin" style="width:16px;height:16px;border-width:2px;"></span>' : (isPdf ? '📄' : '🖼️')}</div>
       <div class="qrow-main">
-        <div class="qrow-filename">${esc(item.file.name)} · ${fmtSize(item.file.size)}</div>
+        <div class="qrow-filename">${esc(item.file.name)} · ${esc(fmtSize(item.file.size))}</div>
         <div class="qrow-detail">${detail}</div>
       </div>
       ${amountStr ? `<div class="qrow-amount">${amountStr}</div>` : ''}
