@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import SignOutButton from '@/components/SignOutButton'
+import RequestAccessButton from '@/components/RequestAccessButton'
+import { TOOLS } from '@/lib/tools'
 
 // HM logo mark — inline for RSC
 function HMLogo() {
@@ -88,13 +90,19 @@ export default async function Home() {
   const status = user?.user_metadata?.status
   const role   = user?.user_metadata?.role
 
-  let userTools: string[] = []
+  let userTools: string[]        = []
+  let pendingRequests: string[]  = []
   if (user && status === 'approved') {
-    const { data: toolAccess } = await supabase
-      .from('tool_access')
-      .select('tool_slug')
-      .eq('user_id', user.id)
-    userTools = toolAccess?.map(a => a.tool_slug) ?? []
+    const [{ data: toolAccess }, { data: accessRequests }] = await Promise.all([
+      supabase.from('tool_access').select('tool_slug').eq('user_id', user.id),
+      supabase
+        .from('tool_access_requests')
+        .select('tool_slug')
+        .eq('user_id', user.id)
+        .eq('status', 'pending'),
+    ])
+    userTools       = toolAccess?.map(a => a.tool_slug) ?? []
+    pendingRequests = accessRequests?.map(r => r.tool_slug) ?? []
   }
 
   // ── Unauthenticated landing ──────────────────────────────────────
@@ -348,35 +356,79 @@ export default async function Home() {
       >
         <p className="eyebrow" style={{ marginBottom: 20 }}>Your tools</p>
 
-        {userTools.length === 0 && role !== 'admin' ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
-            No tools assigned yet. Contact an admin to get access.
-          </p>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 2,
-            }}
-          >
-            {userTools.includes('expenses-manager') && (
-              <ToolCard
-                href="/expenses-manager"
-                label="Expenses Manager"
-                description="Track, categorise, and report on expenses with detailed analytics."
-                cta="Open"
-              />
-            )}
-            {userTools.includes('coverage-tracker') && (
-              <ToolCard
-                href="/coverage-tracker"
-                label="Coverage Tracker"
-                description="Monitor earned media and coverage metrics across clients and campaigns."
-                cta="Open"
-              />
-            )}
-            {role === 'admin' && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: 2,
+          }}
+        >
+          {/* Render every registered tool — granted ones open, others locked */}
+          {TOOLS.map(tool => {
+            const hasAccess = userTools.includes(tool.slug)
+            if (hasAccess) {
+              return (
+                <ToolCard
+                  key={tool.slug}
+                  href={`/${tool.slug}`}
+                  label={tool.label}
+                  description={tool.description}
+                  cta="Open"
+                />
+              )
+            }
+            // Locked card — show request access button
+            const isPending = pendingRequests.includes(tool.slug)
+            return (
+              <div
+                key={tool.slug}
+                style={{
+                  background:      'var(--surface)',
+                  border:          '2px solid var(--border)',
+                  borderLeftWidth: 4,
+                  borderLeftColor: 'var(--border-2)',
+                  padding:         '32px 28px',
+                  opacity:         0.75,
+                }}
+              >
+                <p className="eyebrow" style={{ marginBottom: 12, color: 'var(--text-muted)' }}>
+                  No access
+                </p>
+                <h3
+                  style={{
+                    fontFamily:    'var(--font-heading)',
+                    fontWeight:    900,
+                    fontSize:      30,
+                    textTransform: 'uppercase',
+                    letterSpacing: '-0.01em',
+                    color:         'var(--text-muted)',
+                    lineHeight:    0.95,
+                    marginBottom:  12,
+                  }}
+                >
+                  {tool.label}
+                </h3>
+                <p
+                  style={{
+                    fontSize:     14,
+                    color:        'var(--text-muted)',
+                    lineHeight:   1.65,
+                    marginBottom: 24,
+                    opacity:      0.7,
+                  }}
+                >
+                  {tool.description}
+                </p>
+                <RequestAccessButton
+                  toolSlug={tool.slug}
+                  toolLabel={tool.label}
+                  alreadyRequested={isPending}
+                />
+              </div>
+            )
+          })}
+
+          {role === 'admin' && (
               <Link href="/admin" style={{ textDecoration: 'none', display: 'block' }}>
                 <div
                   className="card-hover"
@@ -421,7 +473,6 @@ export default async function Home() {
               </Link>
             )}
           </div>
-        )}
       </section>
     </>
   )

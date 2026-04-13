@@ -1,8 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-
-// Register each tool slug here when it is added
-const TOOL_SLUGS = ['expenses-manager', 'coverage-tracker'];
+import { TOOL_SLUGS } from '@/lib/tools';
 
 export async function proxy(request: NextRequest) {
   const supabaseResponse = NextResponse.next({ request });
@@ -62,7 +60,9 @@ export async function proxy(request: NextRequest) {
       .single();
 
     if (!access || (access.expires_at && new Date(access.expires_at) < new Date())) {
-      return NextResponse.redirect(new URL('/auth/no-access', request.url));
+      const noAccessUrl = new URL('/auth/no-access', request.url);
+      noAccessUrl.searchParams.set('tool', toolSlug);
+      return NextResponse.redirect(noAccessUrl);
     }
   }
 
