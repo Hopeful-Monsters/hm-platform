@@ -84,7 +84,7 @@ async function linearRequest<T>(body: object): Promise<T> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.LINEAR_API_KEY}`,
+      Authorization: process.env.LINEAR_API_KEY!,
     },
     body: JSON.stringify(body),
   })

@@ -10,7 +10,14 @@ export async function POST(request: Request) {
   const res = await fetch(STREAMTIME_COMPANIES, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: body.name }),
+    body: JSON.stringify({
+      name: body.name,
+      companyStatus: { id: 1 },
+      taxNumber: null,
+      phone1: null,
+      phone2: null,
+      websiteAddress: null,
+    }),
   })
 
   const text = await res.text()
