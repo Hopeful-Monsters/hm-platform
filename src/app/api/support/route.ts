@@ -89,10 +89,15 @@ async function linearRequest<T>(body: object): Promise<T> {
     body: JSON.stringify(body),
   })
 
-  if (!res.ok) throw new Error(`Linear API HTTP error: ${res.status}`)
+  // Always read the body — Linear often includes useful error detail even on 4xx
+  const json = await res.json().catch(() => null)
 
-  const json = await res.json()
-  if (json.errors?.length) {
+  if (!res.ok) {
+    const detail = json?.errors?.[0]?.message ?? JSON.stringify(json)
+    throw new Error(`Linear API ${res.status}: ${detail}`)
+  }
+
+  if (json?.errors?.length) {
     throw new Error(`Linear GraphQL error: ${json.errors[0].message}`)
   }
 
