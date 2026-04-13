@@ -106,6 +106,7 @@ export default function SiteHeader() {
             <DesktopNav
               userRole={user?.user_metadata?.role}
               userTools={userTools}
+              isAuthenticated={!!user}
             />
           )}
         </div>
@@ -183,6 +184,7 @@ export default function SiteHeader() {
         onClose={() => setMobileOpen(false)}
         userRole={user?.user_metadata?.role}
         userTools={userTools}
+        isAuthenticated={!!user}
       />
     </>
   )
