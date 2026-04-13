@@ -74,22 +74,42 @@ async function approveToolRequest(formData: FormData) {
 
   const service = createServiceClient()
 
-  // Grant access
-  await service.from('tool_access').insert({ user_id: userId, tool_slug: toolSlug, plan: 'basic' })
+  // Grant access — bail early if this fails so we don't mark the request
+  // approved or notify the user for an action that didn't complete.
+  const { error: accessError } = await service
+    .from('tool_access')
+    .insert({ user_id: userId, tool_slug: toolSlug, plan: 'basic' })
 
-  // Mark request approved
-  await service.from('tool_access_requests').update({ status: 'approved' }).eq('id', requestId)
+  if (accessError) {
+    console.error('approveToolRequest: failed to grant tool access:', accessError.message)
+    return
+  }
 
-  // Notify user
+  // Mark request approved — log but continue to notification if this fails;
+  // the access grant already succeeded so the user state is correct.
+  const { error: updateError } = await service
+    .from('tool_access_requests')
+    .update({ status: 'approved' })
+    .eq('id', requestId)
+
+  if (updateError) {
+    console.error('approveToolRequest: failed to update request status:', updateError.message)
+  }
+
+  // Notify user (non-fatal)
   if (userEmail) {
-    const toolLabel = TOOL_LABEL[toolSlug as ToolSlug] ?? toolSlug
-    const resend    = new Resend(process.env.RESEND_API_KEY!)
-    await resend.emails.send({
-      from:    'noreply@hopefulmonsters.com.au',
-      to:      userEmail,
-      subject: `Access Granted — ${toolLabel}`,
-      text:    `Your request for access to ${toolLabel} has been approved.\n\nSign in at app.hopefulmonsters.com.au to get started.`,
-    })
+    try {
+      const toolLabel = TOOL_LABEL[toolSlug as ToolSlug] ?? toolSlug
+      const resend    = new Resend(process.env.RESEND_API_KEY!)
+      await resend.emails.send({
+        from:    'noreply@hopefulmonsters.com.au',
+        to:      userEmail,
+        subject: `Access Granted — ${toolLabel}`,
+        text:    `Your request for access to ${toolLabel} has been approved.\n\nSign in at app.hopefulmonsters.com.au to get started.`,
+      })
+    } catch (err) {
+      console.error('approveToolRequest: notification email failed (non-fatal):', err)
+    }
   }
 
   revalidatePath('/admin/approvals')
@@ -101,21 +121,36 @@ async function denyToolRequest(formData: FormData) {
   const userEmail = formData.get('userEmail') as string
   const toolSlug  = formData.get('toolSlug') as string
 
+  if (!TOOL_SLUGS.includes(toolSlug)) return
+
   const service   = createServiceClient()
   const toolLabel = TOOL_LABEL[toolSlug as ToolSlug] ?? toolSlug
 
-  // Mark request denied
-  await service.from('tool_access_requests').update({ status: 'denied' }).eq('id', requestId)
+  // Mark request denied — bail early if this fails so we don't notify
+  // the user for an action that didn't complete.
+  const { error: updateError } = await service
+    .from('tool_access_requests')
+    .update({ status: 'denied' })
+    .eq('id', requestId)
 
-  // Notify user
+  if (updateError) {
+    console.error('denyToolRequest: failed to update request status:', updateError.message)
+    return
+  }
+
+  // Notify user (non-fatal)
   if (userEmail) {
-    const resend = new Resend(process.env.RESEND_API_KEY!)
-    await resend.emails.send({
-      from:    'noreply@hopefulmonsters.com.au',
-      to:      userEmail,
-      subject: `Access Request Update — ${toolLabel}`,
-      text:    `Your request for access to ${toolLabel} has not been approved at this time.\n\nIf you think this is a mistake, reply to this email.`,
-    })
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY!)
+      await resend.emails.send({
+        from:    'noreply@hopefulmonsters.com.au',
+        to:      userEmail,
+        subject: `Access Request Update — ${toolLabel}`,
+        text:    `Your request for access to ${toolLabel} has not been approved at this time.\n\nIf you think this is a mistake, reply to this email.`,
+      })
+    } catch (err) {
+      console.error('denyToolRequest: notification email failed (non-fatal):', err)
+    }
   }
 
   revalidatePath('/admin/approvals')

@@ -86,21 +86,26 @@ export async function POST(request: Request) {
   }
 
   // ── Notify admin (non-fatal) ──────────────────────────────────────
-  try {
-    const resend  = new Resend(process.env.RESEND_API_KEY!)
-    const toolLabel = TOOL_LABEL[tool_slug as ToolSlug] ?? tool_slug
-    await resend.emails.send({
-      from:    'noreply@hopefulmonsters.com.au',
-      to:      process.env.ADMIN_EMAIL || 'admin@hm-platform.com',
-      subject: `Tool Access Request — ${toolLabel}`,
-      text: [
-        `${user.email} has requested access to ${toolLabel}.`,
-        message ? `\nNote from user: ${message}` : '',
-        `\nReview at: app.hopefulmonsters.com.au/admin/approvals`,
-      ].join(''),
-    })
-  } catch (err) {
-    console.warn('Admin notification email failed (non-fatal):', err)
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (!adminEmail) {
+    console.error('ADMIN_EMAIL is not set — skipping admin notification for tool access request')
+  } else {
+    try {
+      const resend    = new Resend(process.env.RESEND_API_KEY!)
+      const toolLabel = TOOL_LABEL[tool_slug as ToolSlug] ?? tool_slug
+      await resend.emails.send({
+        from:    'noreply@hopefulmonsters.com.au',
+        to:      adminEmail,
+        subject: `Tool Access Request — ${toolLabel}`,
+        text: [
+          `${user.email} has requested access to ${toolLabel}.`,
+          message ? `\nNote from user: ${message}` : '',
+          `\nReview at: app.hopefulmonsters.com.au/admin/approvals`,
+        ].join(''),
+      })
+    } catch (err) {
+      console.warn('Admin notification email failed (non-fatal):', err)
+    }
   }
 
   return Response.json({ ok: true })

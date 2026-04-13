@@ -3,13 +3,7 @@
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Paperclip, X } from 'lucide-react'
-
-// Keep in sync with API route and proxy.ts TOOL_SLUGS
-const TOOL_OPTIONS = [
-  { value: 'expenses-manager', label: 'Expenses Manager' },
-  { value: 'coverage-tracker', label: 'Coverage Tracker' },
-  { value: 'platform',         label: 'Platform / General' },
-]
+import { SUPPORT_TOOL_OPTIONS } from '@/lib/support'
 
 const URGENCY_OPTIONS = [
   { value: 'urgent', label: 'Urgent' },
@@ -57,6 +51,71 @@ const selectStyle: React.CSSProperties = {
   backgroundRepeat: 'no-repeat',
   backgroundPosition: 'right 14px center',
   paddingRight: 40,
+}
+
+// ── Additional style constants ─────────────────────────────────────
+
+const formFieldStyle: React.CSSProperties = { marginBottom: 24 }
+
+const successCardStyle: React.CSSProperties = {
+  background:  'var(--surface)',
+  border:      '2px solid var(--border)',
+  borderLeft:  '4px solid var(--accent)',
+  padding:     '40px 36px',
+  maxWidth:    580,
+}
+
+const successHeadingStyle: React.CSSProperties = {
+  fontFamily:    'var(--font-heading)',
+  fontWeight:    900,
+  fontSize:      36,
+  textTransform: 'uppercase',
+  lineHeight:    0.95,
+  marginBottom:  16,
+}
+
+const successBodyStyle: React.CSSProperties = {
+  color:        'var(--text-muted)',
+  fontSize:     15,
+  lineHeight:   1.65,
+  marginBottom: 28,
+}
+
+const successLinkStyle: React.CSSProperties = {
+  color:          'var(--accent)',
+  fontFamily:     'var(--font-heading)',
+  fontWeight:     900,
+  textDecoration: 'none',
+}
+
+const errorBannerStyle: React.CSSProperties = {
+  background:   'rgba(239,68,68,0.08)',
+  border:       '2px solid rgba(239,68,68,0.4)',
+  borderLeft:   '4px solid rgb(239,68,68)',
+  padding:      '12px 16px',
+  marginBottom: 24,
+  fontSize:     14,
+  color:        'rgb(239,68,68)',
+}
+
+const screenshotRowStyle: React.CSSProperties = {
+  display:    'flex',
+  alignItems: 'center',
+  gap:        10,
+  padding:    '10px 14px',
+  background: 'var(--surface)',
+  border:     '2px solid var(--border)',
+}
+
+const screenshotRemoveBtnStyle: React.CSSProperties = {
+  background:  'none',
+  border:      'none',
+  color:       'var(--text-muted)',
+  cursor:      'pointer',
+  padding:     2,
+  display:     'flex',
+  alignItems:  'center',
+  flexShrink:  0,
 }
 
 function focusBorder(e: React.FocusEvent<HTMLElement>) {
@@ -182,43 +241,16 @@ export default function SupportForm({
   // ── Success ──────────────────────────────────────────────────────
   if (result) {
     return (
-      <div
-        style={{
-          background: 'var(--surface)',
-          border: '2px solid var(--border)',
-          borderLeft: '4px solid var(--accent)',
-          padding: '40px 36px',
-          maxWidth: 580,
-        }}
-      >
+      <div style={successCardStyle}>
         <p className="eyebrow" style={{ marginBottom: 12, color: 'var(--accent-label)' }}>
           Submitted
         </p>
-        <h2
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
-            fontSize: 36,
-            textTransform: 'uppercase',
-            lineHeight: 0.95,
-            marginBottom: 16,
-          }}
-        >
+        <h2 style={successHeadingStyle}>
           We&apos;ve got it.
         </h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.65, marginBottom: 28 }}>
+        <p style={successBodyStyle}>
           Logged as{' '}
-          <a
-            href={result.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: 'var(--accent)',
-              fontFamily: 'var(--font-heading)',
-              fontWeight: 900,
-              textDecoration: 'none',
-            }}
-          >
+          <a href={result.url} target="_blank" rel="noopener noreferrer" style={successLinkStyle}>
             {result.identifier}
           </a>{' '}
           in Linear and added to Triage for review.
@@ -247,7 +279,7 @@ export default function SupportForm({
       </p>
 
       {/* Name */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={formFieldStyle}>
         <FieldLabel htmlFor="name">What&apos;s your name?</FieldLabel>
         <input
           id="name"
@@ -265,7 +297,7 @@ export default function SupportForm({
       </div>
 
       {/* Tool */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={formFieldStyle}>
         <FieldLabel htmlFor="tool">Which tool is this related to?</FieldLabel>
         <div style={{ position: 'relative' }}>
           <select
@@ -281,7 +313,7 @@ export default function SupportForm({
             onBlur={blurBorder}
           >
             <option value="" disabled>Select an option</option>
-            {TOOL_OPTIONS.map(opt => (
+            {SUPPORT_TOOL_OPTIONS.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
@@ -289,7 +321,7 @@ export default function SupportForm({
       </div>
 
       {/* What were you trying to do */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={formFieldStyle}>
         <FieldLabel htmlFor="tried">What were you trying to do?</FieldLabel>
         <textarea
           id="tried"
@@ -307,7 +339,7 @@ export default function SupportForm({
       </div>
 
       {/* What happened instead */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={formFieldStyle}>
         <FieldLabel htmlFor="happened">What happened instead?</FieldLabel>
         <textarea
           id="happened"
@@ -325,22 +357,13 @@ export default function SupportForm({
       </div>
 
       {/* Screenshot */}
-      <div style={{ marginBottom: 24 }}>
+      <div style={formFieldStyle}>
         <FieldLabel htmlFor="screenshot" optional>
           Want to add a screenshot?
         </FieldLabel>
 
         {screenshot ? (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '10px 14px',
-              background: 'var(--surface)',
-              border: '2px solid var(--border)',
-            }}
-          >
+          <div style={screenshotRowStyle}>
             <Paperclip size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <span style={{ fontSize: 14, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {screenshot.name}
@@ -351,16 +374,7 @@ export default function SupportForm({
             <button
               type="button"
               onClick={removeScreenshot}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: 2,
-                display: 'flex',
-                alignItems: 'center',
-                flexShrink: 0,
-              }}
+              style={screenshotRemoveBtnStyle}
             >
               <X size={14} />
             </button>
@@ -433,17 +447,7 @@ export default function SupportForm({
 
       {/* Error */}
       {error && (
-        <div
-          style={{
-            background: 'rgba(239,68,68,0.08)',
-            border: '2px solid rgba(239,68,68,0.4)',
-            borderLeft: '4px solid rgb(239,68,68)',
-            padding: '12px 16px',
-            marginBottom: 24,
-            fontSize: 14,
-            color: 'rgb(239,68,68)',
-          }}
-        >
+        <div style={errorBannerStyle}>
           {error}
         </div>
       )}

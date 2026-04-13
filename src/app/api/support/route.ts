@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
+import { SUPPORT_TOOL_OPTIONS, SUPPORT_TOOL_LABELS, type SupportToolValue } from '@/lib/support'
 
 const LINEAR_API_URL = 'https://api.linear.app/graphql'
 
@@ -24,23 +25,10 @@ const URGENCY_LABELS: Record<UrgencyKey, string> = {
   none: 'No priority',
 }
 
-// Registered tool options — keep in sync with proxy.ts TOOL_SLUGS
-const TOOL_OPTIONS = [
-  { value: 'expenses-manager',  label: 'Expenses Manager' },
-  { value: 'coverage-tracker',  label: 'Coverage Tracker' },
-  { value: 'platform',          label: 'Platform / General' },
-] as const
-
-type ToolValue = (typeof TOOL_OPTIONS)[number]['value']
-
-const TOOL_LABELS: Record<ToolValue, string> = Object.fromEntries(
-  TOOL_OPTIONS.map(o => [o.value, o.label])
-) as Record<ToolValue, string>
-
 // ── Validation ─────────────────────────────────────────────────────
 const schema = z.object({
   name:        z.string().min(1).max(100),
-  tool:        z.enum(['expenses-manager', 'coverage-tracker', 'platform']),
+  tool:        z.enum(SUPPORT_TOOL_OPTIONS.map(o => o.value) as [SupportToolValue, ...SupportToolValue[]]),
   tried:       z.string().min(10).max(3000),
   happened:    z.string().min(10).max(3000),
   urgency:     z.enum(['urgent', 'high', 'medium', 'low', 'none']),
@@ -79,12 +67,12 @@ interface LinearIssueInput {
   priority: number
 }
 
-async function linearRequest<T>(body: object): Promise<T> {
+async function linearRequest<T>(body: object, apiKey: string): Promise<T> {
   const res = await fetch(LINEAR_API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: process.env.LINEAR_API_KEY!,
+      Authorization: apiKey,
     },
     body: JSON.stringify(body),
   })
@@ -104,22 +92,22 @@ async function linearRequest<T>(body: object): Promise<T> {
   return json.data
 }
 
-async function createLinearIssue(input: LinearIssueInput) {
+async function createLinearIssue(input: LinearIssueInput, apiKey: string) {
   const data = await linearRequest<{
     issueCreate: { success: boolean; issue: { id: string; identifier: string; url: string } }
-  }>({ query: CREATE_ISSUE_MUTATION, variables: { input } })
+  }>({ query: CREATE_ISSUE_MUTATION, variables: { input } }, apiKey)
 
   if (!data.issueCreate.success) throw new Error('issueCreate returned success: false')
   return data.issueCreate.issue
 }
 
-async function attachFileToIssue(issueId: string, url: string, title: string) {
+async function attachFileToIssue(issueId: string, url: string, title: string, apiKey: string) {
   await linearRequest({
     query: CREATE_ATTACHMENT_MUTATION,
     variables: {
       input: { issueId, url, title },
     },
-  })
+  }, apiKey)
 }
 
 // ── Screenshot upload ──────────────────────────────────────────────
@@ -201,8 +189,9 @@ export async function POST(request: Request) {
 
   // ── Env checks ──────────────────────────────────────────────────
   const teamId = process.env.LINEAR_TEAM_ID
-  if (!teamId) {
-    console.error('LINEAR_TEAM_ID is not set')
+  const apiKey = process.env.LINEAR_API_KEY
+  if (!teamId || !apiKey) {
+    console.error('LINEAR_TEAM_ID or LINEAR_API_KEY is not set')
     return Response.json({ error: 'Support is temporarily unavailable' }, { status: 503 })
   }
 
@@ -215,7 +204,7 @@ export async function POST(request: Request) {
 
   // ── Build Linear issue ──────────────────────────────────────────
   const submitterName = name
-  const toolLabel = TOOL_LABELS[tool as ToolValue]
+  const toolLabel = SUPPORT_TOOL_LABELS[tool as SupportToolValue]
   const urgencyLabel = URGENCY_LABELS[urgency as UrgencyKey]
 
   // Auto-generate title from "what they tried to do" (first 100 chars)
@@ -249,11 +238,11 @@ export async function POST(request: Request) {
 
   // ── Create issue ────────────────────────────────────────────────
   try {
-    const issue = await createLinearIssue(issueInput)
+    const issue = await createLinearIssue(issueInput, apiKey)
 
     // Attach screenshot as a Linear attachment if uploaded
     if (screenshotUrl) {
-      await attachFileToIssue(issue.id, screenshotUrl, 'Screenshot').catch(err =>
+      await attachFileToIssue(issue.id, screenshotUrl, 'Screenshot', apiKey).catch(err =>
         console.warn('Attachment create failed (non-fatal):', err)
       )
     }
