@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import ThemeToggle from './ThemeToggle'
+import SignOutButton from './SignOutButton'
 import { DesktopNav, MobileNav } from './navigation'
 
 // HM logo mark — circle + spark SVG from brand reference
@@ -116,8 +117,9 @@ export default function SiteHeader() {
           <ThemeToggle />
 
           {!loading && user ? (
-            <>
-            </>
+            <div className="hidden md:flex">
+              <SignOutButton />
+            </div>
           ) : !loading ? (
             <>
               <Link
@@ -156,10 +158,10 @@ export default function SiteHeader() {
             </>
           ) : null}
 
-          {/* Mobile menu toggle */}
+          {/* Mobile menu toggle — hidden on desktop */}
           <button
             className="flex md:hidden"
-            onClick={() => setMobileOpen(true)}
+            onClick={() => setMobileOpen(o => !o)}
             style={{
               background: 'none',
               border: '2px solid var(--border-2)',

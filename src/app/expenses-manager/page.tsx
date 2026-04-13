@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import DOMPurify from 'dompurify'
 import './expenses-manager.css'
 
 // ─────────────────────────────────────────────────────────────────
@@ -449,12 +448,12 @@ function renderReviewList() {
     container.innerHTML = '<div class="alert alert-warning">No extracted expenses to review.</div>'; return
   }
   const reviewHtml = reviewable.map(buildReviewCard).join('')
-  container.innerHTML = DOMPurify.sanitize(reviewHtml)
+  container.innerHTML = reviewHtml
 }
 
 function refreshReviewCard(item: QueueItem) {
   const el = document.getElementById(`review_${item.id}`)
-  if (el) el.outerHTML = DOMPurify.sanitize(buildReviewCard(item))
+  if (el) el.outerHTML = buildReviewCard(item)
 }
 
 function buildReviewCard(item: QueueItem): string {
@@ -506,6 +505,7 @@ function buildReviewCard(item: QueueItem): string {
         <div class="fg">
           <label class="lbl">Date <span class="req">*</span></label>
           <input type="date" id="r_date_${item.id}" class="fc" value="${esc(d.date || '')}"
+            ondblclick="this.showPicker && this.showPicker()"
             onchange="updateReviewField(${item.id},'date',this.value); checkDateWarn(${item.id},this.value)">
           ${dateWarnHtml}
         </div>

@@ -149,18 +149,20 @@ export function MobileNav({ isOpen, onClose, userRole, userTools, isAuthenticate
                     key={item.href}
                     href={item.href}
                     onClick={onClose}
+                    className={cn(
+                      'block border-l-4 transition-colors duration-150',
+                      isActive
+                        ? 'text-[var(--accent)] border-l-[var(--accent)]'
+                        : 'text-[var(--text-muted)] border-l-transparent hover:text-[var(--text)] hover:border-l-[var(--border-2)]'
+                    )}
                     style={{
-                      display: 'block',
                       padding: '12px 20px',
                       fontFamily: 'var(--font-heading)',
                       fontWeight: 900,
                       fontSize: 20,
                       textTransform: 'uppercase',
                       letterSpacing: '0.1em',
-                      color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-                      borderLeft: isActive ? '4px solid var(--accent)' : '4px solid transparent',
                       textDecoration: 'none',
-                      transition: 'color 0.15s, border-color 0.15s',
                     }}
                   >
                     {item.label}
