@@ -453,7 +453,12 @@ function renderReviewList() {
 
 function refreshReviewCard(item: QueueItem) {
   const el = document.getElementById(`review_${item.id}`)
-  if (el) el.outerHTML = buildReviewCard(item)
+  if (!el) return
+  const html = buildReviewCard(item)
+  const template = document.createElement('template')
+  template.innerHTML = html.trim()
+  const next = template.content.firstElementChild
+  if (next) el.replaceWith(next)
 }
 
 function buildReviewCard(item: QueueItem): string {
