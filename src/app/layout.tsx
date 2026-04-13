@@ -5,8 +5,10 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import './globals.css'
 import SiteHeader from '@/components/SiteHeader'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { UserProvider } from '@/components/UserProvider'
 import { ErrorBoundary } from '@/components/ui/error-boundary'
 import { Toaster } from '@/components/ui/toaster'
+import { getCurrentUser } from '@/lib/auth'
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
@@ -16,9 +18,11 @@ const barlowCondensed = Barlow_Condensed({
   display: 'swap',
 })
 
+// Weight 900 dropped — all 900-weight usage targets var(--font-heading)
+// (Barlow Condensed). Inter only needs 400/500/600/700 for body and UI copy.
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '900'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-inter',
   display: 'swap',
 })
@@ -33,6 +37,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // Resolve the user once at the layout level. React's cache() ensures any
+  // Server Component further down the tree (e.g. page.tsx) that also calls
+  // getCurrentUser() gets the memoised result — no second network round-trip.
+  const user = await getCurrentUser()
+
   return (
     <html
       lang="en"
@@ -41,11 +50,13 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col antialiased">
         <ErrorBoundary>
           <ThemeProvider defaultTheme="dark">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <Toaster />
-            <Analytics />
-            <SpeedInsights />
+            <UserProvider user={user}>
+              <SiteHeader />
+              <main className="flex-1">{children}</main>
+              <Toaster />
+              <Analytics />
+              <SpeedInsights />
+            </UserProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

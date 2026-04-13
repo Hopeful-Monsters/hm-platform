@@ -12,31 +12,41 @@ interface NavItem {
   label: string
   adminOnly?: boolean
   toolSlug?: string
+  /** Show only when a user is authenticated (any status) */
+  authOnly?: boolean
 }
 
 const navItems: NavItem[] = [
   { href: '/',                  label: 'Home' },
   { href: '/expenses-manager',  label: 'Expenses',  toolSlug: 'expenses-manager' },
   { href: '/coverage-tracker',  label: 'Coverage',  toolSlug: 'coverage-tracker' },
+  { href: '/support',           label: 'Support',   authOnly: true },
   { href: '/admin',             label: 'Admin',     adminOnly: true },
 ]
 
 interface NavProps {
   userRole?: string
   userTools: string[]
+  isAuthenticated?: boolean
 }
 
-function filterItems(items: NavItem[], userRole?: string, userTools: string[] = []) {
+function filterItems(
+  items: NavItem[],
+  userRole?: string,
+  userTools: string[] = [],
+  isAuthenticated = false
+) {
   return items.filter(item => {
     if (item.adminOnly && userRole !== 'admin') return false
     if (item.toolSlug && !userTools.includes(item.toolSlug)) return false
+    if (item.authOnly && !isAuthenticated) return false
     return true
   })
 }
 
-export function DesktopNav({ userRole, userTools }: NavProps) {
+export function DesktopNav({ userRole, userTools, isAuthenticated }: NavProps) {
   const pathname = usePathname()
-  const items = filterItems(navItems, userRole, userTools)
+  const items = filterItems(navItems, userRole, userTools, isAuthenticated)
 
   return (
     <nav className="hidden md:flex items-center gap-0">
@@ -68,9 +78,9 @@ interface MobileNavProps extends NavProps {
   onClose: () => void
 }
 
-export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavProps) {
+export function MobileNav({ isOpen, onClose, userRole, userTools, isAuthenticated }: MobileNavProps) {
   const pathname = usePathname()
-  const items = filterItems(navItems, userRole, userTools)
+  const items = filterItems(navItems, userRole, userTools, isAuthenticated)
 
   return (
     <AnimatePresence>
@@ -139,18 +149,20 @@ export function MobileNav({ isOpen, onClose, userRole, userTools }: MobileNavPro
                     key={item.href}
                     href={item.href}
                     onClick={onClose}
+                    className={cn(
+                      'block border-l-4 transition-colors duration-150',
+                      isActive
+                        ? 'text-[var(--accent)] border-l-[var(--accent)]'
+                        : 'text-[var(--text-muted)] border-l-transparent hover:text-[var(--text)] hover:border-l-[var(--border-2)]'
+                    )}
                     style={{
-                      display: 'block',
                       padding: '12px 20px',
                       fontFamily: 'var(--font-heading)',
                       fontWeight: 900,
                       fontSize: 20,
                       textTransform: 'uppercase',
                       letterSpacing: '0.1em',
-                      color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-                      borderLeft: isActive ? '4px solid var(--accent)' : '4px solid transparent',
                       textDecoration: 'none',
-                      transition: 'color 0.15s, border-color 0.15s',
                     }}
                   >
                     {item.label}

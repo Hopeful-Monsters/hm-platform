@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 const adminLinks = [
   { href: '/admin',           label: 'Dashboard' },
@@ -53,20 +54,21 @@ export default function AdminSidebarClient({ userEmail }: { userEmail?: string }
             <Link
               key={link.href}
               href={link.href}
+              className={cn(
+                'block border-l-[3px] transition-colors duration-150',
+                isActive
+                  ? 'text-[var(--accent)] border-l-[var(--accent)]'
+                  : 'text-[var(--text-muted)] border-l-transparent hover:text-[var(--text)] hover:border-l-[var(--border-2)]'
+              )}
               style={{
-                display: 'block',
                 fontFamily: 'var(--font-heading)',
                 fontWeight: 700,
                 fontSize: 16,
                 textTransform: 'uppercase',
                 letterSpacing: '0.12em',
-                color: isActive ? 'var(--accent)' : 'var(--text-muted)',
                 textDecoration: 'none',
                 padding: '10px 20px',
-                borderLeft: `3px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
-                transition: 'color 0.15s, border-color 0.15s',
               }}
-              className={isActive ? '' : 'hover:text-[var(--text)] hover:border-l-[var(--accent)]'}
             >
               {link.label}
             </Link>

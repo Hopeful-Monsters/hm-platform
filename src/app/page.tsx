@@ -1,7 +1,11 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
+import { getCurrentUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import SignOutButton from '@/components/SignOutButton'
+import RequestAccessButton from '@/components/RequestAccessButton'
+import { TOOLS } from '@/lib/tools'
 
 // HM logo mark — inline for RSC
 function HMLogo() {
@@ -82,20 +86,179 @@ function ToolCard({
   )
 }
 
-export default async function Home() {
+// ── Tool grid skeleton — shown while ToolGrid streams in ──────────
+function ToolGridSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: 2,
+      }}
+    >
+      {[0, 1].map(i => (
+        <div
+          key={i}
+          style={{
+            background: 'var(--surface)',
+            border: '2px solid var(--border)',
+            borderLeftWidth: 4,
+            borderLeftColor: 'var(--border)',
+            padding: '32px 28px',
+            height: 220,
+            opacity: 0.5,
+          }}
+          aria-hidden
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── Async tool grid — streams in independently ────────────────────
+// Isolated here so the welcome hero above renders immediately while
+// the two DB queries (tool_access + tool_access_requests) are in flight.
+async function ToolGrid({ userId, role }: { userId: string; role?: string }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  const [{ data: toolAccess }, { data: accessRequests }] = await Promise.all([
+    supabase.from('tool_access').select('tool_slug').eq('user_id', userId),
+    supabase
+      .from('tool_access_requests')
+      .select('tool_slug')
+      .eq('user_id', userId)
+      .eq('status', 'pending'),
+  ])
+
+  const userTools       = toolAccess?.map(a => a.tool_slug) ?? []
+  const pendingRequests = accessRequests?.map(r => r.tool_slug) ?? []
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        gap: 2,
+      }}
+    >
+      {TOOLS.map(tool => {
+        const hasAccess = userTools.includes(tool.slug)
+        if (hasAccess) {
+          return (
+            <ToolCard
+              key={tool.slug}
+              href={`/${tool.slug}`}
+              label={tool.label}
+              description={tool.description}
+              cta="Open"
+            />
+          )
+        }
+        const isPending = pendingRequests.includes(tool.slug)
+        return (
+          <div
+            key={tool.slug}
+            style={{
+              background:      'var(--surface)',
+              border:          '2px solid var(--border)',
+              borderLeftWidth: 4,
+              borderLeftColor: 'var(--border-2)',
+              padding:         '32px 28px',
+              opacity:         0.75,
+            }}
+          >
+            <p className="eyebrow" style={{ marginBottom: 12, color: 'var(--text-muted)' }}>
+              No access
+            </p>
+            <h3
+              style={{
+                fontFamily:    'var(--font-heading)',
+                fontWeight:    900,
+                fontSize:      30,
+                textTransform: 'uppercase',
+                letterSpacing: '-0.01em',
+                color:         'var(--text-muted)',
+                lineHeight:    0.95,
+                marginBottom:  12,
+              }}
+            >
+              {tool.label}
+            </h3>
+            <p
+              style={{
+                fontSize:     14,
+                color:        'var(--text-muted)',
+                lineHeight:   1.65,
+                marginBottom: 24,
+                opacity:      0.7,
+              }}
+            >
+              {tool.description}
+            </p>
+            <RequestAccessButton
+              toolSlug={tool.slug}
+              toolLabel={tool.label}
+              alreadyRequested={isPending}
+            />
+          </div>
+        )
+      })}
+
+      {role === 'admin' && (
+        <Link href="/admin" style={{ textDecoration: 'none', display: 'block' }}>
+          <div
+            className="card-hover"
+            style={{
+              background: 'var(--surface)',
+              border: '2px solid var(--border)',
+              borderLeft: '4px solid var(--pink)',
+              padding: '32px 28px',
+              height: '100%',
+            }}
+          >
+            <p className="eyebrow" style={{ marginBottom: 12 }}>Admin only</p>
+            <h3
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 900,
+                fontSize: 30,
+                textTransform: 'uppercase',
+                color: 'var(--text)',
+                lineHeight: 0.95,
+                marginBottom: 12,
+              }}
+            >
+              Admin Dashboard
+            </h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: 24 }}>
+              Manage users, approve requests, and control tool access.
+            </p>
+            <span
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 900,
+                fontSize: 14,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                color: 'var(--pink)',
+              }}
+            >
+              Open →
+            </span>
+          </div>
+        </Link>
+      )}
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────
+export default async function Home() {
+  // getCurrentUser() is memoised via React cache() — the call in layout.tsx
+  // already resolved this; we get the cached result with no extra round-trip.
+  const user   = await getCurrentUser()
   const status = user?.user_metadata?.status
   const role   = user?.user_metadata?.role
-
-  let userTools: string[] = []
-  if (user && status === 'approved') {
-    const { data: toolAccess } = await supabase
-      .from('tool_access')
-      .select('tool_slug')
-      .eq('user_id', user.id)
-    userTools = toolAccess?.map(a => a.tool_slug) ?? []
-  }
 
   // ── Unauthenticated landing ──────────────────────────────────────
   if (!user) {
@@ -110,7 +273,6 @@ export default async function Home() {
             overflow: 'hidden',
           }}
         >
-          {/* Watermark */}
           <span
             className="watermark"
             style={{
@@ -300,9 +462,12 @@ export default async function Home() {
   }
 
   // ── Approved dashboard ──────────────────────────────────────────
+  // Welcome hero renders immediately. ToolGrid is in a Suspense boundary so
+  // the hero appears as part of the static shell while the two DB queries
+  // (tool_access + tool_access_requests) stream in concurrently.
   return (
     <>
-      {/* Welcome hero — yellow */}
+      {/* Welcome hero — renders before ToolGrid queries resolve */}
       <section
         style={{
           background: 'var(--accent)',
@@ -337,7 +502,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Tool grid */}
+      {/* Tool grid — streams in after tool_access queries resolve */}
       <section
         style={{
           background: 'var(--bg)',
@@ -347,81 +512,9 @@ export default async function Home() {
         }}
       >
         <p className="eyebrow" style={{ marginBottom: 20 }}>Your tools</p>
-
-        {userTools.length === 0 && role !== 'admin' ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
-            No tools assigned yet. Contact an admin to get access.
-          </p>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 2,
-            }}
-          >
-            {userTools.includes('expenses-manager') && (
-              <ToolCard
-                href="/expenses-manager"
-                label="Expenses Manager"
-                description="Track, categorise, and report on expenses with detailed analytics."
-                cta="Open"
-              />
-            )}
-            {userTools.includes('coverage-tracker') && (
-              <ToolCard
-                href="/coverage-tracker"
-                label="Coverage Tracker"
-                description="Monitor earned media and coverage metrics across clients and campaigns."
-                cta="Open"
-              />
-            )}
-            {role === 'admin' && (
-              <Link href="/admin" style={{ textDecoration: 'none', display: 'block' }}>
-                <div
-                  className="card-hover"
-                  style={{
-                    background: 'var(--surface)',
-                    border: '2px solid var(--border)',
-                    borderLeft: '4px solid var(--pink)',
-                    padding: '32px 28px',
-                    height: '100%',
-                  }}
-                >
-                  <p className="eyebrow" style={{ marginBottom: 12 }}>Admin only</p>
-                  <h3
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontWeight: 900,
-                      fontSize: 30,
-                      textTransform: 'uppercase',
-                      color: 'var(--text)',
-                      lineHeight: 0.95,
-                      marginBottom: 12,
-                    }}
-                  >
-                    Admin Dashboard
-                  </h3>
-                  <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: 24 }}>
-                    Manage users, approve requests, and control tool access.
-                  </p>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontWeight: 900,
-                      fontSize: 14,
-                      letterSpacing: '0.15em',
-                      textTransform: 'uppercase',
-                      color: 'var(--pink)',
-                    }}
-                  >
-                    Open →
-                  </span>
-                </div>
-              </Link>
-            )}
-          </div>
-        )}
+        <Suspense fallback={<ToolGridSkeleton />}>
+          <ToolGrid userId={user.id} role={role} />
+        </Suspense>
       </section>
     </>
   )

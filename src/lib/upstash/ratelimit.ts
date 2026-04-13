@@ -25,6 +25,12 @@ export const rateLimits = {
     limiter: Ratelimit.fixedWindow(5, '15 m'),
     prefix: 'ratelimit',
   }),
+  // Tool access requests: 5 per hour per user — intentional action, not a high-freq call
+  requests: new Ratelimit({
+    redis,
+    limiter: Ratelimit.fixedWindow(5, '1 h'),
+    prefix: 'ratelimit',
+  }),
 };
 
 // Rate limit key convention: {tool-slug}:{route}:{identifier}
