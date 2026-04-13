@@ -4,9 +4,11 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { Menu } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@/components/UserProvider'
 import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import { DesktopNav, MobileNav } from './navigation'
+import type { User } from '@supabase/supabase-js'
 
 // HM logo mark — circle + spark SVG from brand reference
 function HMLogo() {
@@ -20,32 +22,22 @@ function HMLogo() {
 }
 
 export default function SiteHeader() {
-  const [user, setUser]           = useState<{ email?: string; id: string; user_metadata?: Record<string, string> } | null>(null)
-  const [loading, setLoading]     = useState(true)
-  const [userTools, setUserTools] = useState<string[]>([])
+  // Initialise from the server-resolved user passed down via UserProvider.
+  // This means the header renders correctly on the first paint without waiting
+  // for a client-side getUser() call to complete — eliminating the loading flash.
+  const serverUser = useUser()
+  const [user, setUser]             = useState<User | null>(serverUser)
+  const [userTools, setUserTools]   = useState<string[]>([])
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  // Keep user state reactive for sign-in / sign-out events that happen
+  // during the session (e.g. signing out updates the nav immediately).
   useEffect(() => {
     const supabase = createClient()
-
-    let cancelled = false
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!cancelled) {
-        setUser(user)
-        setLoading(false)
-      }
-    })
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
-      }
+      (_, session) => setUser(session?.user ?? null)
     )
-    return () => {
-      cancelled = true
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
@@ -103,24 +95,22 @@ export default function SiteHeader() {
             <span className="hidden sm:inline">HOPEFUL MONSTERS.</span>
           </Link>
 
-          {!loading && (
-            <DesktopNav
+          <DesktopNav
               userRole={user?.user_metadata?.role}
               userTools={userTools}
               isAuthenticated={!!user}
             />
-          )}
         </div>
 
         {/* Right — theme toggle, sign out / auth */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <ThemeToggle />
 
-          {!loading && user ? (
+          {user ? (
             <div className="hidden md:flex">
               <SignOutButton />
             </div>
-          ) : !loading ? (
+          ) : (
             <>
               <Link
                 href="/auth/login"
@@ -156,7 +146,7 @@ export default function SiteHeader() {
                 Sign Up
               </Link>
             </>
-          ) : null}
+          )}
 
           {/* Mobile menu toggle — hidden on desktop */}
           <button

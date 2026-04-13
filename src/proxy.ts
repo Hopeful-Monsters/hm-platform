@@ -4,7 +4,18 @@ import { TOOL_SLUGS } from '@/lib/tools';
 
 export async function proxy(request: NextRequest) {
   const supabaseResponse = NextResponse.next({ request });
+  const { pathname } = request.nextUrl;
 
+  const isAdminRoute = pathname.startsWith('/admin');
+  const toolSlug = TOOL_SLUGS.find(slug => pathname.startsWith(`/${slug}`));
+
+  // Skip auth entirely for routes that don't need protection —
+  // saves a Supabase round-trip on every public/home page request.
+  if (!isAdminRoute && !toolSlug) {
+    return supabaseResponse;
+  }
+
+  // ── Auth required from here on ─────────────────────────────────
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,10 +33,9 @@ export async function proxy(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
 
   // ── Admin route protection ─────────────────────────────────────
-  if (pathname.startsWith('/admin')) {
+  if (isAdminRoute) {
     if (!user) {
       const loginUrl = new URL('/auth/login', request.url);
       loginUrl.searchParams.set('next', pathname);
@@ -37,16 +47,12 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── Tool route protection ──────────────────────────────────────
-  const toolSlug = TOOL_SLUGS.find(slug => pathname.startsWith(`/${slug}`));
-
-  // Redirect unauthenticated users trying to access tools
   if (toolSlug && !user) {
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Check tool access for authenticated users
   if (toolSlug && user) {
     if (user.user_metadata?.status !== 'approved') {
       return NextResponse.redirect(new URL('/auth/no-access', request.url));
