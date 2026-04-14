@@ -19,9 +19,7 @@ interface CompaniesSlice {
 
 // ── Store ─────────────────────────────────────────────────────────
 
-interface AppStore extends CompaniesSlice {}
-
-export const useAppStore = create<AppStore>()(set => ({
+export const useAppStore = create<CompaniesSlice>()(set => ({
   // Companies
   companies: [],
   companiesLoadedAt: null,
