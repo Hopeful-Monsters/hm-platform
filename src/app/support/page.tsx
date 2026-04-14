@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import SupportForm from './SupportForm'
 
 export const metadata = {
-  title: 'Support — Hopeful Monsters',
+  title:  'Support',   // renders as "Support — Hopeful Monsters" via root template
+  robots: { index: false, follow: false },
 }
 
 export default async function SupportPage() {

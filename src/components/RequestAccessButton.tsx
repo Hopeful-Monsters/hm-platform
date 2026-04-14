@@ -11,7 +11,7 @@ interface Props {
   alreadyRequested?: boolean
 }
 
-export default function RequestAccessButton({ toolSlug, toolLabel, alreadyRequested = false }: Props) {
+export default function RequestAccessButton({ toolSlug, alreadyRequested = false }: Props) {
   const [state, setState] = useState<RequestState>(alreadyRequested ? 'already_requested' : 'idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -87,7 +87,7 @@ export default function RequestAccessButton({ toolSlug, toolLabel, alreadyReques
           opacity:    state === 'submitting' ? 0.5 : 1,
         }}
       >
-        {state === 'submitting' ? 'Requesting…' : `Request Access → ${toolLabel}`}
+        {state === 'submitting' ? 'Requesting…' : 'Request Access →'}
       </button>
 
       {state === 'error' && errorMsg && (

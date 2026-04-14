@@ -112,32 +112,32 @@ export default function SiteHeader() {
             </div>
           ) : (
             <>
+              {/* Sign In — colour set via Tailwind so hover override works */}
               <Link
                 href="/auth/login"
-                className="hidden sm:flex"
+                className="hidden sm:flex text-[var(--text-muted)] hover:text-[var(--text)] transition-colors duration-150"
                 style={{
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 900,
                   fontSize: 14,
                   letterSpacing: '0.15em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
                   textDecoration: 'none',
                   padding: '6px 12px',
                 }}
               >
                 Sign In
               </Link>
+              {/* Sign Up — bg/colour via Tailwind so hover override works */}
               <Link
                 href="/auth/signup"
+                className="bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-80 transition-opacity duration-150"
                 style={{
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 900,
                   fontSize: 14,
                   letterSpacing: '0.15em',
                   textTransform: 'uppercase',
-                  background: 'var(--accent)',
-                  color: 'var(--accent-fg)',
                   textDecoration: 'none',
                   padding: '7px 16px',
                   display: 'inline-block',
@@ -150,7 +150,7 @@ export default function SiteHeader() {
 
           {/* Mobile menu toggle — hidden on desktop */}
           <button
-            className="flex md:hidden"
+            className="flex md:hidden items-center justify-center"
             onClick={() => setMobileOpen(o => !o)}
             style={{
               background: 'none',
@@ -158,9 +158,6 @@ export default function SiteHeader() {
               color: 'var(--text-muted)',
               padding: 6,
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}
           >
             <Menu size={16} />
