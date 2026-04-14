@@ -263,14 +263,13 @@ textarea.hm-input {
 
 /* ══ CARD HOVER ══════════════════════════════════════════════════ */
 /* Used in Server Components — pure CSS, no JS event handlers.     */
-/* Outline sidesteps inline border styles and doesn't affect layout */
+/* Slight upward shift on hover for a clean, tactile feel.         */
 
 .card-hover {
-  outline: 2px solid transparent;
-  outline-offset: -2px;
-  transition: outline-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
 }
 .card-hover:hover {
-  outline-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }

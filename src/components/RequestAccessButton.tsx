@@ -87,7 +87,7 @@ export default function RequestAccessButton({ toolSlug, toolLabel, alreadyReques
           opacity:    state === 'submitting' ? 0.5 : 1,
         }}
       >
-        {state === 'submitting' ? 'Requesting…' : `Request Access → ${toolLabel}`}
+        {state === 'submitting' ? 'Requesting…' : 'Request Access →'}
       </button>
 
       {state === 'error' && errorMsg && (

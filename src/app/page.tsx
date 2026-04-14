@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   },
 }
 import { createClient } from '@/lib/supabase/server'
-import { Button } from '@/components/ui/button'
 import SignOutButton from '@/components/SignOutButton'
 import RequestAccessButton from '@/components/RequestAccessButton'
 import { TOOLS } from '@/lib/tools'
@@ -240,7 +239,7 @@ async function ToolGrid({ userId, role }: { userId: string; role?: string }) {
                 fontSize: 14,
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                color: 'var(--pink)',
+                color: 'var(--accent)',
               }}
             >
               Open →
@@ -264,85 +263,86 @@ export default async function Home() {
   if (!user) {
     return (
       <>
-        {/* Hero — yellow */}
+        {/* Hero — yellow, two-column */}
         <section
           style={{
             background: 'var(--accent)',
-            padding: '80px 32px 64px',
-            position: 'relative',
-            overflow: 'hidden',
+            padding: '80px 32px 72px',
           }}
         >
-          <div style={{ position: 'relative', zIndex: 1, maxWidth: 680 }}>
-            <h1
-              className="display-xl"
-              style={{ color: 'var(--accent-fg)', marginBottom: 24 }}
-            >
-              Tools for<br />
-              <span
+          <div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+            style={{ maxWidth: 1200, margin: '0 auto' }}
+          >
+            {/* LHS — copy + CTAs */}
+            <div>
+              <h1
+                className="display-xl"
+                style={{ color: 'var(--accent-fg)', marginBottom: 24 }}
+              >
+                Tools for<br />
+                <span
+                  style={{
+                    WebkitTextStroke: '3px var(--accent-fg)',
+                    color: 'transparent',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  bold
+                </span>{' '}brands.
+              </h1>
+
+              <p
                 style={{
-                  WebkitTextStroke: '3px var(--accent-fg)',
-                  color: 'transparent',
-                  fontStyle: 'italic',
+                  fontSize: 18,
+                  color: 'rgba(0,0,0,0.65)',
+                  lineHeight: 1.6,
+                  maxWidth: 420,
+                  marginBottom: 36,
+                  fontWeight: 500,
                 }}
               >
-                bold
-              </span>{' '}brands.
-            </h1>
+                A curated set of tools for expenses, coverage tracking, and
+                administrative workflows — built for teams that move fast.
+              </p>
 
-            <p
-              style={{
-                fontSize: 18,
-                color: 'rgba(0,0,0,0.65)',
-                lineHeight: 1.6,
-                maxWidth: 460,
-                marginBottom: 36,
-                fontWeight: 500,
-              }}
-            >
-              A curated set of tools for expenses, coverage tracking, and
-              administrative workflows — built for teams that move fast.
-            </p>
-
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
-              <Button asChild size="lg" style={{ background: 'var(--accent-fg)', color: 'var(--accent)' }}>
-                <Link href="/auth/signup">Get Started →</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                style={{
-                  background: 'transparent',
-                  border: '2px solid var(--accent-fg)',
-                  color: 'var(--accent-fg)',
-                }}
-              >
-                <Link href="/auth/login">Sign In</Link>
-              </Button>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {/* Get Started — dark fill on yellow bg */}
+                <Link
+                  href="/auth/signup"
+                  className="btn-hm text-2xl px-10 py-4 transition-all duration-150 hover:opacity-85 hover:-translate-y-0.5"
+                  style={{
+                    background: 'var(--accent-fg)',
+                    color: 'var(--accent)',
+                  }}
+                >
+                  Get Started →
+                </Link>
+                {/* Sign In — ghost on yellow bg */}
+                <Link
+                  href="/auth/login"
+                  className="btn-hm text-2xl px-10 py-4 transition-all duration-150 hover:bg-black/10"
+                  style={{
+                    background: 'transparent',
+                    border: '2px solid var(--accent-fg)',
+                    color: 'var(--accent-fg)',
+                  }}
+                >
+                  Sign In
+                </Link>
+              </div>
             </div>
 
-            {/* Tools carousel */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 12,
-                overflowX: 'auto',
-                paddingBottom: 4,
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-              }}
-            >
+            {/* RHS — tool cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {TOOLS.map(tool => (
                 <div
                   key={tool.slug}
                   style={{
-                    flexShrink: 0,
-                    width: 260,
                     background: 'rgba(0,0,0,0.08)',
                     border: '2px solid rgba(0,0,0,0.12)',
-                    borderLeftWidth: 4,
-                    borderLeftColor: 'rgba(0,0,0,0.25)',
-                    padding: '20px 20px 22px',
+                    borderLeft: '4px solid rgba(0,0,0,0.25)',
+                    padding: '22px 24px',
                   }}
                 >
                   <p
@@ -362,7 +362,7 @@ export default async function Home() {
                     style={{
                       fontFamily: 'var(--font-heading)',
                       fontWeight: 900,
-                      fontSize: 22,
+                      fontSize: 26,
                       textTransform: 'uppercase',
                       letterSpacing: '-0.01em',
                       color: 'var(--accent-fg)',
@@ -374,7 +374,7 @@ export default async function Home() {
                   </h3>
                   <p
                     style={{
-                      fontSize: 13,
+                      fontSize: 14,
                       color: 'rgba(0,0,0,0.55)',
                       lineHeight: 1.55,
                     }}

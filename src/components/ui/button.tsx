@@ -14,6 +14,7 @@ const buttonVariants = cva(
     'btn-hm',
     'inline-flex items-center justify-center gap-2',
     'whitespace-nowrap',
+    'transition-all duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2',
     'disabled:opacity-40 disabled:pointer-events-none',
     '[&_svg]:size-4 [&_svg]:shrink-0',
@@ -23,7 +24,7 @@ const buttonVariants = cva(
       variant: {
         default: [
           'bg-[var(--accent)] text-[var(--accent-fg)]',
-          'hover:outline hover:outline-2 hover:outline-[var(--text)]',
+          'hover:opacity-90 hover:-translate-y-px',
         ].join(' '),
         outline: [
           'bg-transparent text-[var(--accent)]',
@@ -36,7 +37,7 @@ const buttonVariants = cva(
         ].join(' '),
         danger: [
           'bg-red-600 text-white',
-          'hover:outline hover:outline-2 hover:outline-[var(--text)]',
+          'hover:opacity-90 hover:-translate-y-px',
         ].join(' '),
         nav: [
           'bg-transparent text-[var(--text-dim)]',

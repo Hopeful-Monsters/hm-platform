@@ -112,33 +112,32 @@ export default function SiteHeader() {
             </div>
           ) : (
             <>
+              {/* Sign In — colour set via Tailwind so hover override works */}
               <Link
                 href="/auth/login"
-                className="hidden sm:flex transition-colors duration-150 hover:text-[var(--text)]"
+                className="hidden sm:flex text-[var(--text-muted)] hover:text-[var(--text)] transition-colors duration-150"
                 style={{
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 900,
                   fontSize: 14,
                   letterSpacing: '0.15em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
                   textDecoration: 'none',
                   padding: '6px 12px',
                 }}
               >
                 Sign In
               </Link>
+              {/* Sign Up — bg/colour via Tailwind so hover override works */}
               <Link
                 href="/auth/signup"
-                className="transition-opacity duration-150 hover:opacity-80"
+                className="bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-80 transition-opacity duration-150"
                 style={{
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 900,
                   fontSize: 14,
                   letterSpacing: '0.15em',
                   textTransform: 'uppercase',
-                  background: 'var(--accent)',
-                  color: 'var(--accent-fg)',
                   textDecoration: 'none',
                   padding: '7px 16px',
                   display: 'inline-block',

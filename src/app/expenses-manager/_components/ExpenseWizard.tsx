@@ -7,19 +7,25 @@ import { searchCompanies } from '../_actions'
 import { useExpenses } from '../_hooks/useExpenses'
 
 // ── StepIndicator ─────────────────────────────────────────────────
+// step: 1 = Select Job (JobPicker), 2 = Upload Receipts, 3 = Review & Submit
 
-function StepIndicator({ step }: { step: number }) {
+export function StepIndicator({ step }: { step: number }) {
   const cls = (n: number) =>
     `step${step === n ? ' active' : step > n ? ' done' : ''}`
   return (
     <div className="steps">
-      <div className={cls(2)}>
+      <div className={cls(1)}>
         <div className="step-num">1</div>
+        <div className="step-lbl">Select Job</div>
+      </div>
+      <div className="step-connector" />
+      <div className={cls(2)}>
+        <div className="step-num">2</div>
         <div className="step-lbl">Upload Receipts</div>
       </div>
       <div className="step-connector" />
       <div className={cls(3)}>
-        <div className="step-num">2</div>
+        <div className="step-num">3</div>
         <div className="step-lbl">Review &amp; Submit</div>
       </div>
     </div>
