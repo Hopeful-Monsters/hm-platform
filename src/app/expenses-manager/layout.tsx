@@ -1,6 +1,4 @@
 import type { Metadata } from 'next'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import ToolHeader from '@/components/ToolHeader'
 
 export const metadata: Metadata = {
@@ -12,8 +10,8 @@ export const metadata: Metadata = {
 /**
  * Expenses Manager layout shell.
  *
- * Access gating: proxy.ts handles this before we get here.
- * These checks are defense-in-depth only — no extra DB call needed.
+ * Access gating: proxy.ts enforces auth + tool_access on every request
+ * before reaching this layout — no additional DB call needed here.
  *
  * Adding tool sections:
  *   Pass a `tabs` array to <ToolHeader /> as the tool grows:
@@ -23,17 +21,11 @@ export const metadata: Metadata = {
  *     { href: '/expenses-manager/reports', label: 'Reports' },
  *   ]}
  */
-export default async function ExpensesManagerLayout({
+export default function ExpensesManagerLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) redirect('/auth/login')
-  if (user.user_metadata?.status !== 'approved') redirect('/auth/no-access')
-
   return (
     <div
       style={{

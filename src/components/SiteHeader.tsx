@@ -114,7 +114,7 @@ export default function SiteHeader() {
             <>
               <Link
                 href="/auth/login"
-                className="hidden sm:flex"
+                className="hidden sm:flex transition-colors duration-150 hover:text-[var(--text)]"
                 style={{
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 900,
@@ -130,6 +130,7 @@ export default function SiteHeader() {
               </Link>
               <Link
                 href="/auth/signup"
+                className="transition-opacity duration-150 hover:opacity-80"
                 style={{
                   fontFamily: 'var(--font-heading)',
                   fontWeight: 900,

@@ -108,8 +108,7 @@ export default function SignupPage() {
           className="display-lg"
           style={{ color: 'var(--text)', marginBottom: 32 }}
         >
-          Sign<br />
-          <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>Up.</span>
+          Sign <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>Up.</span>
         </h1>
 
         {error && (

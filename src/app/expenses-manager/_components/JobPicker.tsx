@@ -1,23 +1,23 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import type { Job } from '../_types'
 
 // ── JobPicker ────────────────────────────────────────────────────
 // Client component — receives SSR-fetched jobs from the server page,
-// handles filter + navigation to /expenses-manager/[jobId].
+// handles filter + calls onSelect when the user confirms a job.
 
 export default function JobPicker({
   jobs,
   error,
+  onSelect,
   onRetry,
 }: {
   jobs: Job[]
   error: string | null
+  onSelect: (job: Job) => void
   onRetry?: () => void
 }) {
-  const router = useRouter()
   const [filter, setFilter]       = useState('')
   const [selected, setSelected]   = useState<Job | null>(null)
 
@@ -35,12 +35,7 @@ export default function JobPicker({
 
   function proceed() {
     if (!selected) return
-    const sp = new URLSearchParams()
-    if (selected.name)   sp.set('n',   selected.name)
-    if (selected.num)    sp.set('num', selected.num)
-    if (selected.client) sp.set('c',   selected.client)
-    if (selected.full)   sp.set('f',   selected.full)
-    router.push(`/expenses-manager/${selected.id}?${sp.toString()}`)
+    onSelect(selected)
   }
 
   return (

@@ -9,14 +9,22 @@ import {
   submitExpense,
   getDriveStatus,
 } from '../_actions'
+import { useAppStore, companiesCacheIsValid } from '@/store/app-store'
 
 // ── Hook ──────────────────────────────────────────────────────────
 
 export function useExpenses(selectedJob: Job) {
 
+  // ── Store ─────────────────────────────────────────────────────
+  const cachedCompanies   = useAppStore(s => s.companies)
+  const companiesLoadedAt = useAppStore(s => s.companiesLoadedAt)
+  const storeSetCompanies = useAppStore(s => s.setCompanies)
+
   // ── State ────────────────────────────────────────────────────
   const [step, setStep]                 = useState(2)
-  const [companies, setCompanies]       = useState<Array<{ id: string | number; name: string }>>([])
+  const [companies, setCompanies]       = useState<Array<{ id: string | number; name: string }>>(
+    companiesCacheIsValid(companiesLoadedAt) ? cachedCompanies : []
+  )
   const [queue, setQueue]               = useState<QueueItem[]>([])
   const [driveEnabled, setDriveEnabled] = useState(false)
   const [driveStatus, setDriveStatus]   = useState<'disconnected' | 'connecting' | 'connected' | 'failed'>('disconnected')
@@ -65,7 +73,10 @@ export function useExpenses(selectedJob: Job) {
       }
     }).catch(() => { /* silent */ })
 
-    void loadCompanies()
+    // Companies — skip fetch if store cache is still valid
+    if (!companiesCacheIsValid(companiesLoadedAt)) {
+      void loadCompanies()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Companies ─────────────────────────────────────────────────
@@ -73,7 +84,11 @@ export function useExpenses(selectedJob: Job) {
   async function loadCompanies() {
     try {
       const data = await getAllCompanies()
-      if (data.companies?.length) setCompanies(data.companies as Array<{ id: string | number; name: string }>)
+      if (data.companies?.length) {
+        const list = data.companies as Array<{ id: string | number; name: string }>
+        setCompanies(list)
+        storeSetCompanies(list)  // populate store cache
+      }
     } catch { /* silent */ }
   }
 

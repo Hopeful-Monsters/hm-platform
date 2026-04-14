@@ -61,8 +61,7 @@ export default function LoginPage() {
           className="display-lg"
           style={{ color: 'var(--text)', marginBottom: 32 }}
         >
-          Sign<br />
-          <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>In.</span>
+          Sign <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>In.</span>
         </h1>
 
         {/* Error */}

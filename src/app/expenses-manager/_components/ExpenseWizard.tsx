@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import type { Job, CompanyState, QueueItem, Extracted } from '../../_types'
-import { fmtSize, isOldDate, buildFilename, afyFolderName, monthLabel } from '../../_utils'
-import { searchCompanies } from '../../_actions'
-import { useExpenses } from '../../_hooks/useExpenses'
+import type { Job, CompanyState, QueueItem, Extracted } from '../_types'
+import { fmtSize, isOldDate, buildFilename, afyFolderName, monthLabel } from '../_utils'
+import { searchCompanies } from '../_actions'
+import { useExpenses } from '../_hooks/useExpenses'
 
 // ── StepIndicator ─────────────────────────────────────────────────
 
@@ -460,10 +459,9 @@ function ReviewCard({
 
 // ── ExpenseWizard ─────────────────────────────────────────────────
 // Client component — manages steps 2-4 (upload, review, success).
+// Rendered in-place by ExpensesManagerClient; no page navigation needed.
 
-export default function ExpenseWizard({ job }: { job: Job }) {
-  const router = useRouter()
-
+export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () => void }) {
   const {
     step, setStep,
     companies,
@@ -490,7 +488,7 @@ export default function ExpenseWizard({ job }: { job: Job }) {
         <div className="card">
           <div className="card-hdr">
             <div className="card-title">Upload Receipts</div>
-            <button className="btn btn-secondary btn-sm" onClick={() => router.push('/expenses-manager')}>← Back</button>
+            <button className="btn btn-secondary btn-sm" onClick={onBack}>← Back</button>
           </div>
           <div className="card-body">
             <div className="job-banner">
@@ -499,7 +497,7 @@ export default function ExpenseWizard({ job }: { job: Job }) {
                 <div className="job-banner-name">{job.full || job.name}</div>
                 <div className="job-banner-meta">{[job.num, job.client].filter(Boolean).join(' · ')}</div>
               </div>
-              <button className="btn btn-secondary btn-sm" onClick={() => router.push('/expenses-manager')}>Change</button>
+              <button className="btn btn-secondary btn-sm" onClick={onBack}>Change</button>
             </div>
             <DropZone onFiles={addFiles} />
             {queue.length > 0 && (

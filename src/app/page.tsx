@@ -18,17 +18,6 @@ import SignOutButton from '@/components/SignOutButton'
 import RequestAccessButton from '@/components/RequestAccessButton'
 import { TOOLS } from '@/lib/tools'
 
-// HM logo mark — inline for RSC
-function HMLogo() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 60 60" fill="none" aria-hidden>
-      <circle cx="28" cy="36" r="22" fill="#FFE600" />
-      <path d="M44 22 Q50 14 56 8" stroke="#FFE600" strokeWidth="3.5" strokeLinecap="round" />
-      <circle cx="57" cy="7" r="3" fill="#FF3EBF" />
-    </svg>
-  )
-}
-
 // ── Tool card ─────────────────────────────────────────────────────
 function ToolCard({
   href,
@@ -284,40 +273,7 @@ export default async function Home() {
             overflow: 'hidden',
           }}
         >
-          <span
-            className="watermark"
-            style={{
-              fontSize: '38vw',
-              lineHeight: 1,
-              color: 'rgba(0,0,0,0.045)',
-              bottom: -40,
-              right: -20,
-            }}
-          >
-            HM
-          </span>
-
           <div style={{ position: 'relative', zIndex: 1, maxWidth: 680 }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'var(--accent-fg)',
-                color: 'var(--accent)',
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 700,
-                fontSize: 12,
-                letterSpacing: '0.3em',
-                textTransform: 'uppercase',
-                padding: '6px 14px',
-                marginBottom: 24,
-              }}
-            >
-              <HMLogo />
-              Hopeful Monsters Platform
-            </div>
-
             <h1
               className="display-xl"
               style={{ color: 'var(--accent-fg)', marginBottom: 24 }}
@@ -348,7 +304,7 @@ export default async function Home() {
               administrative workflows — built for teams that move fast.
             </p>
 
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
               <Button asChild size="lg" style={{ background: 'var(--accent-fg)', color: 'var(--accent)' }}>
                 <Link href="/auth/signup">Get Started →</Link>
               </Button>
@@ -364,69 +320,71 @@ export default async function Home() {
                 <Link href="/auth/login">Sign In</Link>
               </Button>
             </div>
-          </div>
-        </section>
 
-        {/* Feature grid */}
-        <section
-          style={{
-            background: 'var(--bg)',
-            padding: '64px 32px',
-            maxWidth: 1100,
-            margin: '0 auto',
-          }}
-        >
-          <p className="eyebrow" style={{ marginBottom: 16 }}>What&rsquo;s inside</p>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 2,
-            }}
-          >
-            <ToolCard
-              href="/auth/signup"
-              label="Expenses Manager"
-              description="Track, categorise, and report on expenses with detailed analytics. Built for campaign and project-level visibility."
-              cta="Request access"
-            />
-            <ToolCard
-              href="/auth/signup"
-              label="Coverage Tracker"
-              description="Monitor earned media, coverage metrics, and compliance across clients and campaigns in one place."
-              cta="Request access"
-            />
+            {/* Tools carousel */}
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                overflowX: 'auto',
+                paddingBottom: 4,
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
+            >
+              {TOOLS.map(tool => (
+                <div
+                  key={tool.slug}
+                  style={{
+                    flexShrink: 0,
+                    width: 260,
+                    background: 'rgba(0,0,0,0.08)',
+                    border: '2px solid rgba(0,0,0,0.12)',
+                    borderLeftWidth: 4,
+                    borderLeftColor: 'rgba(0,0,0,0.25)',
+                    padding: '20px 20px 22px',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontWeight: 700,
+                      fontSize: 11,
+                      letterSpacing: '0.25em',
+                      textTransform: 'uppercase',
+                      color: 'rgba(0,0,0,0.45)',
+                      marginBottom: 8,
+                    }}
+                  >
+                    Tool
+                  </p>
+                  <h3
+                    style={{
+                      fontFamily: 'var(--font-heading)',
+                      fontWeight: 900,
+                      fontSize: 22,
+                      textTransform: 'uppercase',
+                      letterSpacing: '-0.01em',
+                      color: 'var(--accent-fg)',
+                      lineHeight: 0.95,
+                      marginBottom: 10,
+                    }}
+                  >
+                    {tool.label}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: 'rgba(0,0,0,0.55)',
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    {tool.description}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-        </section>
-
-        {/* Bottom CTA */}
-        <section
-          style={{
-            background: 'var(--surface)',
-            borderTop: '2px solid var(--border)',
-            padding: '64px 32px',
-            textAlign: 'center',
-          }}
-        >
-          <p className="eyebrow" style={{ marginBottom: 16 }}>Access is by approval</p>
-          <h2 className="display-md" style={{ color: 'var(--text)', marginBottom: 16 }}>
-            Ready to get started?
-          </h2>
-          <p
-            style={{
-              fontSize: 16,
-              color: 'var(--text-muted)',
-              maxWidth: 440,
-              margin: '0 auto 32px',
-              lineHeight: 1.65,
-            }}
-          >
-            Sign up and we&rsquo;ll review your request. Approved accounts get access to all tools
-            they&rsquo;ve been granted.
-          </p>
-          <Button asChild size="lg">
-            <Link href="/auth/signup">Create Account →</Link>
-          </Button>
         </section>
       </>
     )
