@@ -17,7 +17,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/',                  label: 'Home' },
   { href: '/expenses-manager',  label: 'Expenses',  toolSlug: 'expenses-manager' },
   { href: '/coverage-tracker',  label: 'Coverage',  toolSlug: 'coverage-tracker' },
   { href: '/support',           label: 'Support',   authOnly: true },

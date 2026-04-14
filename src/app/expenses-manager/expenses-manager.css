@@ -2,35 +2,10 @@
  * Expense Manager — HM-themed styles
  *
  * All rules are scoped to [data-tool="expenses-manager"] so they don't
- * bleed into other pages. CSS custom property aliases are defined on the
- * container so the original var(--brand), var(--g50), etc. references in
- * dynamic innerHTML strings all resolve to HM design tokens automatically.
+ * bleed into other pages. Uses HM design tokens directly.
  */
 
-/* ── Variable aliases: original tokens → HM design system ─────── */
-
 [data-tool="expenses-manager"] {
-  --brand:         var(--accent);
-  --brand-light:   rgba(255, 230, 0, 0.08);
-  --brand-dark:    var(--accent);
-  --success:       #16a34a;
-  --success-light: #f0fdf4;
-  --error:         #dc2626;
-  --error-light:   #fef2f2;
-  --warning:       #d97706;
-  --warning-light: #fffbeb;
-  --g50:  var(--bg);
-  --g100: var(--surface-2);
-  --g200: var(--border);
-  --g300: var(--border-2);
-  --g400: var(--text-dim);
-  --g500: var(--text-muted);
-  --g600: var(--text-muted);
-  --g700: var(--text);
-  --g800: var(--text);
-  --r:    0px;
-  --shadow: none;
-  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.2);
   font-size: 14px;
   color: var(--text);
   font-family: var(--font-sans);
