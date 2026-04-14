@@ -1,6 +1,17 @@
+import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
+
+export const metadata: Metadata = {
+  title:       'Hopeful Monsters',
+  description: 'A curated set of internal tools for expenses, coverage tracking, and administrative workflows — built for teams that move fast.',
+  openGraph: {
+    title:       'Hopeful Monsters',
+    description: 'A curated set of internal tools for expenses, coverage tracking, and administrative workflows — built for teams that move fast.',
+    type:        'website',
+  },
+}
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import SignOutButton from '@/components/SignOutButton'

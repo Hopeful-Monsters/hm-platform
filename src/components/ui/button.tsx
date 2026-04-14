@@ -23,8 +23,7 @@ const buttonVariants = cva(
       variant: {
         default: [
           'bg-[var(--accent)] text-[var(--accent-fg)]',
-          'hover:-translate-x-0.5 hover:-translate-y-0.5',
-          'hover:shadow-[3px_3px_0_var(--text)]',
+          'hover:outline hover:outline-2 hover:outline-[var(--text)]',
         ].join(' '),
         outline: [
           'bg-transparent text-[var(--accent)]',
@@ -37,8 +36,7 @@ const buttonVariants = cva(
         ].join(' '),
         danger: [
           'bg-red-600 text-white',
-          'hover:-translate-x-0.5 hover:-translate-y-0.5',
-          'hover:shadow-[3px_3px_0_#000]',
+          'hover:outline hover:outline-2 hover:outline-[var(--text)]',
         ].join(' '),
         nav: [
           'bg-transparent text-[var(--text-dim)]',

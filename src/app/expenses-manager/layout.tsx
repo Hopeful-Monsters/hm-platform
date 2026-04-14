@@ -1,6 +1,13 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ToolHeader from '@/components/ToolHeader'
+
+export const metadata: Metadata = {
+  title:       'Expenses Manager',
+  description: 'Track, categorise, and report on expenses with detailed analytics. Built for campaign and project-level visibility.',
+  robots:      { index: false, follow: false },
+}
 
 /**
  * Expenses Manager layout shell.

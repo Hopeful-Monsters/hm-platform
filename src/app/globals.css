@@ -122,6 +122,29 @@ body {
   text-transform: uppercase;
 }
 
+/* ── Sub-head — descriptive text directly below display headings   */
+/* Use for section intros, hero descriptions, page lead copy.       */
+/* fontSize scales from 17px on narrow viewports up to 20px.       */
+
+.subhead {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+/* ── Body legibility — secondary descriptive text, card copy       */
+/* Sits between .subhead and small utility labels.                  */
+
+.body-md {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
 /* ══ FORM ELEMENTS ═══════════════════════════════════════════════ */
 
 .hm-input {
@@ -239,13 +262,15 @@ textarea.hm-input {
 ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
 
 /* ══ CARD HOVER ══════════════════════════════════════════════════ */
-/* Used in Server Components — pure CSS, no JS event handlers      */
+/* Used in Server Components — pure CSS, no JS event handlers.     */
+/* Outline sidesteps inline border styles and doesn't affect layout */
 
 .card-hover {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.15s ease;
   cursor: pointer;
 }
 .card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  outline-color: var(--accent);
 }

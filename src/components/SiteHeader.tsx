@@ -150,7 +150,7 @@ export default function SiteHeader() {
 
           {/* Mobile menu toggle — hidden on desktop */}
           <button
-            className="flex md:hidden"
+            className="flex md:hidden items-center justify-center"
             onClick={() => setMobileOpen(o => !o)}
             style={{
               background: 'none',
@@ -158,9 +158,6 @@ export default function SiteHeader() {
               color: 'var(--text-muted)',
               padding: 6,
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}
           >
             <Menu size={16} />

@@ -1,6 +1,13 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ToolHeader from '@/components/ToolHeader'
+
+export const metadata: Metadata = {
+  title:       'Coverage Tracker',
+  description: 'Monitor earned media, coverage metrics, and compliance across clients and campaigns in one place.',
+  robots:      { index: false, follow: false },
+}
 
 /**
  * Coverage Tracker layout shell.
