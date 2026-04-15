@@ -309,6 +309,59 @@ export function useExpenses(selectedJob: Job) {
     }, 500)
   }
 
+  // ── Submit helpers ────────────────────────────────────────────
+
+  /** Upload a single receipt file to Google Drive. Returns the Drive file ID. */
+  async function uploadToDrive(snap: QueueItem): Promise<string | null> {
+    if (!snap.file) return null
+    const d  = snap.extracted
+    const fn = buildFilename(snap, selectedJob.num, selectedJob.id, initials) || snap.file.name
+
+    const form = new FormData()
+    form.append('file',     snap.file, fn)
+    form.append('filename', fn)
+    if (d.date) form.append('date', d.date)
+
+    const res = await fetch('/api/expenses-manager/drive/upload', { method: 'POST', body: form })
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({})) as { error?: string }
+      throw new Error(e.error || `Drive upload failed (${res.status})`)
+    }
+    const df = await res.json() as { id?: string }
+    return df?.id || null
+  }
+
+  /** Validate fields, submit to Streamtime, and optionally upload to Drive. */
+  async function submitSingleExpense(snap: QueueItem): Promise<{ driveFileId: string | null }> {
+    const d = snap.extracted
+    if (!d.date || !d.supplier || !d.itemName || isNaN(parseFloat(String(d.amountExGST))))
+      throw new Error('Date, Supplier, Expense Name and Cost Ex GST are all required.')
+    if (!d.reference) throw new Error('Reference is required.')
+
+    const exGST    = parseFloat(String(d.amountExGST))
+    const total    = parseFloat(String(d.totalIncGST)) || exGST
+    const sellRate = Math.round(total * (1 + snap.markup / 100) * 100) / 100
+
+    await submitExpense({
+      jobId:                 parseInt(selectedJob.id),
+      date:                  d.date,
+      supplierCompanyId:     Number(snap.company!.chosenId),
+      itemName:              d.itemName,
+      costRate:              exGST,
+      sellRate,
+      quantity:              1,
+      itemPricingMethodId:   2,
+      loggedExpenseStatusId: 2,
+      currencyCode:          'AUD',
+      exchangeRate:          1,
+      markup:                snap.markup,
+      ...(d.reference ? { reference: d.reference } : {}),
+    })
+
+    const driveFileId = driveEnabled ? await uploadToDrive(snap) : null
+    return { driveFileId }
+  }
+
   // ── Submit ────────────────────────────────────────────────────
 
   async function handleSubmit() {
@@ -330,51 +383,7 @@ export function useExpenses(selectedJob: Job) {
     for (const snap of snapshot) {
       updateItem(snap.id, { status: 'submitting' })
       try {
-        const d = snap.extracted
-        if (!d.date || !d.supplier || !d.itemName || isNaN(parseFloat(String(d.amountExGST))))
-          throw new Error('Date, Supplier, Expense Name and Cost Ex GST are all required.')
-        if (!d.reference) throw new Error('Reference is required.')
-
-        const exGST    = parseFloat(String(d.amountExGST))
-        const total    = parseFloat(String(d.totalIncGST)) || exGST
-        const sellRate = Math.round(total * (1 + snap.markup / 100) * 100) / 100
-
-        await submitExpense({
-          jobId:                 parseInt(selectedJob.id),
-          date:                  d.date,
-          supplierCompanyId:     Number(snap.company!.chosenId),
-          itemName:              d.itemName,
-          costRate:              exGST,
-          sellRate,
-          quantity:              1,
-          itemPricingMethodId:   2,
-          loggedExpenseStatusId: 2,
-          currencyCode:          'AUD',
-          exchangeRate:          1,
-          markup:                snap.markup,
-          ...(d.reference ? { reference: d.reference } : {}),
-        })
-
-        let driveFileId: string | null = null
-        if (driveEnabled && snap.file) {
-          const fn   = buildFilename(snap, selectedJob.num, selectedJob.id, initials) || snap.file.name
-          const form = new FormData()
-          form.append('file',     snap.file, fn)
-          form.append('filename', fn)
-          if (d.date) form.append('date', d.date)
-
-          const uploadRes = await fetch('/api/expenses-manager/drive/upload', {
-            method: 'POST',
-            body:   form,
-          })
-          if (!uploadRes.ok) {
-            const e = await uploadRes.json().catch(() => ({})) as { error?: string }
-            throw new Error(e.error || `Drive upload failed (${uploadRes.status})`)
-          }
-          const df = await uploadRes.json() as { id?: string }
-          driveFileId = df?.id || null
-        }
-
+        const { driveFileId } = await submitSingleExpense(snap)
         updateItem(snap.id, { status: 'done', driveFileId })
         submitResults.push({ item: snap, ok: true, driveFileId })
       } catch (err: unknown) {

@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   if (limited) return limited
 
   const key = process.env.GEMINI_KEY
-  if (!key) return Response.json({ error: 'GEMINI_KEY not configured' }, { status: 500 })
+  if (!key) return Response.json({ error: 'Extraction service is not configured' }, { status: 500 })
 
   const rawBody = await request.json().catch(() => null)
   const parsed = ExtractBodySchema.safeParse(rawBody)

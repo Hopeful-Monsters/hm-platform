@@ -9,6 +9,10 @@ import { TOOL_LABEL, TOOL_SLUGS, type ToolSlug } from '@/lib/tools'
 
 async function approveUser(formData: FormData) {
   'use server'
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return
+
   const userId        = formData.get('userId') as string
   const selectedTools = formData.getAll('tools') as string[]
 
@@ -40,6 +44,10 @@ async function approveUser(formData: FormData) {
 
 async function approveToolRequest(formData: FormData) {
   'use server'
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return
+
   const requestId = formData.get('requestId') as string
   const userId    = formData.get('userId') as string
   const userEmail = formData.get('userEmail') as string
@@ -87,6 +95,10 @@ async function approveToolRequest(formData: FormData) {
 
 async function denyToolRequest(formData: FormData) {
   'use server'
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return
+
   const requestId = formData.get('requestId') as string
   const userEmail = formData.get('userEmail') as string
   const toolSlug  = formData.get('toolSlug') as string

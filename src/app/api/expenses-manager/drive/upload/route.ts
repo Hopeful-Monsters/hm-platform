@@ -90,6 +90,47 @@ async function getOrCreateMonthFolder(
   return ((await res.json()) as DriveFile).id
 }
 
+// ── Form parsing ──────────────────────────────────────────────────────────────
+
+type ParsedUploadForm =
+  | { ok: true;  file: File; filename: string; dateStr: string }
+  | { ok: false; response: Response }
+
+async function parseUploadForm(request: Request): Promise<ParsedUploadForm> {
+  let formData: FormData
+  try {
+    formData = await request.formData()
+  } catch {
+    return { ok: false, response: Response.json({ error: 'Invalid form data' }, { status: 400 }) }
+  }
+
+  const fileEntry = formData.get('file')
+  if (!(fileEntry instanceof File)) {
+    return { ok: false, response: Response.json({ error: 'No file provided' }, { status: 400 }) }
+  }
+
+  const fieldsParsed = UploadFormSchema.safeParse({
+    filename: formData.get('filename') ?? undefined,
+    date:     formData.get('date')     ?? undefined,
+  })
+  if (!fieldsParsed.success) {
+    return {
+      ok: false,
+      response: Response.json(
+        { error: fieldsParsed.error.issues[0]?.message ?? 'Invalid form fields' },
+        { status: 400 },
+      ),
+    }
+  }
+
+  return {
+    ok:       true,
+    file:     fileEntry,
+    filename: fieldsParsed.data.filename ?? fileEntry.name,
+    dateStr:  fieldsParsed.data.date ?? '',
+  }
+}
+
 // ── Upload ────────────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
@@ -109,32 +150,10 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Google Drive not connected. Reconnect in the Expenses Manager.' }, { status: 403 })
   }
 
-  // Parse multipart form — file + optional date for folder placement
-  let formData: FormData
-  try {
-    formData = await request.formData()
-  } catch {
-    return Response.json({ error: 'Invalid form data' }, { status: 400 })
-  }
-
-  const fileEntry = formData.get('file')
-  if (!(fileEntry instanceof File)) {
-    return Response.json({ error: 'No file provided' }, { status: 400 })
-  }
-
-  const fieldsParsed = UploadFormSchema.safeParse({
-    filename: formData.get('filename') ?? undefined,
-    date:     formData.get('date')     ?? undefined,
-  })
-  if (!fieldsParsed.success) {
-    return Response.json(
-      { error: fieldsParsed.error.issues[0]?.message ?? 'Invalid form fields' },
-      { status: 400 },
-    )
-  }
-
-  const filename = fieldsParsed.data.filename ?? fileEntry.name
-  const dateStr  = fieldsParsed.data.date ?? ''
+  // Parse and validate multipart form
+  const parsed = await parseUploadForm(request)
+  if (!parsed.ok) return parsed.response
+  const { file: fileEntry, filename, dateStr } = parsed
 
   // Get a fresh access token
   let accessToken: string

@@ -47,14 +47,14 @@ export async function proxy(request: NextRequest) {
   const isAdminRoute = pathname.startsWith('/admin');
   const isApiRoute   = pathname.startsWith('/api/');
 
-  // Match both page routes (/${slug}/...) and API routes (/api/${slug}/...).
-  // API routes need separate response handling below — redirects are wrong for JSON consumers.
-  const toolSlug = TOOL_SLUGS.find(
-    slug => pathname.startsWith(`/${slug}`) || pathname.startsWith(`/api/${slug}`)
-  );
+  // For page routes only — API route handlers own their own auth, so we don't
+  // run a Supabase round-trip here for those paths. This avoids doubling the DB
+  // calls: proxy getUser/tool_access + handler getUser = 2 Supabase calls per request.
+  const toolSlug = isApiRoute
+    ? null
+    : TOOL_SLUGS.find(slug => pathname.startsWith(`/${slug}`));
 
-  // Skip auth entirely for routes that don't need protection —
-  // saves a Supabase round-trip on every public/home/auth page request.
+  // Skip auth for non-admin, non-tool routes (includes all API routes).
   if (!isAdminRoute && !toolSlug) {
     return makeNext();
   }
@@ -92,10 +92,8 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── Tool route protection ──────────────────────────────────────
-  // API routes must receive JSON responses, not HTML redirects.
+  // ── Tool route protection (page routes only) ──────────────────
   if (toolSlug && !user) {
-    if (isApiRoute) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
@@ -103,7 +101,6 @@ export async function proxy(request: NextRequest) {
 
   if (toolSlug && user) {
     if (user.user_metadata?.status !== 'approved') {
-      if (isApiRoute) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       return NextResponse.redirect(new URL('/auth/no-access', request.url));
     }
 
@@ -115,7 +112,6 @@ export async function proxy(request: NextRequest) {
       .single();
 
     if (!access || (access.expires_at && new Date(access.expires_at) < new Date())) {
-      if (isApiRoute) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       const noAccessUrl = new URL('/auth/no-access', request.url);
       noAccessUrl.searchParams.set('tool', toolSlug);
       return NextResponse.redirect(noAccessUrl);
