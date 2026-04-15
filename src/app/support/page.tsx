@@ -59,7 +59,7 @@ export default async function SupportPage() {
             fontSize: 16,
             color: 'var(--text-muted)',
             lineHeight: 1.65,
-            maxWidth: 480,
+            maxWidth: 720,
           }}
         >
           Report a bug, request a feature, or ask a question. All submissions go

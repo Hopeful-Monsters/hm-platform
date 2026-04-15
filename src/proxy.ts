@@ -3,19 +3,59 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { TOOL_SLUGS } from '@/lib/tools';
 
 export async function proxy(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({ request });
-  const { pathname } = request.nextUrl;
+  // ── Content Security Policy ────────────────────────────────────
+  // A fresh nonce is generated per request. Next.js reads the CSP header,
+  // extracts the nonce, and automatically applies it to all scripts it generates.
+  // 'strict-dynamic' covers scripts that are dynamically created at runtime
+  // (e.g. Vercel Analytics/SpeedInsights), so they don't need explicit allowlisting.
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const isDev = process.env.NODE_ENV === 'development';
+  const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace('https://', '');
 
+  const csp = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    // In dev, Tailwind v4 injects a <style> block — 'unsafe-inline' is required.
+    // In prod, Next.js applies the nonce to any <style> tags it generates.
+    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    `img-src 'self' blob: data:`,
+    `font-src 'self'`,
+    // next/font/google self-hosts fonts at build time — no runtime call to Google needed.
+    // Upstash and Resend are server-side only — no client connect required.
+    `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+    `frame-ancestors 'self'`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `upgrade-insecure-requests`,
+  ].join('; ');
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
+
+  // Helper: create a NextResponse.next() that carries the CSP and nonce forward.
+  // The cookies passed in are re-applied so Supabase session writes aren't lost.
+  const makeNext = (cookiesToSet: { name: string; value: string; options?: object }[] = []) => {
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
+    res.headers.set('Content-Security-Policy', csp);
+    cookiesToSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options as Parameters<typeof res.cookies.set>[2]));
+    return res;
+  };
+
+  const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith('/admin');
   const toolSlug = TOOL_SLUGS.find(slug => pathname.startsWith(`/${slug}`));
 
   // Skip auth entirely for routes that don't need protection —
-  // saves a Supabase round-trip on every public/home page request.
+  // saves a Supabase round-trip on every public/home/auth page request.
   if (!isAdminRoute && !toolSlug) {
-    return supabaseResponse;
+    return makeNext();
   }
 
   // ── Auth required from here on ─────────────────────────────────
+  const pendingCookies: { name: string; value: string; options?: object }[] = [];
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -25,7 +65,7 @@ export async function proxy(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value);
-            supabaseResponse.cookies.set(name, value, options);
+            pendingCookies.push({ name, value, options });
           });
         },
       },
@@ -72,12 +112,19 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return supabaseResponse;
+  return makeNext(pendingCookies);
 }
 
 export const config = {
-  // Run on all tool paths and API routes — exclude static assets and auth routes
+  // Run on all page requests. Exclude static assets and skip prefetch requests
+  // (they don't render HTML so there's no need to generate a fresh nonce for them).
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|auth/).*)',
+    {
+      source: '/((?!_next/static|_next/image|favicon.ico).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
   ],
 };

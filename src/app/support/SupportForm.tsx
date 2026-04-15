@@ -62,7 +62,7 @@ const successCardStyle: React.CSSProperties = {
   border:      '2px solid var(--border)',
   borderLeft:  '4px solid var(--accent)',
   padding:     '40px 36px',
-  maxWidth:    580,
+  maxWidth:    720,
 }
 
 const successHeadingStyle: React.CSSProperties = {
@@ -271,35 +271,33 @@ export default function SupportForm({
 
   // ── Form ─────────────────────────────────────────────────────────
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 580 }}>
+    <form onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
       {/* Submitting as */}
       <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32 }}>
         Submitting as{' '}
         <span style={{ color: 'var(--text)', fontWeight: 600 }}>{userEmail}</span>
       </p>
 
-      {/* Name */}
-      <div style={formFieldStyle}>
-        <FieldLabel htmlFor="name">What&apos;s your name?</FieldLabel>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="Enter text"
-          required
-          minLength={1}
-          maxLength={100}
-          style={inputStyle}
-          onFocus={focusBorder}
-          onBlur={blurBorder}
-        />
-      </div>
-
-      {/* Tool */}
-      <div style={formFieldStyle}>
-        <FieldLabel htmlFor="tool">Which tool is this related to?</FieldLabel>
-        <div style={{ position: 'relative' }}>
+      {/* Name + Tool — two columns */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        <div>
+          <FieldLabel htmlFor="name">Your name</FieldLabel>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Enter text"
+            required
+            minLength={1}
+            maxLength={100}
+            style={inputStyle}
+            onFocus={focusBorder}
+            onBlur={blurBorder}
+          />
+        </div>
+        <div>
+          <FieldLabel htmlFor="tool">Which tool?</FieldLabel>
           <select
             id="tool"
             value={tool}
@@ -356,14 +354,30 @@ export default function SupportForm({
         />
       </div>
 
-      {/* Screenshot */}
-      <div style={formFieldStyle}>
-        <FieldLabel htmlFor="screenshot" optional>
-          Want to add a screenshot?
-        </FieldLabel>
+      {/* Screenshot — single line */}
+      <div style={{ ...formFieldStyle, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <label
+          htmlFor="screenshot"
+          style={{ ...labelStyle, marginBottom: 0, whiteSpace: 'nowrap', flexShrink: 0 }}
+        >
+          Screenshot
+          <span
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontWeight: 400,
+              fontSize: 12,
+              letterSpacing: 0,
+              textTransform: 'none',
+              color: 'var(--text-muted)',
+              marginLeft: 8,
+            }}
+          >
+            (optional)
+          </span>
+        </label>
 
         {screenshot ? (
-          <div style={screenshotRowStyle}>
+          <div style={{ ...screenshotRowStyle, flex: 1 }}>
             <Paperclip size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <span style={{ fontSize: 14, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {screenshot.name}
@@ -380,34 +394,40 @@ export default function SupportForm({
             </button>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '9px 18px',
-              background: 'var(--surface)',
-              border: '2px solid var(--border)',
-              color: 'var(--text-muted)',
-              fontFamily: 'var(--font-body)',
-              fontSize: 14,
-              cursor: 'pointer',
-              transition: 'border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'var(--text)'
-              e.currentTarget.style.color = 'var(--text)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'var(--border)'
-              e.currentTarget.style.color = 'var(--text-muted)'
-            }}
-          >
-            <Paperclip size={14} />
-            Add file
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 18px',
+                background: 'var(--surface)',
+                border: '2px solid var(--border)',
+                color: 'var(--text-muted)',
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--text)'
+                e.currentTarget.style.color = 'var(--text)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--border)'
+                e.currentTarget.style.color = 'var(--text-muted)'
+              }}
+            >
+              <Paperclip size={14} />
+              Add file
+            </button>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              PNG, JPG, WebP or GIF · max 5 MB
+            </span>
+          </>
         )}
 
         <input
@@ -418,9 +438,6 @@ export default function SupportForm({
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-          PNG, JPG, WebP or GIF · max 5 MB
-        </p>
       </div>
 
       {/* Urgency */}

@@ -28,7 +28,6 @@ export default async function AdminPage() {
     <div>
       {/* Page header */}
       <div style={{ marginBottom: 36 }}>
-        <p className="eyebrow" style={{ marginBottom: 8 }}>Admin</p>
         <h1
           style={{
             fontFamily: 'var(--font-heading)',

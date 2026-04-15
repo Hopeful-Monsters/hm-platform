@@ -26,14 +26,36 @@ async function checkRateLimit(
 
 // ── Streamtime config ─────────────────────────────────────────────────────────
 
-const ST_SEARCH    = 'https://api.streamtime.net/v1/search'
-const ST_COMPANIES = 'https://api.streamtime.net/v1/companies'
-const ST_EXPENSES  = 'https://api.streamtime.net/v1/logged_expenses'
+const ST_SEARCH    = 'https://api.streamtime.net/v2/search'
+const ST_COMPANIES = 'https://api.streamtime.net/v2/companies'
+const ST_EXPENSES  = 'https://api.streamtime.net/v2/logged_expenses'
 
 function stKey(): string {
   const key = process.env.STREAMTIME_KEY
   if (!key) throw new Error('STREAMTIME_KEY not configured')
   return key
+}
+
+// ── Search response normalisation ────────────────────────────────────────────
+// v1 returned { searchResults: [...] } — flat objects per record.
+// v2 returns a top-level array of wrapper objects where the record sits under
+// a typed key: [{ job: {...}, company: null, ... }, ...]
+// This helper extracts the inner record so all downstream mapping stays the same.
+
+function parseSearchResults(raw: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(raw)) {
+    return (raw as Array<Record<string, unknown>>).map(wrapper => {
+      // Pick the first non-null object value as the inner record.
+      // Covers job (view 7), company (view 12), and any future view.
+      const inner = Object.values(wrapper).find(
+        v => v !== null && typeof v === 'object' && !Array.isArray(v),
+      )
+      return (inner as Record<string, unknown>) ?? wrapper
+    })
+  }
+  // Fallback: legacy { searchResults: [...] } shape
+  const obj = raw as Record<string, unknown>
+  return (obj.searchResults as Array<Record<string, unknown>>) ?? []
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
@@ -46,7 +68,7 @@ export async function searchJobs(): Promise<{ searchResults: Array<Record<string
   const user = await requireUser()
   await checkRateLimit(rateLimits.api, `expenses-manager:jobs:${user.id}`)
 
-  const res = await fetch(`${ST_SEARCH}?search_view=7&include_statistics=false`, {
+  const res = await fetch(`${ST_SEARCH}?search_view=7`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -58,7 +80,7 @@ export async function searchJobs(): Promise<{ searchResults: Array<Record<string
     const d = await res.json().catch(() => ({})) as { error?: string }
     throw new Error(d.error || `Streamtime error ${res.status}`)
   }
-  return res.json()
+  return { searchResults: parseSearchResults(await res.json()) }
 }
 
 /**
@@ -75,7 +97,7 @@ export async function getAllCompanies(): Promise<{ companies: Array<{ id: unknow
   let allResults: Array<{ id: unknown; name: unknown }> = []
 
   while (allResults.length < MAX_RESULTS) {
-    const res = await fetch(`${ST_SEARCH}?search_view=12&include_statistics=false`, {
+    const res = await fetch(`${ST_SEARCH}?search_view=12`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -85,8 +107,7 @@ export async function getAllCompanies(): Promise<{ companies: Array<{ id: unknow
     })
     if (!res.ok) break
 
-    const data = await res.json() as { searchResults?: Array<Record<string, unknown>> }
-    const page = (data.searchResults || []).map(r => ({
+    const page = parseSearchResults(await res.json()).map(r => ({
       id:   r['id']   ?? r['companyId'],
       name: r['name'] ?? r['companyName'] ?? r['Company Name'],
     })).filter(r => r.id && r.name)
@@ -107,7 +128,7 @@ export async function searchCompanies(query: string): Promise<{ results: Array<{
   const user = await requireUser()
   await checkRateLimit(rateLimits.api, `expenses-manager:companies-search:${user.id}`)
 
-  const res = await fetch(`${ST_SEARCH}?search_view=12&include_statistics=false`, {
+  const res = await fetch(`${ST_SEARCH}?search_view=12`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -117,11 +138,7 @@ export async function searchCompanies(query: string): Promise<{ results: Array<{
   })
   if (!res.ok) throw new Error(`Streamtime error ${res.status}`)
 
-  const data = await res.json() as {
-    searchResults?: Array<Record<string, unknown>>
-    results?: Array<Record<string, unknown>>
-  }
-  const results = (data.searchResults || data.results || []).map(r => ({
+  const results = parseSearchResults(await res.json()).map(r => ({
     id:   r['id']   ?? r['companyId']   ?? r['Company ID'],
     name: r['name'] ?? r['companyName'] ?? r['Company Name'] ?? r['Name'],
   })).filter(r => r.id && r.name)
@@ -188,7 +205,7 @@ export async function disconnectDrive(): Promise<void> {
 export async function submitExpense(loggedExpense: {
   jobId: number
   date: string
-  company: string
+  supplierCompanyId: number
   itemName: string
   costRate: number
   sellRate: number
@@ -197,7 +214,6 @@ export async function submitExpense(loggedExpense: {
   loggedExpenseStatusId: number
   currencyCode: string
   exchangeRate: number
-  description: string
   markup: number
   reference?: string
 }): Promise<Record<string, unknown>> {
@@ -207,7 +223,7 @@ export async function submitExpense(loggedExpense: {
   const res = await fetch(ST_EXPENSES, {
     method: 'POST',
     headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ loggedExpense }),
+    body: JSON.stringify({ loggedExpense: { ...loggedExpense, supplierContactId: null } }),
   })
 
   const data = await res.json() as Record<string, unknown>
