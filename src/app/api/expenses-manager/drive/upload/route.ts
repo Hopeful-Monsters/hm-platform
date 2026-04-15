@@ -1,6 +1,17 @@
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
 import { afyFolderName, afyMonthIndex } from '@/app/expenses-manager/_utils'
+
+// Validate the non-File form fields
+const UploadFormSchema = z.object({
+  filename: z.string().min(1).max(255).optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD')
+    .optional()
+    .or(z.literal('')),
+})
 
 // ── Token management ──────────────────────────────────────────────────────────
 
@@ -111,8 +122,19 @@ export async function POST(request: Request) {
     return Response.json({ error: 'No file provided' }, { status: 400 })
   }
 
-  const filename = formData.get('filename') as string | null ?? fileEntry.name
-  const dateStr  = formData.get('date')     as string | null ?? ''
+  const fieldsParsed = UploadFormSchema.safeParse({
+    filename: formData.get('filename') ?? undefined,
+    date:     formData.get('date')     ?? undefined,
+  })
+  if (!fieldsParsed.success) {
+    return Response.json(
+      { error: fieldsParsed.error.issues[0]?.message ?? 'Invalid form fields' },
+      { status: 400 },
+    )
+  }
+
+  const filename = fieldsParsed.data.filename ?? fileEntry.name
+  const dateStr  = fieldsParsed.data.date ?? ''
 
   // Get a fresh access token
   let accessToken: string

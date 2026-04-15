@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
 import { cookies } from 'next/headers'
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
@@ -8,6 +9,10 @@ export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
+
+  // Rate limit — prevents spamming OAuth initiations
+  const limited = await applyRateLimit(rateLimits.api, `expenses-manager:drive-auth:${user.id}`)
+  if (limited) return limited
 
   const clientId = process.env.GOOGLE_CLIENT_ID
   if (!clientId) {
