@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { requireToolAccess } from '@/lib/auth'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
 
 // Permitted MIME types — only receipts/invoices (images + PDF)
@@ -39,10 +39,9 @@ Rules:
 - Currency is AUD — do not include it in the JSON`
 
 export async function POST(request: Request) {
-  // Auth — must be a signed-in user
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  // Auth — must be signed in, approved, and have expenses-manager access
+  const user = await requireToolAccess('expenses-manager').catch(() => null)
+  if (!user) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   // Rate limit — use the AI limiter (10/min) since this hits an LLM
   const limited = await applyRateLimit(rateLimits.ai, `expenses-manager:extract:${user.id}`)

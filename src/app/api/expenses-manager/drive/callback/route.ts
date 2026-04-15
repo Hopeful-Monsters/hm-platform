@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { cookies } from 'next/headers'
 
 // Validate query params from Google's OAuth redirect.
@@ -122,13 +123,13 @@ export async function GET(request: Request) {
     )
   }
 
-  // Persist refresh token in Supabase user_metadata (server-side only — never sent to client)
-  const { error: updateErr } = await supabase.auth.updateUser({
-    data: { drive_refresh_token: tokens.refresh_token },
-  })
+  // Persist refresh token in the drive_tokens table (service role only — never exposed to client JS)
+  const { error: upsertErr } = await createServiceClient()
+    .from('drive_tokens')
+    .upsert({ user_id: user.id, refresh_token: tokens.refresh_token, updated_at: new Date().toISOString() })
 
-  if (updateErr) {
-    return popupResponse({ driveError: `Failed to save credentials: ${updateErr.message}` }, safeOrigin)
+  if (upsertErr) {
+    return popupResponse({ driveError: `Failed to save credentials: ${upsertErr.message}` }, safeOrigin)
   }
 
   return popupResponse({ driveConnected: true }, safeOrigin)

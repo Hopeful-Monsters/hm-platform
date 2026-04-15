@@ -117,6 +117,14 @@ const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 // Signed URL valid for 90 days — long enough for any support resolution cycle
 const SIGNED_URL_EXPIRY_SECONDS = 90 * 24 * 60 * 60
 
+// MIME → file extension map. Extension is derived server-side, not from user input.
+const MIME_TO_EXT: Record<string, string> = {
+  'image/png':  'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif':  'gif',
+}
+
 async function uploadScreenshot(
   file: File,
   userId: string
@@ -125,7 +133,7 @@ async function uploadScreenshot(
   if (file.size > MAX_FILE_BYTES) return null
 
   const buffer = Buffer.from(await file.arrayBuffer())
-  const ext = file.name.split('.').pop() ?? 'png'
+  const ext  = MIME_TO_EXT[file.type] ?? 'png'
   const path = `${userId}/${Date.now()}.${ext}`
 
   const supabase = createServiceClient()

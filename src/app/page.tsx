@@ -267,13 +267,13 @@ export default async function Home() {
           minHeight: 'calc(100vh - var(--nav-h))',
           display: 'flex',
           alignItems: 'center',
+          background: 'var(--accent)',
         }}
       >
         {/* Hero — yellow, two-column */}
         <section
           style={{
             width: '100%',
-            background: 'var(--accent)',
             padding: '80px 32px 72px',
           }}
         >

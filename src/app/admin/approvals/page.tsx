@@ -14,7 +14,8 @@ async function approveUser(formData: FormData) {
   if (!user || user.user_metadata?.role !== 'admin') return
 
   const userId        = formData.get('userId') as string
-  const selectedTools = formData.getAll('tools') as string[]
+  // Validate slugs against the canonical list — rejects any forged values
+  const selectedTools = (formData.getAll('tools') as string[]).filter(slug => TOOL_SLUGS.includes(slug))
 
   const service = createServiceClient()
 

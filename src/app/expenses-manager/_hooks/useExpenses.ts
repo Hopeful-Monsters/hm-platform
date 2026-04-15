@@ -108,7 +108,7 @@ export function useExpenses(selectedJob: Job) {
   function addFiles(files: FileList) {
     const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     Array.from(files).forEach(file => {
-      if (file.size > 20 * 1024 * 1024) { alert(`${file.name}: too large (max 20 MB).`); return }
+      if (file.size > 5 * 1024 * 1024) { alert(`${file.name}: too large (max 5 MB).`); return }
       if (!ALLOWED.includes(file.type))  { alert(`${file.name}: unsupported type.`); return }
       const id = nextId.current++
       const item: QueueItem = {
@@ -255,10 +255,10 @@ export function useExpenses(selectedJob: Job) {
   }
 
   // ── Google Drive ──────────────────────────────────────────────
-  // Server-side OAuth: refresh token stored in Supabase user_metadata.
+  // Server-side OAuth: refresh token stored in drive_tokens table (service role only).
   // The auth flow opens a popup → /api/expenses-manager/drive/auth → Google →
   // /api/expenses-manager/drive/callback → postMessage → this handler.
-  // Uploads go to /api/expenses-manager/drive/upload (route handler, handles 20 MB files).
+  // Uploads go to /api/expenses-manager/drive/upload (route handler, handles 5 MB files).
 
   function authDrive() {
     const popup = window.open(
@@ -297,7 +297,8 @@ export function useExpenses(selectedJob: Job) {
     }
     window.addEventListener('message', onMessage)
 
-    // Detect popup closed without completing (e.g. user dismissed it)
+    // Detect popup closed without completing (e.g. user dismissed it).
+    // Also uncheck the Drive toggle so the UI stays consistent.
     const poll = setInterval(() => {
       if (!popup.closed) return
       clearInterval(poll)
@@ -305,6 +306,7 @@ export function useExpenses(selectedJob: Job) {
       if (!completed) {
         setDriveStatus('disconnected')
         setDriveMsg('Not connected')
+        setDriveEnabled(false)
       }
     }, 500)
   }

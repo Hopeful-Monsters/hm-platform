@@ -341,7 +341,15 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                 <input
                   type="checkbox"
                   checked={driveEnabled}
-                  onChange={e => setDriveEnabled(e.target.checked)}
+                  onChange={e => {
+                    const checked = e.target.checked
+                    setDriveEnabled(checked)
+                    // Trigger auth immediately when enabling — no separate button press needed.
+                    // authDrive() will also call setDriveEnabled(false) if the popup is dismissed.
+                    if (checked && driveStatus !== 'connected') {
+                      authDrive()
+                    }
+                  }}
                 />
               </div>
               {driveEnabled && (

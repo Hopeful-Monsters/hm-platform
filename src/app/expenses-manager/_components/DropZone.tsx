@@ -19,7 +19,7 @@ export function DropZone({ onFiles }: { onFiles: (files: FileList) => void }) {
       />
       <div className="drop-icon">📎</div>
       <div className="drop-text"><strong>Drop files here</strong> or click to browse</div>
-      <div className="drop-hint">JPG, PNG, WebP or PDF · Max 20 MB each · Multiple files supported</div>
+      <div className="drop-hint">JPG, PNG, WebP or PDF · Max 5 MB each · Multiple files supported</div>
     </div>
   )
 }

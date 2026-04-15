@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Barlow_Condensed, Inter } from 'next/font/google'
+import { headers } from 'next/headers'
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import './globals.css'
@@ -68,6 +69,10 @@ export default async function RootLayout({
   // getCurrentUser() gets the memoised result — no second network round-trip.
   const user = await getCurrentUser()
 
+  // Read the per-request CSP nonce set by proxy.ts and pass it to ThemeProvider
+  // so the anti-FOUC inline script can be executed under the strict CSP policy.
+  const nonce = (await headers()).get('x-nonce') ?? undefined
+
   return (
     <html
       lang="en"
@@ -75,7 +80,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col antialiased">
         <ErrorBoundary>
-          <ThemeProvider defaultTheme="dark">
+          <ThemeProvider defaultTheme="dark" nonce={nonce}>
             <UserProvider user={user}>
               <SiteHeader />
               <main className="flex-1">{children}</main>
