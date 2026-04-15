@@ -72,7 +72,7 @@ async function updateToolAccess(formData: FormData) {
 export default async function UsersPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') redirect('/auth/login')
+  if (!user || user.user_metadata?.role !== 'admin') redirect('/login')
 
   const service = createServiceClient()
   const { data: users }          = await service.auth.admin.listUsers()

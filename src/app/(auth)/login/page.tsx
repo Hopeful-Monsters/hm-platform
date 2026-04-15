@@ -33,7 +33,7 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/callback` },
     })
     if (error) {
       setError(error.message)
@@ -165,7 +165,7 @@ export default function LoginPage() {
         >
           No account?{' '}
           <Link
-            href="/auth/signup"
+            href="/signup"
             style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
           >
             Sign up

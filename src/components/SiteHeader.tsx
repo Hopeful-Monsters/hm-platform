@@ -10,17 +10,6 @@ import SignOutButton from './SignOutButton'
 import { DesktopNav, MobileNav } from './navigation'
 import type { User } from '@supabase/supabase-js'
 
-// HM logo mark — circle + spark SVG from brand reference
-function HMLogo() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 60 60" fill="none" aria-hidden>
-      <circle cx="28" cy="36" r="22" fill="#FFE600" />
-      <path d="M44 22 Q50 14 56 8" stroke="#FFE600" strokeWidth="3.5" strokeLinecap="round" />
-      <circle cx="57" cy="7" r="3" fill="#FF3EBF" />
-    </svg>
-  )
-}
-
 export default function SiteHeader() {
   // Initialise from the server-resolved user passed down via UserProvider.
   // This means the header renders correctly on the first paint without waiting
@@ -91,7 +80,6 @@ export default function SiteHeader() {
               flexShrink: 0,
             }}
           >
-            <HMLogo />
             <span className="hidden sm:inline">HOPEFUL MONSTERS.</span>
           </Link>
 
@@ -114,7 +102,7 @@ export default function SiteHeader() {
             <>
               {/* Sign In — colour set via Tailwind so hover override works */}
               <Link
-                href="/auth/login"
+                href="/login"
                 className="hidden sm:flex text-[var(--text-muted)] hover:text-[var(--text)] transition-colors duration-150"
                 style={{
                   fontFamily: 'var(--font-heading)',
@@ -130,7 +118,7 @@ export default function SiteHeader() {
               </Link>
               {/* Sign Up — bg/colour via Tailwind so hover override works */}
               <Link
-                href="/auth/signup"
+                href="/signup"
                 className="bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-80 transition-opacity duration-150"
                 style={{
                   fontFamily: 'var(--font-heading)',
