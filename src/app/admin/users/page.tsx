@@ -100,7 +100,6 @@ export default async function UsersPage() {
     <div>
       {/* Page header */}
       <div style={{ marginBottom: 36 }}>
-        <p className="eyebrow" style={{ marginBottom: 8 }}>Admin / Users</p>
         <h1
           style={{
             fontFamily:    'var(--font-heading)',

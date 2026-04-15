@@ -223,7 +223,7 @@ export async function submitExpense(loggedExpense: {
   const res = await fetch(ST_EXPENSES, {
     method: 'POST',
     headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ loggedExpense }),
+    body: JSON.stringify({ loggedExpense: { ...loggedExpense, supplierContactId: null } }),
   })
 
   const data = await res.json() as Record<string, unknown>
