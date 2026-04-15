@@ -26,9 +26,9 @@ async function checkRateLimit(
 
 // ── Streamtime config ─────────────────────────────────────────────────────────
 
-const ST_SEARCH    = 'https://api.streamtime.net/v1/search'
-const ST_COMPANIES = 'https://api.streamtime.net/v1/companies'
-const ST_EXPENSES  = 'https://api.streamtime.net/v1/logged_expenses'
+const ST_SEARCH    = 'https://api.streamtime.net/v2/search'
+const ST_COMPANIES = 'https://api.streamtime.net/v2/companies'
+const ST_EXPENSES  = 'https://api.streamtime.net/v2/logged_expenses'
 
 function stKey(): string {
   const key = process.env.STREAMTIME_KEY
@@ -46,7 +46,7 @@ export async function searchJobs(): Promise<{ searchResults: Array<Record<string
   const user = await requireUser()
   await checkRateLimit(rateLimits.api, `expenses-manager:jobs:${user.id}`)
 
-  const res = await fetch(`${ST_SEARCH}?search_view=7&include_statistics=false`, {
+  const res = await fetch(`${ST_SEARCH}?search_view=7`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -75,7 +75,7 @@ export async function getAllCompanies(): Promise<{ companies: Array<{ id: unknow
   let allResults: Array<{ id: unknown; name: unknown }> = []
 
   while (allResults.length < MAX_RESULTS) {
-    const res = await fetch(`${ST_SEARCH}?search_view=12&include_statistics=false`, {
+    const res = await fetch(`${ST_SEARCH}?search_view=12`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -188,7 +188,7 @@ export async function disconnectDrive(): Promise<void> {
 export async function submitExpense(loggedExpense: {
   jobId: number
   date: string
-  company: string
+  supplierCompanyId: number
   itemName: string
   costRate: number
   sellRate: number
@@ -197,7 +197,6 @@ export async function submitExpense(loggedExpense: {
   loggedExpenseStatusId: number
   currencyCode: string
   exchangeRate: number
-  description: string
   markup: number
   reference?: string
 }): Promise<Record<string, unknown>> {

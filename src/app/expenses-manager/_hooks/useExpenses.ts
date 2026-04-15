@@ -338,12 +338,11 @@ export function useExpenses(selectedJob: Job) {
         const exGST    = parseFloat(String(d.amountExGST))
         const total    = parseFloat(String(d.totalIncGST)) || exGST
         const sellRate = Math.round(total * (1 + snap.markup / 100) * 100) / 100
-        const descText = d.description || `Submitted by ${initials || 'XX'}`
 
         await submitExpense({
           jobId:                 parseInt(selectedJob.id),
           date:                  d.date,
-          company:               d.supplier,
+          supplierCompanyId:     Number(snap.company!.chosenId),
           itemName:              d.itemName,
           costRate:              exGST,
           sellRate,
@@ -352,7 +351,6 @@ export function useExpenses(selectedJob: Job) {
           loggedExpenseStatusId: 2,
           currencyCode:          'AUD',
           exchangeRate:          1,
-          description:           descText,
           markup:                snap.markup,
           ...(d.reference ? { reference: d.reference } : {}),
         })
