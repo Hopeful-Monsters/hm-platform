@@ -13,7 +13,7 @@ export default async function SupportPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth/login?next=/support')
+  if (!user) redirect('/login?next=/support')
 
   // Derive display name — email signup stores first_name + last_name;
   // Google OAuth typically provides full_name or name.
@@ -76,7 +76,7 @@ export default async function SupportPage() {
         }}
       />
 
-      <SupportForm userEmail={user.email ?? ''} defaultName={defaultName} />
+      <SupportForm defaultName={defaultName} />
     </main>
   )
 }

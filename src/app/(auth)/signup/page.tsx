@@ -46,7 +46,7 @@ export default function SignupPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/callback` },
     })
     if (error) {
       setError(error.message)
@@ -77,7 +77,7 @@ export default function SignupPage() {
             Once confirmed, your account will be pending admin approval. You&rsquo;ll hear from us soon.
           </p>
           <Link
-            href="/auth/login"
+            href="/login"
             style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontSize: 14 }}
           >
             Back to sign in →
@@ -236,7 +236,7 @@ export default function SignupPage() {
         <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
           Already have an account?{' '}
           <Link
-            href="/auth/login"
+            href="/login"
             style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
           >
             Sign in

@@ -31,8 +31,8 @@ export default async function CoverageTrackerLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth/login')
-  if (user.user_metadata?.status !== 'approved') redirect('/auth/no-access')
+  if (!user) redirect('/login')
+  if (user.user_metadata?.status !== 'approved') redirect('/no-access')
 
   return (
     <div

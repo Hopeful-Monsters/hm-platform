@@ -157,10 +157,8 @@ function FieldLabel({
 }
 
 export default function SupportForm({
-  userEmail,
   defaultName,
 }: {
-  userEmail: string
   defaultName: string
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -272,12 +270,6 @@ export default function SupportForm({
   // ── Form ─────────────────────────────────────────────────────────
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
-      {/* Submitting as */}
-      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32 }}>
-        Submitting as{' '}
-        <span style={{ color: 'var(--text)', fontWeight: 600 }}>{userEmail}</span>
-      </p>
-
       {/* Name + Tool — two columns */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
         <div>
