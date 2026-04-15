@@ -45,10 +45,16 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith('/admin');
-  const toolSlug = TOOL_SLUGS.find(slug => pathname.startsWith(`/${slug}`));
+  const isApiRoute   = pathname.startsWith('/api/');
 
-  // Skip auth entirely for routes that don't need protection —
-  // saves a Supabase round-trip on every public/home/auth page request.
+  // For page routes only — API route handlers own their own auth, so we don't
+  // run a Supabase round-trip here for those paths. This avoids doubling the DB
+  // calls: proxy getUser/tool_access + handler getUser = 2 Supabase calls per request.
+  const toolSlug = isApiRoute
+    ? null
+    : TOOL_SLUGS.find(slug => pathname.startsWith(`/${slug}`));
+
+  // Skip auth for non-admin, non-tool routes (includes all API routes).
   if (!isAdminRoute && !toolSlug) {
     return makeNext();
   }
@@ -86,7 +92,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── Tool route protection ──────────────────────────────────────
+  // ── Tool route protection (page routes only) ──────────────────
   if (toolSlug && !user) {
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('next', pathname);

@@ -6,7 +6,11 @@ import { Resend } from 'resend';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+
+  // Validate next param to prevent open redirect. Must be a relative path
+  // starting with / but not // (which browsers normalise to an external host).
+  const rawNext = searchParams.get('next') ?? '/';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
 
   if (code) {
     const supabase = await createClient();

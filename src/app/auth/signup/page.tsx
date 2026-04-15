@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { notifyAdmin } from './actions'
 
 export default function SignupPage() {
   const [firstName, setFirstName] = useState('')
@@ -33,11 +34,7 @@ export default function SignupPage() {
     if (error) {
       setError(error.message)
     } else {
-      fetch('/api/auth/notify-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      }).catch(() => {})
+      notifyAdmin(email).catch(() => {})
       setSuccess(true)
     }
     setLoading(false)

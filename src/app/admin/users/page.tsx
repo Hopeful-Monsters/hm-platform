@@ -9,6 +9,10 @@ import { UsersClient, type UserRow } from './UsersClient'
 
 async function promoteToAdmin(formData: FormData) {
   'use server'
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return
+
   const userId  = formData.get('userId') as string
   const service = createServiceClient()
 
@@ -34,6 +38,10 @@ async function promoteToAdmin(formData: FormData) {
 
 async function revokeAdmin(formData: FormData) {
   'use server'
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return
+
   const userId  = formData.get('userId') as string
   const service = createServiceClient()
 
@@ -52,6 +60,10 @@ async function revokeAdmin(formData: FormData) {
 
 async function updateToolAccess(formData: FormData) {
   'use server'
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.user_metadata?.role !== 'admin') return
+
   const userId        = formData.get('userId') as string
   const selectedTools = formData.getAll('tools') as string[]
 

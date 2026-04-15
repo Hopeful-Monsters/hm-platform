@@ -1,3 +1,23 @@
+import { z } from 'zod'
+import { createClient } from '@/lib/supabase/server'
+import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
+
+// Permitted MIME types — only receipts/invoices (images + PDF)
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+] as const
+
+const ExtractBodySchema = z.object({
+  mimeType: z.enum(ALLOWED_MIME_TYPES, {
+    message: 'Unsupported file type. Allowed: JPEG, PNG, WebP, GIF, PDF',
+  }),
+  data: z.string().min(1, 'data must not be empty'),
+})
+
 const EXTRACT_PROMPT = `Extract the expense details from this receipt or invoice. Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
 
 {
@@ -19,13 +39,27 @@ Rules:
 - Currency is AUD — do not include it in the JSON`
 
 export async function POST(request: Request) {
-  const key = process.env.GEMINI_KEY
-  if (!key) return Response.json({ error: 'GEMINI_KEY not configured' }, { status: 500 })
+  // Auth — must be a signed-in user
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await request.json().catch(() => null)
-  if (!body?.mimeType || !body?.data) {
-    return Response.json({ error: 'mimeType and data are required' }, { status: 400 })
+  // Rate limit — use the AI limiter (10/min) since this hits an LLM
+  const limited = await applyRateLimit(rateLimits.ai, `expenses-manager:extract:${user.id}`)
+  if (limited) return limited
+
+  const key = process.env.GEMINI_KEY
+  if (!key) return Response.json({ error: 'Extraction service is not configured' }, { status: 500 })
+
+  const rawBody = await request.json().catch(() => null)
+  const parsed = ExtractBodySchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues[0]?.message ?? 'Invalid request body' },
+      { status: 400 },
+    )
   }
+  const body = parsed.data
 
   const today = new Date().toISOString().split('T')[0]
   const prompt = EXTRACT_PROMPT.replace('__TODAY__', today)
@@ -36,7 +70,7 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ inline_data: { mime_type: body.mimeType, data: body.data } }, { text: prompt }] }],
+        contents: [{ parts: [{ inline_data: { mime_type: body.mimeType, data: body.data } }, { text: prompt }] }], // body is typed via Zod — mimeType is a permitted enum value
         generationConfig: { temperature: 0, maxOutputTokens: 1024 },
       }),
     }
