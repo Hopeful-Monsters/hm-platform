@@ -1,5 +1,17 @@
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
+
+// Validate query params from Google's OAuth redirect.
+// Bounds string lengths to prevent oversized inputs and enforces expected shapes.
+const CallbackQuerySchema = z.object({
+  // Authorization code — Google uses ~70 char codes; 512 gives headroom
+  code:  z.string().min(1).max(512).optional(),
+  // CSRF state — we generate UUID v4 values
+  state: z.string().uuid().optional(),
+  // Error string from Google (e.g. "access_denied") — cap at 128 chars
+  error: z.string().max(128).optional(),
+})
 
 function escapeHtml(value: string) {
   return value
@@ -37,9 +49,17 @@ function popupResponse(msg: Record<string, unknown>, origin: string) {
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const safeOrigin = normalizeTargetOrigin(origin)
-  const code  = searchParams.get('code')
-  const state = searchParams.get('state')
-  const error = searchParams.get('error')
+
+  // Validate and bound all query params before using them
+  const queryParsed = CallbackQuerySchema.safeParse({
+    code:  searchParams.get('code')  ?? undefined,
+    state: searchParams.get('state') ?? undefined,
+    error: searchParams.get('error') ?? undefined,
+  })
+  if (!queryParsed.success) {
+    return popupResponse({ driveError: 'Invalid callback parameters' }, safeOrigin)
+  }
+  const { code, state, error } = queryParsed.data
 
   // Google returned an error (e.g. access_denied, popup_closed_by_user)
   if (error) return popupResponse({ driveError: error }, safeOrigin)
