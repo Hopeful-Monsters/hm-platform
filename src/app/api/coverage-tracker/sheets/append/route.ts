@@ -69,11 +69,9 @@ export async function POST(request: Request) {
     accessToken = await getGoogleAccessToken(tokenRow.refresh_token as string)
   } catch (err: unknown) {
     // Token likely revoked — clear it so the UI shows disconnected state
-    await createServiceClient()
-      .from('drive_tokens')
-      .delete()
-      .eq('user_id', user.id)
-      .catch(() => { /* non-fatal */ })
+    try {
+      await createServiceClient().from('drive_tokens').delete().eq('user_id', user.id)
+    } catch { /* non-fatal */ }
     return Response.json(
       { error: `Drive auth expired — please reconnect. (${(err as Error).message})` },
       { status: 401 },
@@ -88,17 +86,20 @@ export async function POST(request: Request) {
   }
 
   // Log submission (non-fatal — don't fail the request if logging fails)
-  await createServiceClient()
-    .from('coverage_submissions')
-    .insert({
-      user_id:   user.id,
-      sheet_id:  sheetId,
-      sheet_tab: sheetTab,
-      campaign:  campaign ?? null,
-      row_count: rows.length,
-      mode:      'existing',
-    })
-    .catch(err => console.warn('[coverage-tracker] submission log failed:', err.message))
+  try {
+    await createServiceClient()
+      .from('coverage_submissions')
+      .insert({
+        user_id:   user.id,
+        sheet_id:  sheetId,
+        sheet_tab: sheetTab,
+        campaign:  campaign ?? null,
+        row_count: rows.length,
+        mode:      'existing',
+      })
+  } catch (err: unknown) {
+    console.warn('[coverage-tracker] submission log failed:', (err as Error).message)
+  }
 
   return Response.json({ success: true })
 }
