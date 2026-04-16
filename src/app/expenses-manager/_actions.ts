@@ -1,6 +1,5 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { requireToolAccess } from '@/lib/auth'
 import { rateLimits } from '@/lib/upstash/ratelimit'
@@ -182,9 +181,11 @@ export async function createCompanyAction(name: string): Promise<{ id: unknown; 
  * Reads from drive_tokens (service role) — token is never in user_metadata / JWT.
  */
 export async function getDriveStatus(): Promise<'connected' | 'disconnected'> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // requireToolAccess ensures user is authenticated, approved, and has tool access.
+  // Gracefully returns 'disconnected' on any auth failure rather than throwing.
+  const user = await requireToolAccess('expenses-manager').catch(() => null)
   if (!user) return 'disconnected'
+
   const { data } = await createServiceClient()
     .from('drive_tokens')
     .select('user_id')
@@ -197,9 +198,9 @@ export async function getDriveStatus(): Promise<'connected' | 'disconnected'> {
  * Remove the stored Drive refresh token, effectively disconnecting Drive.
  */
 export async function disconnectDrive(): Promise<void> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await requireToolAccess('expenses-manager').catch(() => null)
   if (!user) return
+
   await createServiceClient()
     .from('drive_tokens')
     .delete()

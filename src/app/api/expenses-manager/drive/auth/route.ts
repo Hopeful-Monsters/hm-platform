@@ -1,46 +1,14 @@
-import { requireToolAccess } from '@/lib/auth'
-import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
-import { cookies } from 'next/headers'
-
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+/**
+ * Drive OAuth initiation — expenses-manager entry point.
+ *
+ * Redirects to the platform-level /api/drive/auth route.
+ * Kept for backward compatibility with bookmarked or cached links.
+ *
+ * The canonical auth URL is now /api/drive/auth.
+ * Update the popup URL in useExpenses.ts to use /api/drive/auth directly.
+ */
 
 export async function GET(request: Request) {
-  // Auth — must be signed in, approved, and have expenses-manager access
-  const user = await requireToolAccess('expenses-manager').catch(() => null)
-  if (!user) return new Response('Forbidden', { status: 403 })
-
-  // Rate limit — prevents spamming OAuth initiations
-  const limited = await applyRateLimit(rateLimits.api, `expenses-manager:drive-auth:${user.id}`)
-  if (limited) return limited
-
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  if (!clientId) {
-    return new Response('GOOGLE_CLIENT_ID not configured', { status: 500 })
-  }
-
-  // CSRF state — stored in an httpOnly cookie, verified in the callback
-  const state = crypto.randomUUID()
-  const cookieStore = await cookies()
-  cookieStore.set('drive_oauth_state', state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 600, // 10 minutes
-    path: '/',
-  })
-
-  const origin      = new URL(request.url).origin
-  const redirectUri = `${origin}/api/expenses-manager/drive/callback`
-
-  const params = new URLSearchParams({
-    client_id:     clientId,
-    redirect_uri:  redirectUri,
-    response_type: 'code',
-    scope:         DRIVE_SCOPE,
-    access_type:   'offline',
-    prompt:        'consent', // Force consent screen to always get a refresh_token
-    state,
-  })
-
-  return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
+  const url = new URL(request.url)
+  return Response.redirect(`${url.origin}/api/drive/auth`, 301)
 }

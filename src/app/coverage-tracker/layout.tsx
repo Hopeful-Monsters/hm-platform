@@ -15,13 +15,9 @@ export const metadata: Metadata = {
  * Access gating: proxy.ts handles this before we get here.
  * These checks are defense-in-depth only — no extra DB call needed.
  *
- * Adding tool sections:
- *   Pass a `tabs` array to <ToolHeader /> as the tool grows:
- *   tabs={[
- *     { href: '/coverage-tracker',          label: 'Dashboard' },
- *     { href: '/coverage-tracker/entries',  label: 'Entries' },
- *     { href: '/coverage-tracker/reports',  label: 'Reports' },
- *   ]}
+ * Tabs: add entries here as new pages are built.
+ *   { href: '/coverage-tracker/history', label: 'History' }  ← future
+ *   { href: '/coverage-tracker/reports', label: 'Reports' }  ← future
  */
 export default async function CoverageTrackerLayout({
   children,
@@ -37,16 +33,19 @@ export default async function CoverageTrackerLayout({
   return (
     <div
       style={{
-        minHeight: 'calc(100vh - var(--nav-h))',
-        background: 'var(--bg)',
-        display: 'flex',
-        flexDirection: 'column',
+        minHeight:      'calc(100vh - var(--nav-h))',
+        background:     'var(--bg)',
+        display:        'flex',
+        flexDirection:  'column',
       }}
     >
       <ToolHeader
         toolName="Coverage Tracker"
         toolSlug="coverage-tracker"
-        // tabs={[]} — add tabs here as pages are built
+        tabs={[
+          { href: '/coverage-tracker', label: 'Upload' },
+          // { href: '/coverage-tracker/history', label: 'History' },
+        ]}
       />
       <div style={{ flex: 1 }}>
         {children}

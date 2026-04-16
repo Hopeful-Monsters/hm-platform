@@ -256,13 +256,13 @@ export function useExpenses(selectedJob: Job) {
 
   // ── Google Drive ──────────────────────────────────────────────
   // Server-side OAuth: refresh token stored in drive_tokens table (service role only).
-  // The auth flow opens a popup → /api/expenses-manager/drive/auth → Google →
-  // /api/expenses-manager/drive/callback → postMessage → this handler.
+  // The auth flow opens a popup → /api/drive/auth → Google →
+  // /api/drive/callback → postMessage → this handler.
   // Uploads go to /api/expenses-manager/drive/upload (route handler, handles 5 MB files).
 
   function authDrive() {
     const popup = window.open(
-      '/api/expenses-manager/drive/auth',
+      '/api/drive/auth',
       'drive-auth',
       'width=520,height=660,left=200,top=100',
     )
