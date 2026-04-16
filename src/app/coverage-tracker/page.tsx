@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useWizard } from './_components/WizardContext'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -8,7 +9,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 type CoverageRow = {
   date:        string
-  campaign:    string
+  campaign:    string  // set from Setup.campaign at submit time
   publication: string
   country:     string
   mediaType:   string
@@ -25,9 +26,19 @@ type CoverageRow = {
   link:        string
 }
 
-type DestMode = 'existing' | 'new'
-type Step     = 1 | 2 | 3 | 4
-type Status   = { type: 'info' | 'success' | 'error'; message: string } | null
+type DestMode  = 'existing' | 'new'
+type Operator  = 'AND' | 'OR'
+type Status    = { type: 'info' | 'success' | 'error'; message: string } | null
+type Result    = { ok: true; sheetUrl?: string } | { ok: false; error: string }
+
+type SetupState = {
+  campaign:     string
+  keyMessages:  string[]
+  keyMsgOp:     Operator
+  spokesperson: string
+  ctas:         string[]
+  ctaOp:        Operator
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -119,74 +130,14 @@ function rowToArray(r: CoverageRow): (string | number)[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared style tokens
-// ─────────────────────────────────────────────────────────────────────────────
-
-const card: React.CSSProperties = {
-  background:   'var(--surface)',
-  border:       '2px solid var(--border)',
-  padding:      '24px 28px',
-  marginBottom: 16,
-}
-
-const label: React.CSSProperties = {
-  display:       'block',
-  fontFamily:    'var(--font-heading)',
-  fontWeight:    700,
-  fontSize:      11,
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  color:         'var(--text-muted)',
-  marginBottom:  5,
-}
-
-const inputBase: React.CSSProperties = {
-  width:      '100%',
-  padding:    '8px 10px',
-  background: 'var(--bg)',
-  border:     '2px solid var(--border)',
-  color:      'var(--text)',
-  fontSize:   13,
-  fontFamily: 'inherit',
-  outline:    'none',
-  boxSizing:  'border-box',
-}
-
-const selectBase: React.CSSProperties = {
-  padding:    '8px 10px',
-  background: 'var(--bg)',
-  border:     '2px solid var(--border)',
-  color:      'var(--text)',
-  fontSize:   13,
-  fontFamily: 'inherit',
-  outline:    'none',
-}
-
-const btn: React.CSSProperties = {
-  padding:       '9px 20px',
-  fontSize:      12,
-  fontFamily:    'var(--font-heading)',
-  fontWeight:    700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  border:        'none',
-  cursor:        'pointer',
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // StatusBanner
 // ─────────────────────────────────────────────────────────────────────────────
 
 function StatusBanner({ status }: { status: Status }) {
   if (!status) return null
-  const c = {
-    info:    { bg: 'rgba(255,230,0,0.06)',  border: 'var(--accent)', color: 'var(--accent)' },
-    success: { bg: 'rgba(0,200,100,0.08)',  border: '#00c864',       color: '#00c864'       },
-    error:   { bg: 'rgba(255,62,191,0.08)', border: 'var(--pink)',   color: 'var(--pink)'   },
-  }[status.type]
   return (
     <div
-      style={{ padding: '11px 14px', background: c.bg, borderLeft: `3px solid ${c.border}`, color: c.color, fontSize: 13, marginTop: 14 }}
+      className={`ct-banner ${status.type}`}
       // Message may include a safe anchor tag for sheet links
       dangerouslySetInnerHTML={{ __html: status.message }}
     />
@@ -198,6 +149,7 @@ function StatusBanner({ status }: { status: Status }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function CoverageTrackerPage() {
+  const { step, setStep } = useWizard()
 
   // ── Drive connection ──────────────────────────────────────────
   const [driveStatus, setDriveStatus] = useState<'unknown' | 'connected' | 'disconnected' | 'connecting'>('unknown')
@@ -237,21 +189,41 @@ export default function CoverageTrackerPage() {
   }, [])
 
   // ── Wizard state ──────────────────────────────────────────────
-  const [step,       setStep]       = useState<Step>(1)
-  const [rows,       setRows]       = useState<CoverageRow[]>([])
-  const [destMode,   setDestMode]   = useState<DestMode>('existing')
-  const [status,     setStatus]     = useState<Status>(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [rows,        setRows]        = useState<CoverageRow[]>([])
+  const [destMode,    setDestMode]    = useState<DestMode>('existing')
+  const [status,      setStatus]      = useState<Status>(null)
+  const [submitting,  setSubmitting]  = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [result,      setResult]      = useState<Result | null>(null)
 
-  // Destination fields
-  const [sheetUrl,   setSheetUrl]   = useState('')
-  const [sheetTab,   setSheetTab]   = useState('2026 Coverage Tracker')
-  const [newTitle,   setNewTitle]   = useState('')
-  const [newTab,     setNewTab]     = useState('2026 Coverage Tracker')
-  const [shareEmail, setShareEmail] = useState('')
+  // Esc closes the confirmation modal. Guard with `submitting` so an in-flight
+  // submit can't be dismissed by a stray keypress.
+  useEffect(() => {
+    if (!showConfirm) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !submitting) setShowConfirm(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showConfirm, submitting])
 
-  // Batch defaults
-  const [bCampaign,  setBCampaign]  = useState('')
+  // Destination fields (shareEmail removed — deprecated)
+  const [sheetUrl, setSheetUrl] = useState('')
+  const [sheetTab, setSheetTab] = useState('2026 Coverage Tracker')
+  const [newTitle, setNewTitle] = useState('')
+  const [newTab,   setNewTab]   = useState('2026 Coverage Tracker')
+
+  // Setup state (new step 2)
+  const [setup, setSetup] = useState<SetupState>({
+    campaign:     '',
+    keyMessages:  [''],
+    keyMsgOp:     'AND',
+    spokesperson: '',
+    ctas:         [''],
+    ctaOp:        'AND',
+  })
+
+  // Batch defaults (review step)
   const [bMediaType, setBMediaType] = useState('')
   const [bKeyMsg,    setBKeyMsg]    = useState('')
   const [bSpokes,    setBSpokes]    = useState('')
@@ -259,12 +231,7 @@ export default function CoverageTrackerPage() {
   const [bCta,       setBCta]       = useState('')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // ── Shared input focus handlers ───────────────────────────────
-  const onFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) =>
-    (e.target.style.borderColor = 'var(--accent)')
-  const onBlur  = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) =>
-    (e.target.style.borderColor = 'var(--border)')
+  const [dragOver,   setDragOver]   = useState(false)
 
   // ── File handling ─────────────────────────────────────────────
   function processFile(file: File) {
@@ -288,65 +255,160 @@ export default function CoverageTrackerPage() {
     setRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
   }
 
-  function applyBatch() {
-    setRows(prev => prev.map(r => ({
-      ...r,
-      ...(bCampaign  && { campaign:  bCampaign  }),
+  /**
+   * Batch apply helper.
+   *   mode='all'    — overwrite every row
+   *   mode='blanks' — only fill cells that are currently empty
+   */
+  function applyBatch(mode: 'all' | 'blanks') {
+    const updates: Partial<CoverageRow> = {
       ...(bMediaType && { mediaType: bMediaType }),
       ...(bKeyMsg    && { keyMsg:    bKeyMsg    }),
       ...(bSpokes    && { spokes:    bSpokes    }),
       ...(bImage     && { image:     bImage     }),
       ...(bCta       && { cta:       bCta       }),
-    })))
+    }
+    setRows(prev => prev.map(r => {
+      const next = { ...r }
+      for (const [k, v] of Object.entries(updates) as [keyof CoverageRow, string][]) {
+        if (mode === 'all')                next[k] = v
+        else if (mode === 'blanks' && !r[k]) next[k] = v
+      }
+      return next
+    }))
+  }
+
+  // ── Setup helpers ─────────────────────────────────────────────
+  function updateKeyMsg(idx: number, value: string) {
+    setSetup(s => ({ ...s, keyMessages: s.keyMessages.map((m, i) => i === idx ? value : m) }))
+  }
+  function addKeyMsg() {
+    setSetup(s => ({ ...s, keyMessages: [...s.keyMessages, ''] }))
+  }
+  function removeKeyMsg(idx: number) {
+    // UI guards this with length > 1, so we won't empty the list here.
+    setSetup(s => ({ ...s, keyMessages: s.keyMessages.filter((_, i) => i !== idx) }))
+  }
+  function updateCta(idx: number, value: string) {
+    setSetup(s => ({ ...s, ctas: s.ctas.map((c, i) => i === idx ? value : c) }))
+  }
+  function addCta() {
+    setSetup(s => ({ ...s, ctas: [...s.ctas, ''] }))
+  }
+  function removeCta(idx: number) {
+    // UI guards this with length > 1, so we won't empty the list here.
+    setSetup(s => ({ ...s, ctas: s.ctas.filter((_, i) => i !== idx) }))
   }
 
   // ── Submit ────────────────────────────────────────────────────
   async function doSubmit() {
+    setShowConfirm(false)
     setSubmitting(true)
-    setStatus({ type: 'info', message: `Sending ${rows.length} rows to Google Sheets…` })
-    const rowArrays = rows.map(rowToArray)
+    setStatus(null)
+
+    // Stamp every row with the campaign from Setup before sending
+    const stampedRows = rows.map(r => ({ ...r, campaign: setup.campaign }))
+    const rowArrays   = stampedRows.map(rowToArray)
+
+    // Non-empty setup arrays; operators persisted for future Gemini use
+    const cleanKeyMessages = setup.keyMessages.map(m => m.trim()).filter(Boolean)
+    const cleanCtas        = setup.ctas.map(c => c.trim()).filter(Boolean)
 
     try {
       if (destMode === 'existing') {
         const m = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
-        if (!m) {
-          setStatus({ type: 'error', message: 'URL does not look like a valid Google Sheets link.' })
-          setSubmitting(false); return
-        }
+        if (!m) throw new Error('URL does not look like a valid Google Sheets link.')
+
         const res    = await fetch('/api/coverage-tracker/sheets/append', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sheetId: m[1], sheetTab: sheetTab || '2026 Coverage Tracker', rows: rowArrays, campaign: rows[0]?.campaign || undefined }),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sheetId:            m[1],
+            sheetTab:           sheetTab || '2026 Coverage Tracker',
+            rows:               rowArrays,
+            campaign:           setup.campaign || undefined,
+            // Setup context — for future Gemini integration
+            keyMessages:        cleanKeyMessages,
+            keyMessageOperator: setup.keyMsgOp,
+            spokesperson:       setup.spokesperson || undefined,
+            ctas:               cleanCtas,
+            ctaOperator:        setup.ctaOp,
+          }),
         })
         const result = await res.json() as { error?: string }
         if (!res.ok) throw new Error(result.error ?? `Server error ${res.status}`)
-        setStatus({ type: 'success', message: `✓ Appended ${rows.length} rows to <strong>${sheetTab}</strong>` })
+
+        // Reconstruct sheet URL for the success screen
+        const sheetLink = `https://docs.google.com/spreadsheets/d/${m[1]}/edit`
+        setResult({ ok: true, sheetUrl: sheetLink })
+        setStep(5)
 
       } else {
         const res    = await fetch('/api/coverage-tracker/sheets/create', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sheetTitle: newTitle || 'Coverage Tracker', sheetTab: newTab || '2026 Coverage Tracker', rows: rowArrays, shareEmail: shareEmail || undefined, campaign: rows[0]?.campaign || undefined }),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sheetTitle:         newTitle || 'Coverage Tracker',
+            sheetTab:           newTab   || '2026 Coverage Tracker',
+            rows:               rowArrays,
+            campaign:           setup.campaign || undefined,
+            keyMessages:        cleanKeyMessages,
+            keyMessageOperator: setup.keyMsgOp,
+            spokesperson:       setup.spokesperson || undefined,
+            ctas:               cleanCtas,
+            ctaOperator:        setup.ctaOp,
+          }),
         })
-        const result = await res.json() as { error?: string; newSheetUrl?: string }
-        if (!res.ok) throw new Error(result.error ?? `Server error ${res.status}`)
-        setStatus({ type: 'success', message: `✓ Created spreadsheet and appended ${rows.length} rows. <a href="${result.newSheetUrl}" target="_blank" rel="noopener" style="color:inherit;font-weight:700;">Open sheet →</a>` })
+        const apiResult = await res.json() as { error?: string; newSheetUrl?: string }
+        if (!res.ok) throw new Error(apiResult.error ?? `Server error ${res.status}`)
+
+        setResult({ ok: true, sheetUrl: apiResult.newSheetUrl })
+        setStep(5)
       }
     } catch (err: unknown) {
-      setStatus({ type: 'error', message: (err as Error).message })
+      setResult({ ok: false, error: (err as Error).message })
+      setStep(5)
     } finally {
       setSubmitting(false)
     }
   }
+
+  function resetWizard() {
+    setRows([])
+    setDestMode('existing')
+    setStatus(null)
+    setResult(null)
+    setSheetUrl('')
+    setSheetTab('2026 Coverage Tracker')
+    setNewTitle('')
+    setNewTab('2026 Coverage Tracker')
+    setSetup({
+      campaign:     '',
+      keyMessages:  [''],
+      keyMsgOp:     'AND',
+      spokesperson: '',
+      ctas:         [''],
+      ctaOp:        'AND',
+    })
+    setBMediaType(''); setBKeyMsg(''); setBSpokes(''); setBImage(''); setBCta('')
+    setStep(1)
+  }
+
+  // ── Destination summary (used in confirmation modal copy) ─────
+  const destSummary = destMode === 'existing'
+    ? `"${sheetTab}" tab of the existing sheet`
+    : `tab "${newTab}" in new sheet "${newTitle || 'Coverage Tracker'}"`
 
   // ─────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: 1700, margin: '0 auto', padding: '24px 20px' }}>
+    <div className="ct-main">
 
       {/* ── Drive connection banner ── */}
       {driveStatus !== 'connected' && (
-        <div style={{ ...card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, borderColor: driveStatus === 'connecting' ? 'var(--accent)' : 'var(--border)' }}>
+        <div className="ct-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, borderColor: driveStatus === 'connecting' ? 'var(--accent)' : 'var(--border)' }}>
           <div>
             <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>
               {driveStatus === 'connecting' ? 'Connecting to Google Drive…' : 'Connect Google Drive to get started'}
@@ -356,9 +418,11 @@ export default function CoverageTrackerPage() {
             </p>
           </div>
           <button
+            type="button"
             onClick={connectDrive}
             disabled={driveStatus === 'connecting' || driveStatus === 'unknown'}
-            style={{ ...btn, background: driveStatus === 'connecting' ? 'var(--border)' : 'var(--accent)', color: driveStatus === 'connecting' ? 'var(--text-muted)' : 'var(--accent-fg)', flexShrink: 0 }}
+            className="ct-btn ct-btn-primary"
+            style={{ flexShrink: 0 }}
           >
             {driveStatus === 'connecting' ? 'Connecting…' : 'Connect Drive'}
           </button>
@@ -367,123 +431,169 @@ export default function CoverageTrackerPage() {
 
       {driveStatus === 'connected' && (
         <>
-          {/* ── Step indicator ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 20 }}>
-            {(['Upload CSV', 'Destination', 'Review Rows', 'Submit'] as const).map((lbl, i) => {
-              const n        = (i + 1) as Step
-              const isDone   = step > n
-              const isActive = step === n
-              return (
-                <div key={lbl} style={{ display: 'flex', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: isDone ? '#00c864' : isActive ? 'var(--accent)' : 'var(--text-muted)' }}>
-                    <span style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, background: isDone ? '#00c864' : isActive ? 'var(--accent)' : 'var(--border)', color: isDone || isActive ? '#000' : 'var(--text-muted)' }}>
-                      {isDone ? '✓' : n}
-                    </span>
-                    {lbl}
-                  </div>
-                  {i < 3 && <div style={{ width: 32, height: 2, background: 'var(--border)' }} />}
-                </div>
-              )
-            })}
-          </div>
-
           {/* ── Step 1: Upload ── */}
           {step === 1 && (
-            <div style={card}>
-              <p style={{ margin: '0 0 16px', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text)' }}>
-                Upload Meltwater CSV
-              </p>
+            <div className="ct-card">
+              <p className="ct-card-title">Upload Meltwater CSV</p>
               <div
+                className={`ct-drop-zone${dragOver ? ' is-over' : ''}`}
                 onClick={() => fileInputRef.current?.click()}
-                onDragOver={e => e.preventDefault()}
-                onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) processFile(f) }}
-                style={{ border: '2px dashed var(--border)', padding: '52px 32px', textAlign: 'center', cursor: 'pointer' }}
+                onDragOver={e  => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e      => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) processFile(f) }}
               >
-                <div style={{ fontSize: 32, marginBottom: 10 }}>📤</div>
-                <p style={{ margin: '0 0 6px', fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>
-                  Drop your Meltwater CSV here, or click to browse
-                </p>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
-                  Accepts the standard UTF-16 tab-delimited .csv export from Meltwater
-                </p>
+                <div className="ct-drop-icon">📤</div>
+                <p className="ct-drop-text">Drop your Meltwater CSV here, or click to browse</p>
+                <p className="ct-drop-hint">Accepts the standard UTF-16 tab-delimited .csv export from Meltwater</p>
               </div>
               <input ref={fileInputRef} type="file" accept=".csv,.tsv" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f) }} />
               <StatusBanner status={status} />
             </div>
           )}
 
-          {/* ── Step 2: Destination ── */}
+          {/* ── Step 2: Setup ── */}
           {step === 2 && (
-            <div style={card}>
-              <p style={{ margin: '0 0 20px', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text)' }}>
-                Configure Destination
-              </p>
+            <div className="ct-card">
+              <p className="ct-card-title">Campaign Setup</p>
 
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                {(['existing', 'new'] as DestMode[]).map(mode => (
-                  <button key={mode} onClick={() => setDestMode(mode)} style={{ ...btn, background: destMode === mode ? 'var(--accent)' : 'var(--bg)', color: destMode === mode ? 'var(--accent-fg)' : 'var(--text-muted)', border: `2px solid ${destMode === mode ? 'var(--accent)' : 'var(--border)'}` }}>
-                    {mode === 'existing' ? 'Append to existing sheet' : 'Create new spreadsheet'}
-                  </button>
-                ))}
+              {/* Campaign */}
+              <div style={{ marginBottom: 18 }}>
+                <label className="ct-label">Campaign</label>
+                <input
+                  type="text"
+                  className="ct-input"
+                  value={setup.campaign}
+                  onChange={e => setSetup(s => ({ ...s, campaign: e.target.value }))}
+                  placeholder="e.g. NFL Australia 2026 Launch"
+                />
               </div>
 
-              {destMode === 'existing' ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                  <div style={{ flex: 1, minWidth: 300 }}>
-                    <label style={label}>Google Sheet URL</label>
-                    <input type="text" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" style={inputBase} onFocus={onFocus} onBlur={onBlur} />
-                  </div>
-                  <div style={{ minWidth: 200 }}>
-                    <label style={label}>Tab Name</label>
-                    <input type="text" value={sheetTab} onChange={e => setSheetTab(e.target.value)} style={inputBase} onFocus={onFocus} onBlur={onBlur} />
-                  </div>
+              {/* Key messages — repeating + AND/OR */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <label className="ct-label" style={{ margin: 0 }}>Key Message(s)</label>
+                  {setup.keyMessages.length > 1 && (
+                    <div className="ct-op-toggle">
+                      {(['AND', 'OR'] as Operator[]).map(op => (
+                        <button
+                          key={op}
+                          type="button"
+                          className={`ct-btn ct-btn-toggle${setup.keyMsgOp === op ? ' is-active' : ''}`}
+                          onClick={() => setSetup(s => ({ ...s, keyMsgOp: op }))}
+                        >
+                          {op}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                  <div style={{ flex: 1, minWidth: 240 }}>
-                    <label style={label}>Spreadsheet Title</label>
-                    <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. NFL Coverage Tracker 2026" style={inputBase} onFocus={onFocus} onBlur={onBlur} />
-                  </div>
-                  <div style={{ minWidth: 200 }}>
-                    <label style={label}>Tab Name</label>
-                    <input type="text" value={newTab} onChange={e => setNewTab(e.target.value)} style={inputBase} onFocus={onFocus} onBlur={onBlur} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 240 }}>
-                    <label style={label}>Share with (Google email)</label>
-                    <input type="email" value={shareEmail} onChange={e => setShareEmail(e.target.value)} placeholder="yourname@domain.com" style={inputBase} onFocus={onFocus} onBlur={onBlur} />
-                  </div>
+                <div className="ct-field-group">
+                  {setup.keyMessages.map((msg, i) => (
+                    <div key={i} className="ct-field-row">
+                      <input
+                        type="text"
+                        className="ct-input"
+                        value={msg}
+                        onChange={e => updateKeyMsg(i, e.target.value)}
+                        placeholder={`Key message ${i + 1}`}
+                      />
+                      {setup.keyMessages.length > 1 && (
+                        <button type="button" className="ct-remove-btn" onClick={() => removeKeyMsg(i)} aria-label="Remove key message">✕</button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
+                {setup.keyMessages[setup.keyMessages.length - 1].trim() !== '' && (
+                  <button type="button" className="ct-btn ct-btn-add" onClick={addKeyMsg} style={{ marginTop: 8 }}>
+                    + Add another key message
+                  </button>
+                )}
+              </div>
+
+              {/* Spokesperson */}
+              <div style={{ marginBottom: 18 }}>
+                <label className="ct-label">Spokesperson</label>
+                <input
+                  type="text"
+                  className="ct-input"
+                  value={setup.spokesperson}
+                  onChange={e => setSetup(s => ({ ...s, spokesperson: e.target.value }))}
+                  placeholder="e.g. Gai Waterhouse"
+                />
+              </div>
+
+              {/* CTAs — repeating + AND/OR */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <label className="ct-label" style={{ margin: 0 }}>CTA(s)</label>
+                  {setup.ctas.length > 1 && (
+                    <div className="ct-op-toggle">
+                      {(['AND', 'OR'] as Operator[]).map(op => (
+                        <button
+                          key={op}
+                          type="button"
+                          className={`ct-btn ct-btn-toggle${setup.ctaOp === op ? ' is-active' : ''}`}
+                          onClick={() => setSetup(s => ({ ...s, ctaOp: op }))}
+                        >
+                          {op}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="ct-field-group">
+                  {setup.ctas.map((cta, i) => (
+                    <div key={i} className="ct-field-row">
+                      <input
+                        type="text"
+                        className="ct-input"
+                        value={cta}
+                        onChange={e => updateCta(i, e.target.value)}
+                        placeholder={`CTA ${i + 1}`}
+                      />
+                      {setup.ctas.length > 1 && (
+                        <button type="button" className="ct-remove-btn" onClick={() => removeCta(i)} aria-label="Remove CTA">✕</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {setup.ctas[setup.ctas.length - 1].trim() !== '' && (
+                  <button type="button" className="ct-btn ct-btn-add" onClick={addCta} style={{ marginTop: 8 }}>
+                    + Add another CTA
+                  </button>
+                )}
+              </div>
 
               <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-                <button onClick={() => setStep(1)} style={{ ...btn, background: 'var(--bg)', color: 'var(--text-muted)', border: '2px solid var(--border)' }}>← Back</button>
-                <button onClick={() => setStep(3)} style={{ ...btn, background: 'var(--accent)', color: 'var(--accent-fg)' }}>Review rows →</button>
+                <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(1)}>← Back</button>
+                <button
+                  type="button"
+                  className="ct-btn ct-btn-primary"
+                  onClick={() => setStep(3)}
+                  disabled={!setup.campaign.trim()}
+                >
+                  Review rows →
+                </button>
               </div>
             </div>
           )}
 
           {/* ── Step 3: Review table ── */}
           {step === 3 && (
-            <div style={card}>
+            <div className="ct-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                <p style={{ margin: 0, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text)' }}>
-                  Review &amp; Edit Rows
-                </p>
+                <p className="ct-card-title" style={{ margin: 0 }}>Review &amp; Edit Rows</p>
                 <span style={{ padding: '2px 10px', background: 'var(--accent)', color: 'var(--accent-fg)', fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {rows.length} {rows.length === 1 ? 'row' : 'rows'}
                 </span>
               </div>
 
               {/* Batch defaults panel */}
-              <div style={{ background: 'var(--bg)', border: '2px solid var(--border)', padding: '16px 20px', marginBottom: 16 }}>
-                <p style={{ margin: '0 0 12px', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
-                  Batch defaults — apply to all rows, then override per-row below
+              <div className="ct-batch-panel">
+                <p className="ct-batch-title">
+                  Batch defaults — set values below, then apply to all rows or only the blanks
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={label}>Campaign</label>
-                    <input type="text" value={bCampaign} onChange={e => setBCampaign(e.target.value)} style={inputBase} onFocus={onFocus} onBlur={onBlur} />
-                  </div>
                   {[
                     { lbl: 'Media Type',   val: bMediaType, set: setBMediaType, opts: MEDIA_TYPES },
                     { lbl: 'Key Messages', val: bKeyMsg,    set: setBKeyMsg,    opts: YES_NO },
@@ -492,42 +602,42 @@ export default function CoverageTrackerPage() {
                     { lbl: 'CTA',          val: bCta,       set: setBCta,       opts: YES_NO },
                   ].map(({ lbl, val, set, opts }) => (
                     <div key={lbl} style={{ minWidth: 130 }}>
-                      <label style={label}>{lbl}</label>
-                      <select value={val} onChange={e => set(e.target.value)} style={selectBase} onFocus={onFocus} onBlur={onBlur}>
+                      <label className="ct-label">{lbl}</label>
+                      <select className="ct-select" value={val} onChange={e => set(e.target.value)}>
                         <option value="">— keep —</option>
                         {opts.map(o => <option key={o} value={o}>{o}</option>)}
                       </select>
                     </div>
                   ))}
-                  <div>
-                    <button onClick={applyBatch} style={{ ...btn, background: 'var(--accent)', color: 'var(--accent-fg)' }}>Apply to all</button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="ct-btn ct-btn-primary"   onClick={() => applyBatch('all')}>Apply to All</button>
+                    <button type="button" className="ct-btn ct-btn-secondary" onClick={() => applyBatch('blanks')}>Apply to Blanks</button>
                   </div>
                 </div>
               </div>
 
-              {/* Preview table */}
+              {/* Preview table — Campaign column removed (now set once in Setup) */}
               <div style={{ overflowX: 'auto', border: '2px solid var(--border)', maxHeight: 480, overflowY: 'auto' }}>
-                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1500, fontSize: 12 }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1400, fontSize: 12 }}>
                   <thead>
                     <tr>
                       {[
-                        { h: '#',         editable: false },
-                        { h: 'DATE',      editable: false },
-                        { h: 'CAMPAIGN',  editable: true  },
+                        { h: '#',           editable: false },
+                        { h: 'DATE',        editable: false },
                         { h: 'PUBLICATION', editable: false },
-                        { h: 'COUNTRY',   editable: false },
-                        { h: 'MEDIA TYPE', editable: true },
-                        { h: 'FORMAT',    editable: true  },
-                        { h: 'HEADLINE',  editable: false },
-                        { h: 'REACH',     editable: false },
-                        { h: 'AVE',       editable: false },
-                        { h: 'PR VALUE',  editable: false },
-                        { h: 'SENTIMENT', editable: true  },
-                        { h: 'KEY MSGS',  editable: true  },
-                        { h: 'SPOKES',    editable: true  },
-                        { h: 'IMAGE',     editable: true  },
-                        { h: 'CTA',       editable: true  },
-                        { h: 'LINK',      editable: false },
+                        { h: 'COUNTRY',     editable: false },
+                        { h: 'MEDIA TYPE',  editable: true  },
+                        { h: 'FORMAT',      editable: true  },
+                        { h: 'HEADLINE',    editable: false },
+                        { h: 'REACH',       editable: false },
+                        { h: 'AVE',         editable: false },
+                        { h: 'PR VALUE',    editable: false },
+                        { h: 'SENTIMENT',   editable: true  },
+                        { h: 'KEY MSGS',    editable: true  },
+                        { h: 'SPOKES',      editable: true  },
+                        { h: 'IMAGE',       editable: true  },
+                        { h: 'CTA',         editable: true  },
+                        { h: 'LINK',        editable: false },
                       ].map(({ h, editable }) => (
                         <th key={h} style={{
                           padding: '8px 7px', textAlign: 'left', fontSize: 10, fontWeight: 700,
@@ -545,19 +655,16 @@ export default function CoverageTrackerPage() {
                       <tr key={idx} style={{ background: idx % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
                         <td style={{ padding: '4px 7px', color: 'var(--text-muted)', fontSize: 11, textAlign: 'center' }}>{idx + 1}</td>
                         <td style={{ padding: '4px 7px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{r.date}</td>
-                        <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                          <input type="text" value={r.campaign} onChange={e => updateRow(idx, 'campaign', e.target.value)} style={{ ...inputBase, minWidth: 120, padding: '3px 6px', fontSize: 12 }} onFocus={onFocus} onBlur={onBlur} />
-                        </td>
                         <td style={{ padding: '4px 7px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{r.publication}</td>
                         <td style={{ padding: '4px 7px', color: 'var(--text)' }}>{r.country}</td>
                         <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                          <select value={r.mediaType} onChange={e => updateRow(idx, 'mediaType', e.target.value)} style={{ ...selectBase, fontSize: 12, padding: '3px 6px' }} onFocus={onFocus} onBlur={onBlur}>
+                          <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r.mediaType} onChange={e => updateRow(idx, 'mediaType', e.target.value)}>
                             <option value="">—</option>
                             {MEDIA_TYPES.map(o => <option key={o}>{o}</option>)}
                           </select>
                         </td>
                         <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                          <select value={r.mediaFormat} onChange={e => updateRow(idx, 'mediaFormat', e.target.value)} style={{ ...selectBase, fontSize: 12, padding: '3px 6px' }} onFocus={onFocus} onBlur={onBlur}>
+                          <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r.mediaFormat} onChange={e => updateRow(idx, 'mediaFormat', e.target.value)}>
                             {MEDIA_FORMATS.map(o => <option key={o}>{o}</option>)}
                           </select>
                         </td>
@@ -566,14 +673,14 @@ export default function CoverageTrackerPage() {
                         <td style={{ padding: '4px 7px', color: 'var(--text)', textAlign: 'right', whiteSpace: 'nowrap' }}>{r.ave !== '' ? Number(r.ave).toFixed(2) : '—'}</td>
                         <td style={{ padding: '4px 7px', color: 'var(--text)', textAlign: 'right', whiteSpace: 'nowrap' }}>{r.prValue !== '' ? Number(r.prValue).toFixed(2) : '—'}</td>
                         <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                          <select value={r.sentiment} onChange={e => updateRow(idx, 'sentiment', e.target.value)} style={{ ...selectBase, fontSize: 12, padding: '3px 6px' }} onFocus={onFocus} onBlur={onBlur}>
+                          <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r.sentiment} onChange={e => updateRow(idx, 'sentiment', e.target.value)}>
                             <option value="">—</option>
                             {SENTIMENTS.map(o => <option key={o}>{o}</option>)}
                           </select>
                         </td>
                         {(['keyMsg', 'spokes', 'image', 'cta'] as const).map(field => (
                           <td key={field} style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                            <select value={r[field]} onChange={e => updateRow(idx, field, e.target.value)} style={{ ...selectBase, fontSize: 12, padding: '3px 6px' }} onFocus={onFocus} onBlur={onBlur}>
+                            <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r[field]} onChange={e => updateRow(idx, field, e.target.value)}>
                               <option value="">—</option>
                               {YES_NO.map(o => <option key={o}>{o}</option>)}
                             </select>
@@ -589,36 +696,151 @@ export default function CoverageTrackerPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-                <button onClick={() => setStep(2)} style={{ ...btn, background: 'var(--bg)', color: 'var(--text-muted)', border: '2px solid var(--border)' }}>← Back</button>
-                <button onClick={() => setStep(4)} style={{ ...btn, background: 'var(--accent)', color: 'var(--accent-fg)' }}>Submit →</button>
+                <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(2)}>← Back</button>
+                <button type="button" className="ct-btn ct-btn-primary"   onClick={() => setStep(4)}>Configure destination →</button>
               </div>
             </div>
           )}
 
-          {/* ── Step 4: Submit ── */}
+          {/* ── Step 4: Destination ── */}
           {step === 4 && (
-            <div style={card}>
-              <p style={{ margin: '0 0 20px', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text)' }}>
-                Submit to Google Sheets
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <div className="ct-card">
+              <p className="ct-card-title">Configure Destination</p>
+
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {(['existing', 'new'] as DestMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={`ct-btn ct-btn-toggle${destMode === mode ? ' is-active' : ''}`}
+                    onClick={() => setDestMode(mode)}
+                  >
+                    {mode === 'existing' ? 'Append to existing sheet' : 'Create new spreadsheet'}
+                  </button>
+                ))}
+              </div>
+
+              {destMode === 'existing' ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                  <div style={{ flex: 1, minWidth: 300 }}>
+                    <label className="ct-label">Google Sheet URL</label>
+                    <input type="text" className="ct-input" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" />
+                  </div>
+                  <div style={{ minWidth: 200 }}>
+                    <label className="ct-label">Tab Name</label>
+                    <input type="text" className="ct-input" value={sheetTab} onChange={e => setSheetTab(e.target.value)} />
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <label className="ct-label">Spreadsheet Title</label>
+                    <input type="text" className="ct-input" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. NFL Coverage Tracker 2026" />
+                  </div>
+                  <div style={{ minWidth: 200 }}>
+                    <label className="ct-label">Tab Name</label>
+                    <input type="text" className="ct-input" value={newTab} onChange={e => setNewTab(e.target.value)} />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 24 }}>
+                <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(3)}>← Back</button>
                 <button
-                  onClick={doSubmit}
-                  disabled={submitting}
-                  style={{ ...btn, background: submitting ? 'var(--border)' : 'var(--accent)', color: submitting ? 'var(--text-muted)' : 'var(--accent-fg)', cursor: submitting ? 'not-allowed' : 'pointer' }}
+                  type="button"
+                  className="ct-btn ct-btn-primary"
+                  disabled={submitting || (destMode === 'existing' && !sheetUrl.trim())}
+                  onClick={() => setShowConfirm(true)}
                 >
-                  {submitting ? 'Submitting…' : destMode === 'new' ? 'Create Spreadsheet & Add Rows' : 'Append to Google Sheet'}
+                  {destMode === 'new' ? 'Create Spreadsheet & Add Rows' : 'Append to Google Sheet'}
                 </button>
                 <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                   {rows.length} {rows.length === 1 ? 'row' : 'rows'} ready
                 </span>
               </div>
               <StatusBanner status={status} />
-              {!submitting && (
-                <button onClick={() => setStep(3)} style={{ ...btn, background: 'transparent', color: 'var(--text-muted)', border: 'none', padding: '8px 0', marginTop: 8, textTransform: 'none', fontSize: 12, fontFamily: 'inherit', letterSpacing: 0 }}>
-                  ← Back to review
+            </div>
+          )}
+
+          {/* ── Step 5: Result (success / failure) ── */}
+          {step === 5 && result && result.ok && (
+            <div className="ct-card" style={{ textAlign: 'center', padding: '44px 24px' }}>
+              <div className="ct-success-circle">✓</div>
+              <h2 className="ct-result-heading">
+                {rows.length === 1 ? 'Coverage Logged!' : `${rows.length} Rows Logged!`}
+              </h2>
+              <p className="ct-result-detail">
+                {destMode === 'existing'
+                  ? <>Appended to <strong>{sheetTab}</strong> in your existing sheet.</>
+                  : <>Created <strong>{newTitle || 'Coverage Tracker'}</strong> with tab <strong>{newTab}</strong>.</>}
+              </p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {result.sheetUrl && (
+                  <a
+                    href={result.sheetUrl}
+                    target="_blank"
+                    rel="noopener"
+                    className="ct-btn ct-btn-secondary"
+                  >
+                    Open Spreadsheet ↗
+                  </a>
+                )}
+                <button type="button" className="ct-btn ct-btn-primary" onClick={resetWizard}>
+                  Submit Another Coverage Update
                 </button>
-              )}
+              </div>
+            </div>
+          )}
+
+          {step === 5 && result && !result.ok && (
+            <div className="ct-card" style={{ textAlign: 'center', padding: '44px 24px' }}>
+              <div className="ct-failure-circle">✕</div>
+              <h2 className="ct-result-heading">Submission Failed</h2>
+              <p className="ct-result-detail">{result.error}</p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="ct-btn ct-btn-secondary"
+                  onClick={() => { setResult(null); setStep(3) }}
+                >
+                  ← Back to Review
+                </button>
+                <button
+                  type="button"
+                  className="ct-btn ct-btn-primary"
+                  onClick={() => { setResult(null); setStep(4) }}
+                >
+                  Re-check Destination &amp; Retry
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Submit confirmation modal ── */}
+          {showConfirm && (
+            <div
+              className="ct-modal-backdrop"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="ct-confirm-title"
+              onClick={e => { if (e.target === e.currentTarget) setShowConfirm(false) }}
+            >
+              <div className="ct-modal">
+                <h3 id="ct-confirm-title" className="ct-modal-title">Confirm Submission</h3>
+                <p className="ct-modal-body">
+                  Submit <strong>{rows.length}</strong> {rows.length === 1 ? 'row' : 'rows'} to the {destSummary}?
+                  <br /><br />
+                  This will {destMode === 'existing' ? 'append to the live sheet' : 'create a new Google Sheet on your Drive'}.
+                </p>
+                <div className="ct-modal-actions">
+                  <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setShowConfirm(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="ct-btn ct-btn-primary" onClick={doSubmit} disabled={submitting}>
+                    {submitting ? 'Submitting…' : 'Confirm & Submit'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </>

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Resend } from 'resend'
 import { revalidatePath } from 'next/cache'
 import { UsersClient, type UserRow } from './UsersClient'
+import { TOOL_SLUGS } from '@/lib/tools'
 
 // ── Server Actions ────────────────────────────────────────────────
 
@@ -65,7 +66,7 @@ async function updateToolAccess(formData: FormData) {
   if (!user || user.user_metadata?.role !== 'admin') return
 
   const userId        = formData.get('userId') as string
-  const selectedTools = formData.getAll('tools') as string[]
+  const selectedTools = (formData.getAll('tools') as string[]).filter(s => TOOL_SLUGS.includes(s))
 
   const service = createServiceClient()
   await service.from('tool_access').delete().eq('user_id', userId)

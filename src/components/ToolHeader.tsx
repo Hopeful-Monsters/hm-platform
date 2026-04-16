@@ -25,9 +25,15 @@ interface ToolHeaderProps {
   toolName: string
   toolSlug: string
   tabs?: Tab[]
+  /**
+   * Optional slot rendered in the tab area — use when a tool wants
+   * something other than nav links (e.g. a step indicator for a wizard).
+   * When provided, `tabs` is ignored.
+   */
+  children?: React.ReactNode
 }
 
-export default function ToolHeader({ toolName, tabs = [] }: ToolHeaderProps) {
+export default function ToolHeader({ toolName, tabs = [], children }: ToolHeaderProps) {
   const pathname = usePathname()
 
   return (
@@ -68,8 +74,12 @@ export default function ToolHeader({ toolName, tabs = [] }: ToolHeaderProps) {
         </span>
       </div>
 
-      {/* Tab links */}
-      {tabs.length > 0 && (
+      {/* Custom slot (e.g. wizard step indicator) takes precedence over tabs */}
+      {children ? (
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          {children}
+        </div>
+      ) : tabs.length > 0 && (
         <nav style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
           {tabs.map(tab => {
             const isActive = tab.href === pathname

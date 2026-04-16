@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import ToolHeader from '@/components/ToolHeader'
+import { WizardProvider } from './_components/WizardContext'
+import StepIndicator from './_components/StepIndicator'
+import './coverage-tracker.css'
 
 export const metadata: Metadata = {
   title:       'Coverage Tracker',
@@ -15,9 +18,8 @@ export const metadata: Metadata = {
  * Access gating: proxy.ts handles this before we get here.
  * These checks are defense-in-depth only — no extra DB call needed.
  *
- * Tabs: add entries here as new pages are built.
- *   { href: '/coverage-tracker/history', label: 'History' }  ← future
- *   { href: '/coverage-tracker/reports', label: 'Reports' }  ← future
+ * Sub-nav: the 4-step wizard indicator replaces the tab links — the old
+ * "Upload" tab was redundant because the wizard already starts on upload.
  */
 export default async function CoverageTrackerLayout({
   children,
@@ -32,6 +34,7 @@ export default async function CoverageTrackerLayout({
 
   return (
     <div
+      data-tool="coverage-tracker"
       style={{
         minHeight:      'calc(100vh - var(--nav-h))',
         background:     'var(--bg)',
@@ -39,17 +42,14 @@ export default async function CoverageTrackerLayout({
         flexDirection:  'column',
       }}
     >
-      <ToolHeader
-        toolName="Coverage Tracker"
-        toolSlug="coverage-tracker"
-        tabs={[
-          { href: '/coverage-tracker', label: 'Upload' },
-          // { href: '/coverage-tracker/history', label: 'History' },
-        ]}
-      />
-      <div style={{ flex: 1 }}>
-        {children}
-      </div>
+      <WizardProvider>
+        <ToolHeader toolName="Coverage Tracker" toolSlug="coverage-tracker">
+          <StepIndicator />
+        </ToolHeader>
+        <div style={{ flex: 1 }}>
+          {children}
+        </div>
+      </WizardProvider>
     </div>
   )
 }

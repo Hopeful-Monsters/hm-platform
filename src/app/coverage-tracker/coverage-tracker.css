@@ -1,0 +1,366 @@
+/**
+ * Coverage Tracker — HM-themed styles
+ *
+ * All rules are scoped to [data-tool="coverage-tracker"] so they don't
+ * bleed into other pages. Mirrors the expenses-manager pattern for
+ * shared components (drop-zone, buttons, success screen).
+ */
+
+[data-tool="coverage-tracker"] {
+  font-size: 14px;
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-main {
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* ── Step indicator (rendered inside sub-nav) ───────────────────── */
+
+[data-tool="coverage-tracker"] .ct-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  padding: 0 16px;
+  overflow-x: auto;
+}
+
+[data-tool="coverage-tracker"] .ct-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+[data-tool="coverage-tracker"] .ct-step.is-done    { color: #00c864; }
+[data-tool="coverage-tracker"] .ct-step.is-active  { color: var(--accent); }
+
+[data-tool="coverage-tracker"] .ct-step-num {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--border);
+  color: var(--text-muted);
+}
+
+[data-tool="coverage-tracker"] .ct-step.is-done .ct-step-num   { background: #00c864;       color: #000; }
+[data-tool="coverage-tracker"] .ct-step.is-active .ct-step-num { background: var(--accent); color: #000; }
+
+[data-tool="coverage-tracker"] .ct-step-connector {
+  width: 28px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+}
+
+[data-tool="coverage-tracker"] .ct-card-title {
+  margin: 0 0 16px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+
+[data-tool="coverage-tracker"] .ct-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+[data-tool="coverage-tracker"] .ct-input,
+[data-tool="coverage-tracker"] .ct-select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+[data-tool="coverage-tracker"] .ct-input:focus,
+[data-tool="coverage-tracker"] .ct-select:focus { border-color: var(--accent); }
+
+/* ── Buttons ────────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-btn {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 9px 20px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+[data-tool="coverage-tracker"] .ct-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+[data-tool="coverage-tracker"] .ct-btn-primary       { background: var(--accent); color: var(--accent-fg); }
+[data-tool="coverage-tracker"] .ct-btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+[data-tool="coverage-tracker"] .ct-btn-secondary     { background: var(--bg); color: var(--text-muted); border: 2px solid var(--border); }
+[data-tool="coverage-tracker"] .ct-btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+
+[data-tool="coverage-tracker"] .ct-btn-ghost        { background: transparent; color: var(--text-muted); padding: 8px 10px; letter-spacing: 0.04em; font-size: 12px; }
+[data-tool="coverage-tracker"] .ct-btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+
+[data-tool="coverage-tracker"] .ct-btn-toggle       { background: var(--bg); color: var(--text-muted); border: 2px solid var(--border); }
+[data-tool="coverage-tracker"] .ct-btn-toggle:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+[data-tool="coverage-tracker"] .ct-btn-toggle.is-active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+[data-tool="coverage-tracker"] .ct-btn-success      { background: #16a34a; color: white; }
+[data-tool="coverage-tracker"] .ct-btn-success:hover:not(:disabled) { background: #15803d; }
+
+[data-tool="coverage-tracker"] .ct-btn-danger       { background: var(--pink); color: #000; }
+[data-tool="coverage-tracker"] .ct-btn-danger:hover:not(:disabled) { opacity: 0.88; }
+
+[data-tool="coverage-tracker"] .ct-btn-add {
+  background: transparent;
+  border: 2px dashed var(--border);
+  color: var(--text-muted);
+  padding: 7px 14px;
+  font-size: 11px;
+}
+[data-tool="coverage-tracker"] .ct-btn-add:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+
+/* ── Drop zone (mirrors expenses-manager) ───────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-drop-zone {
+  border: 2px dashed var(--border-2);
+  padding: 52px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+[data-tool="coverage-tracker"] .ct-drop-zone:hover,
+[data-tool="coverage-tracker"] .ct-drop-zone.is-over {
+  border-color: var(--accent);
+  background: rgba(255, 230, 0, 0.04);
+}
+
+[data-tool="coverage-tracker"] .ct-drop-icon { font-size: 32px; margin-bottom: 10px; }
+[data-tool="coverage-tracker"] .ct-drop-text {
+  margin: 0 0 6px;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+}
+[data-tool="coverage-tracker"] .ct-drop-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Status banner ──────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-banner {
+  padding: 11px 14px;
+  font-size: 13px;
+  margin-top: 14px;
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+[data-tool="coverage-tracker"] .ct-banner.info    { background: rgba(255,230,0,0.06);  border-left-color: var(--accent); color: var(--accent); }
+[data-tool="coverage-tracker"] .ct-banner.success { background: rgba(0,200,100,0.08);  border-left-color: #00c864;       color: #00c864; }
+[data-tool="coverage-tracker"] .ct-banner.error   { background: rgba(255,62,191,0.08); border-left-color: var(--pink);   color: var(--pink); }
+
+/* ── Setup step — repeating fields ──────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-tool="coverage-tracker"] .ct-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-tool="coverage-tracker"] .ct-field-row .ct-input { flex: 1; }
+
+[data-tool="coverage-tracker"] .ct-remove-btn {
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+[data-tool="coverage-tracker"] .ct-remove-btn:hover:not(:disabled) { border-color: var(--pink); color: var(--pink); }
+
+[data-tool="coverage-tracker"] .ct-op-toggle {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-left: 12px;
+}
+[data-tool="coverage-tracker"] .ct-op-toggle .ct-btn-toggle {
+  padding: 4px 10px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+[data-tool="coverage-tracker"] .ct-op-toggle .ct-btn-toggle + .ct-btn-toggle { margin-left: -2px; }
+
+/* ── Review step — batch defaults panel ─────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-batch-panel {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+
+[data-tool="coverage-tracker"] .ct-batch-title {
+  margin: 0 0 12px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* ── Modal ──────────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+[data-tool="coverage-tracker"] .ct-modal {
+  background: var(--surface);
+  border: 2px solid var(--border-2);
+  padding: 28px 32px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-tool="coverage-tracker"] .ct-modal-title {
+  margin: 0 0 10px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+[data-tool="coverage-tracker"] .ct-modal-body {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+[data-tool="coverage-tracker"] .ct-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ── Success / Failure screen (mirrors expenses-manager) ────────── */
+
+[data-tool="coverage-tracker"] .ct-success-circle {
+  width: 64px;
+  height: 64px;
+  background: rgba(22,163,74,0.12);
+  border: 2px solid rgba(22,163,74,0.5);
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 16px;
+}
+
+[data-tool="coverage-tracker"] .ct-failure-circle {
+  width: 64px;
+  height: 64px;
+  background: rgba(255,62,191,0.10);
+  border: 2px solid var(--pink);
+  color: var(--pink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 16px;
+}
+
+[data-tool="coverage-tracker"] .ct-result-heading {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+[data-tool="coverage-tracker"] .ct-result-detail {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
