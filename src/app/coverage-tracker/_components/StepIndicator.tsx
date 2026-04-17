@@ -2,11 +2,11 @@
 
 import { useWizard } from './WizardContext'
 
-const STEPS = ['Upload CSV', 'Setup', 'Review Rows', 'Destination'] as const
+const STEPS = ['Upload CSV', 'Setup', 'Review & Submit'] as const
 
 /**
- * Renders the 4-step wizard indicator inside the ToolHeader's tab slot.
- * Step 5 (result) is the post-submit outcome screen and doesn't appear here.
+ * Renders the 3-step wizard indicator inside the ToolHeader's tab slot.
+ * Step 4 (result) is the post-submit outcome screen and doesn't appear here.
  */
 export default function StepIndicator() {
   const { step } = useWizard()
@@ -14,7 +14,7 @@ export default function StepIndicator() {
   return (
     <div className="ct-steps">
       {STEPS.map((label, i) => {
-        const n = (i + 1) as 1 | 2 | 3 | 4
+        const n = (i + 1) as 1 | 2 | 3
         const isDone   = step > n
         const isActive = step === n
         const cls      = `ct-step${isDone ? ' is-done' : ''}${isActive ? ' is-active' : ''}`

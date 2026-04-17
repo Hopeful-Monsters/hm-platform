@@ -32,12 +32,22 @@ type Status    = { type: 'info' | 'success' | 'error'; message: string } | null
 type Result    = { ok: true; sheetUrl?: string } | { ok: false; error: string }
 
 type SetupState = {
-  campaign:     string
-  keyMessages:  string[]
-  keyMsgOp:     Operator
-  spokesperson: string
-  ctas:         string[]
-  ctaOp:        Operator
+  campaign:       string
+  // Key messages — per-item operators: ops[i] is the operator BETWEEN item i and item i+1
+  keyMessages:    string[]
+  keyMsgOps:      Operator[]   // length === keyMessages.length - 1
+  // Spokespersons — same per-item operator pattern
+  spokespersons:  string[]
+  spokesOps:      Operator[]   // length === spokespersons.length - 1
+  // CTAs — same per-item operator pattern
+  ctas:           string[]
+  ctaOps:         Operator[]   // length === ctas.length - 1
+  // Destination
+  destMode:       DestMode
+  sheetUrl:       string
+  sheetTab:       string
+  newTitle:       string
+  newTab:         string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,7 +57,25 @@ type SetupState = {
 const MEDIA_TYPES   = ['Metro', 'Regional', 'National', 'Lifestyle', 'Sports', 'Marketing Trade']
 const MEDIA_FORMATS = ['ONLINE', 'PRINT', 'TV', 'RADIO', 'SOCIAL MEDIA', 'PODCAST']
 const YES_NO        = ['YES', 'NO']
-const SENTIMENTS    = ['POSITIVE', 'NEUTRAL', 'NEGATIVE']
+const SENTIMENTS    = ['POSITIVE', 'NEGATIVE']
+
+const DEFAULT_TAB   = '2026 Coverage Tracker'
+
+/** Initial/reset value for SetupState */
+const EMPTY_SETUP: SetupState = {
+  campaign:      '',
+  keyMessages:   [''],
+  keyMsgOps:     [],
+  spokespersons: [''],
+  spokesOps:     [],
+  ctas:          [''],
+  ctaOps:        [],
+  destMode:      'existing',
+  sheetUrl:      '',
+  sheetTab:      DEFAULT_TAB,
+  newTitle:      '',
+  newTab:        DEFAULT_TAB,
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CSV parsing & field mapping
@@ -85,8 +113,11 @@ function deriveFormat(sourceType: string): string {
 }
 
 function fmtSentiment(s: string): string {
-  const map: Record<string, string> = { positive: 'POSITIVE', neutral: 'NEUTRAL', negative: 'NEGATIVE' }
-  return map[(s ?? '').toLowerCase()] ?? (s ? s.toUpperCase() : '')
+  const lower = (s ?? '').toLowerCase()
+  // Neutral is treated as Positive — only POSITIVE / NEGATIVE exist in the tracker
+  if (lower === 'positive' || lower === 'neutral') return 'POSITIVE'
+  if (lower === 'negative')                        return 'NEGATIVE'
+  return s ? s.toUpperCase() : ''
 }
 
 function parseAVE(v: string): string {
@@ -130,6 +161,82 @@ function rowToArray(r: CoverageRow): (string | number)[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// RepeatingField — shared component for Key Messages, Spokespersons, CTAs
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Renders a list of text inputs where:
+ *   - Items can be added/removed
+ *   - A per-item AND/OR toggle appears BETWEEN adjacent items (ops[i] sits
+ *     between items[i] and items[i+1]), only visible when there are ≥2 items
+ *   - The "Add" button appears once the last item has content
+ */
+function RepeatingField({
+  label, items, ops, placeholder,
+  onUpdate, onAdd, onRemove, onSetOp,
+}: {
+  label:       string
+  items:       string[]
+  ops:         Operator[]
+  placeholder: string
+  onUpdate:    (idx: number, value: string) => void
+  onAdd:       () => void
+  onRemove:    (idx: number) => void
+  onSetOp:     (idx: number, op: Operator) => void
+}) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label className="ct-label">{label}</label>
+      <div className="ct-field-group">
+        {items.map((item, i) => (
+          <div key={i}>
+            {/* AND/OR toggle ABOVE this item (between items[i-1] and items[i]) */}
+            {i > 0 && (
+              <div className="ct-op-toggle" style={{ marginBottom: 6 }}>
+                {(['AND', 'OR'] as Operator[]).map(op => (
+                  <button
+                    key={op}
+                    type="button"
+                    className={`ct-btn ct-btn-toggle${ops[i - 1] === op ? ' is-active' : ''}`}
+                    onClick={() => onSetOp(i - 1, op)}
+                  >
+                    {op}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="ct-field-row">
+              <input
+                type="text"
+                className="ct-input"
+                value={item}
+                onChange={e => onUpdate(i, e.target.value)}
+                placeholder={`${placeholder} ${i + 1}`}
+              />
+              {items.length > 1 && (
+                <button
+                  type="button"
+                  className="ct-remove-btn"
+                  onClick={() => onRemove(i)}
+                  aria-label={`Remove ${label} ${i + 1}`}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {items[items.length - 1].trim() !== '' && (
+        <button type="button" className="ct-btn ct-btn-add" onClick={onAdd} style={{ marginTop: 8 }}>
+          + Add another {label.replace(/\(s\)$/, '').replace(/\(.*\)$/, '').trim().toLowerCase()}
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // StatusBanner
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -153,6 +260,7 @@ export default function CoverageTrackerPage() {
 
   // ── Drive connection ──────────────────────────────────────────
   const [driveStatus, setDriveStatus] = useState<'unknown' | 'connected' | 'disconnected' | 'connecting'>('unknown')
+
 
   useEffect(() => {
     fetch('/api/drive/status')
@@ -190,11 +298,13 @@ export default function CoverageTrackerPage() {
 
   // ── Wizard state ──────────────────────────────────────────────
   const [rows,        setRows]        = useState<CoverageRow[]>([])
-  const [destMode,    setDestMode]    = useState<DestMode>('existing')
   const [status,      setStatus]      = useState<Status>(null)
   const [submitting,  setSubmitting]  = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [result,      setResult]      = useState<Result | null>(null)
+
+  // Setup + destination combined state
+  const [setup, setSetup] = useState<SetupState>(EMPTY_SETUP)
 
   // Esc closes the confirmation modal. Guard with `submitting` so an in-flight
   // submit can't be dismissed by a stray keypress.
@@ -206,22 +316,6 @@ export default function CoverageTrackerPage() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [showConfirm, submitting])
-
-  // Destination fields (shareEmail removed — deprecated)
-  const [sheetUrl, setSheetUrl] = useState('')
-  const [sheetTab, setSheetTab] = useState('2026 Coverage Tracker')
-  const [newTitle, setNewTitle] = useState('')
-  const [newTab,   setNewTab]   = useState('2026 Coverage Tracker')
-
-  // Setup state (new step 2)
-  const [setup, setSetup] = useState<SetupState>({
-    campaign:     '',
-    keyMessages:  [''],
-    keyMsgOp:     'AND',
-    spokesperson: '',
-    ctas:         [''],
-    ctaOp:        'AND',
-  })
 
   // Batch defaults (review step)
   const [bMediaType, setBMediaType] = useState('')
@@ -278,27 +372,56 @@ export default function CoverageTrackerPage() {
     }))
   }
 
-  // ── Setup helpers ─────────────────────────────────────────────
-  function updateKeyMsg(idx: number, value: string) {
-    setSetup(s => ({ ...s, keyMessages: s.keyMessages.map((m, i) => i === idx ? value : m) }))
+  // ── Setup helpers — generic repeating-field factory ──────────
+  /**
+   * Returns CRUD helpers for a repeating field that has per-item AND/OR
+   * operators between adjacent entries.
+   *
+   *   items  = the string array (e.g. keyMessages)
+   *   ops    = operator array of length items.length - 1
+   *            ops[i] is the operator BETWEEN items[i] and items[i+1]
+   *
+   * When an item is added, a default 'AND' operator is appended to ops.
+   * When an item is removed at index i, ops[i-1] (or ops[i]) is also removed
+   * so the lengths stay in sync.
+   */
+  function makeRepeatingHelpers<K extends 'keyMessages' | 'spokespersons' | 'ctas'>(
+    itemsKey: K,
+    opsKey:   K extends 'keyMessages' ? 'keyMsgOps' : K extends 'spokespersons' ? 'spokesOps' : 'ctaOps',
+  ) {
+    return {
+      updateItem(idx: number, value: string) {
+        setSetup(s => ({ ...s, [itemsKey]: (s[itemsKey] as string[]).map((v, i) => i === idx ? value : v) }))
+      },
+      addItem() {
+        setSetup(s => ({
+          ...s,
+          [itemsKey]: [...(s[itemsKey] as string[]), ''],
+          [opsKey]:   [...(s[opsKey]   as Operator[]), 'AND'],
+        }))
+      },
+      removeItem(idx: number) {
+        setSetup(s => {
+          const items = (s[itemsKey] as string[]).filter((_, i) => i !== idx)
+          // Remove the operator that was between this item and its neighbour.
+          // If removing first item, remove ops[0]; otherwise remove ops[idx-1].
+          const ops   = (s[opsKey] as Operator[]).filter((_, i) => i !== Math.max(0, idx - 1))
+          return { ...s, [itemsKey]: items, [opsKey]: ops }
+        })
+      },
+      setOp(idx: number, op: Operator) {
+        // idx = position in ops array (between items[idx] and items[idx+1])
+        setSetup(s => ({
+          ...s,
+          [opsKey]: (s[opsKey] as Operator[]).map((o, i) => i === idx ? op : o),
+        }))
+      },
+    }
   }
-  function addKeyMsg() {
-    setSetup(s => ({ ...s, keyMessages: [...s.keyMessages, ''] }))
-  }
-  function removeKeyMsg(idx: number) {
-    // UI guards this with length > 1, so we won't empty the list here.
-    setSetup(s => ({ ...s, keyMessages: s.keyMessages.filter((_, i) => i !== idx) }))
-  }
-  function updateCta(idx: number, value: string) {
-    setSetup(s => ({ ...s, ctas: s.ctas.map((c, i) => i === idx ? value : c) }))
-  }
-  function addCta() {
-    setSetup(s => ({ ...s, ctas: [...s.ctas, ''] }))
-  }
-  function removeCta(idx: number) {
-    // UI guards this with length > 1, so we won't empty the list here.
-    setSetup(s => ({ ...s, ctas: s.ctas.filter((_, i) => i !== idx) }))
-  }
+
+  const keyMsgHelpers = makeRepeatingHelpers('keyMessages', 'keyMsgOps')
+  const spokesHelpers = makeRepeatingHelpers('spokespersons', 'spokesOps')
+  const ctaHelpers    = makeRepeatingHelpers('ctas', 'ctaOps')
 
   // ── Submit ────────────────────────────────────────────────────
   async function doSubmit() {
@@ -310,64 +433,63 @@ export default function CoverageTrackerPage() {
     const stampedRows = rows.map(r => ({ ...r, campaign: setup.campaign }))
     const rowArrays   = stampedRows.map(rowToArray)
 
-    // Non-empty setup arrays; operators persisted for future Gemini use
-    const cleanKeyMessages = setup.keyMessages.map(m => m.trim()).filter(Boolean)
-    const cleanCtas        = setup.ctas.map(c => c.trim()).filter(Boolean)
+    // Clean setup arrays; per-item operators passed for downstream Gemini use
+    const cleanKeyMessages   = setup.keyMessages.map(m => m.trim()).filter(Boolean)
+    const cleanSpokespersons = setup.spokespersons.map(s => s.trim()).filter(Boolean)
+    const cleanCtas          = setup.ctas.map(c => c.trim()).filter(Boolean)
+
+    // Shared payload fragment
+    const setupPayload = {
+      campaign:              setup.campaign   || undefined,
+      keyMessages:           cleanKeyMessages,
+      keyMessageOperators:   setup.keyMsgOps,   // per-item operators between adjacent entries
+      spokespersons:         cleanSpokespersons,
+      spokesOperators:       setup.spokesOps,
+      ctas:                  cleanCtas,
+      ctaOperators:          setup.ctaOps,
+    }
 
     try {
-      if (destMode === 'existing') {
-        const m = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+      if (setup.destMode === 'existing') {
+        const m = setup.sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
         if (!m) throw new Error('URL does not look like a valid Google Sheets link.')
 
-        const res    = await fetch('/api/coverage-tracker/sheets/append', {
+        const res = await fetch('/api/coverage-tracker/sheets/append', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sheetId:            m[1],
-            sheetTab:           sheetTab || '2026 Coverage Tracker',
-            rows:               rowArrays,
-            campaign:           setup.campaign || undefined,
-            // Setup context — for future Gemini integration
-            keyMessages:        cleanKeyMessages,
-            keyMessageOperator: setup.keyMsgOp,
-            spokesperson:       setup.spokesperson || undefined,
-            ctas:               cleanCtas,
-            ctaOperator:        setup.ctaOp,
+            sheetId:  m[1],
+            sheetTab: setup.sheetTab || DEFAULT_TAB,
+            rows:     rowArrays,
+            ...setupPayload,
           }),
         })
-        const result = await res.json() as { error?: string }
-        if (!res.ok) throw new Error(result.error ?? `Server error ${res.status}`)
+        const data = await res.json() as { error?: string }
+        if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
 
-        // Reconstruct sheet URL for the success screen
-        const sheetLink = `https://docs.google.com/spreadsheets/d/${m[1]}/edit`
-        setResult({ ok: true, sheetUrl: sheetLink })
-        setStep(5)
+        setResult({ ok: true, sheetUrl: `https://docs.google.com/spreadsheets/d/${m[1]}/edit` })
+        setStep(4)
 
       } else {
-        const res    = await fetch('/api/coverage-tracker/sheets/create', {
+        const res = await fetch('/api/coverage-tracker/sheets/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sheetTitle:         newTitle || 'Coverage Tracker',
-            sheetTab:           newTab   || '2026 Coverage Tracker',
-            rows:               rowArrays,
-            campaign:           setup.campaign || undefined,
-            keyMessages:        cleanKeyMessages,
-            keyMessageOperator: setup.keyMsgOp,
-            spokesperson:       setup.spokesperson || undefined,
-            ctas:               cleanCtas,
-            ctaOperator:        setup.ctaOp,
+            sheetTitle: setup.newTitle || 'Coverage Tracker',
+            sheetTab:   setup.newTab   || DEFAULT_TAB,
+            rows:       rowArrays,
+            ...setupPayload,
           }),
         })
-        const apiResult = await res.json() as { error?: string; newSheetUrl?: string }
-        if (!res.ok) throw new Error(apiResult.error ?? `Server error ${res.status}`)
+        const data = await res.json() as { error?: string; newSheetUrl?: string }
+        if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
 
-        setResult({ ok: true, sheetUrl: apiResult.newSheetUrl })
-        setStep(5)
+        setResult({ ok: true, sheetUrl: data.newSheetUrl })
+        setStep(4)
       }
     } catch (err: unknown) {
       setResult({ ok: false, error: (err as Error).message })
-      setStep(5)
+      setStep(4)
     } finally {
       setSubmitting(false)
     }
@@ -375,29 +497,17 @@ export default function CoverageTrackerPage() {
 
   function resetWizard() {
     setRows([])
-    setDestMode('existing')
     setStatus(null)
     setResult(null)
-    setSheetUrl('')
-    setSheetTab('2026 Coverage Tracker')
-    setNewTitle('')
-    setNewTab('2026 Coverage Tracker')
-    setSetup({
-      campaign:     '',
-      keyMessages:  [''],
-      keyMsgOp:     'AND',
-      spokesperson: '',
-      ctas:         [''],
-      ctaOp:        'AND',
-    })
+    setSetup(EMPTY_SETUP)
     setBMediaType(''); setBKeyMsg(''); setBSpokes(''); setBImage(''); setBCta('')
     setStep(1)
   }
 
   // ── Destination summary (used in confirmation modal copy) ─────
-  const destSummary = destMode === 'existing'
-    ? `"${sheetTab}" tab of the existing sheet`
-    : `tab "${newTab}" in new sheet "${newTitle || 'Coverage Tracker'}"`
+  const destSummary = setup.destMode === 'existing'
+    ? `"${setup.sheetTab || DEFAULT_TAB}" tab of the existing sheet`
+    : `tab "${setup.newTab || DEFAULT_TAB}" in new sheet "${setup.newTitle || 'Coverage Tracker'}"`
 
   // ─────────────────────────────────────────────────────────────
   // Render
@@ -451,7 +561,7 @@ export default function CoverageTrackerPage() {
             </div>
           )}
 
-          {/* ── Step 2: Setup ── */}
+          {/* ── Step 2: Setup (campaign + destination) ── */}
           {step === 2 && (
             <div className="ct-card">
               <p className="ct-card-title">Campaign Setup</p>
@@ -468,111 +578,118 @@ export default function CoverageTrackerPage() {
                 />
               </div>
 
-              {/* Key messages — repeating + AND/OR */}
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <label className="ct-label" style={{ margin: 0 }}>Key Message(s)</label>
-                  {setup.keyMessages.length > 1 && (
-                    <div className="ct-op-toggle">
-                      {(['AND', 'OR'] as Operator[]).map(op => (
-                        <button
-                          key={op}
-                          type="button"
-                          className={`ct-btn ct-btn-toggle${setup.keyMsgOp === op ? ' is-active' : ''}`}
-                          onClick={() => setSetup(s => ({ ...s, keyMsgOp: op }))}
-                        >
-                          {op}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              {/* Key messages — repeating + per-item AND/OR */}
+              <RepeatingField
+                label="Key Message(s)"
+                items={setup.keyMessages}
+                ops={setup.keyMsgOps}
+                placeholder="Key message"
+                onUpdate={keyMsgHelpers.updateItem}
+                onAdd={keyMsgHelpers.addItem}
+                onRemove={keyMsgHelpers.removeItem}
+                onSetOp={keyMsgHelpers.setOp}
+              />
+
+              {/* Spokespersons — repeating + per-item AND/OR */}
+              <RepeatingField
+                label="Spokesperson(s)"
+                items={setup.spokespersons}
+                ops={setup.spokesOps}
+                placeholder="Spokesperson"
+                onUpdate={spokesHelpers.updateItem}
+                onAdd={spokesHelpers.addItem}
+                onRemove={spokesHelpers.removeItem}
+                onSetOp={spokesHelpers.setOp}
+              />
+
+              {/* CTAs — repeating + per-item AND/OR */}
+              <RepeatingField
+                label="CTA(s)"
+                items={setup.ctas}
+                ops={setup.ctaOps}
+                placeholder="CTA"
+                onUpdate={ctaHelpers.updateItem}
+                onAdd={ctaHelpers.addItem}
+                onRemove={ctaHelpers.removeItem}
+                onSetOp={ctaHelpers.setOp}
+              />
+
+              {/* ── Destination ── */}
+              <div style={{ borderTop: '2px solid var(--border)', margin: '24px 0 20px', paddingTop: 20 }}>
+                <p className="ct-card-title" style={{ marginBottom: 16 }}>Destination</p>
+
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  {(['existing', 'new'] as DestMode[]).map(mode => (
+                    <button
+                      key={mode}
+                      type="button"
+                      className={`ct-btn ct-btn-toggle${setup.destMode === mode ? ' is-active' : ''}`}
+                      onClick={() => setSetup(s => ({ ...s, destMode: mode }))}
+                    >
+                      {mode === 'existing' ? 'Append to existing sheet' : 'Create new spreadsheet'}
+                    </button>
+                  ))}
                 </div>
-                <div className="ct-field-group">
-                  {setup.keyMessages.map((msg, i) => (
-                    <div key={i} className="ct-field-row">
+
+                {setup.destMode === 'existing' ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                    <div style={{ flex: 1, minWidth: 300 }}>
+                      <label className="ct-label">Google Sheet URL</label>
                       <input
                         type="text"
                         className="ct-input"
-                        value={msg}
-                        onChange={e => updateKeyMsg(i, e.target.value)}
-                        placeholder={`Key message ${i + 1}`}
+                        value={setup.sheetUrl}
+                        onChange={e => setSetup(s => ({ ...s, sheetUrl: e.target.value }))}
+                        placeholder="https://docs.google.com/spreadsheets/d/…"
                       />
-                      {setup.keyMessages.length > 1 && (
-                        <button type="button" className="ct-remove-btn" onClick={() => removeKeyMsg(i)} aria-label="Remove key message">✕</button>
-                      )}
                     </div>
-                  ))}
-                </div>
-                {setup.keyMessages[setup.keyMessages.length - 1].trim() !== '' && (
-                  <button type="button" className="ct-btn ct-btn-add" onClick={addKeyMsg} style={{ marginTop: 8 }}>
-                    + Add another key message
-                  </button>
-                )}
-              </div>
-
-              {/* Spokesperson */}
-              <div style={{ marginBottom: 18 }}>
-                <label className="ct-label">Spokesperson</label>
-                <input
-                  type="text"
-                  className="ct-input"
-                  value={setup.spokesperson}
-                  onChange={e => setSetup(s => ({ ...s, spokesperson: e.target.value }))}
-                  placeholder="e.g. Gai Waterhouse"
-                />
-              </div>
-
-              {/* CTAs — repeating + AND/OR */}
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <label className="ct-label" style={{ margin: 0 }}>CTA(s)</label>
-                  {setup.ctas.length > 1 && (
-                    <div className="ct-op-toggle">
-                      {(['AND', 'OR'] as Operator[]).map(op => (
-                        <button
-                          key={op}
-                          type="button"
-                          className={`ct-btn ct-btn-toggle${setup.ctaOp === op ? ' is-active' : ''}`}
-                          onClick={() => setSetup(s => ({ ...s, ctaOp: op }))}
-                        >
-                          {op}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="ct-field-group">
-                  {setup.ctas.map((cta, i) => (
-                    <div key={i} className="ct-field-row">
+                    <div style={{ minWidth: 200 }}>
+                      <label className="ct-label">Tab Name</label>
                       <input
                         type="text"
                         className="ct-input"
-                        value={cta}
-                        onChange={e => updateCta(i, e.target.value)}
-                        placeholder={`CTA ${i + 1}`}
+                        value={setup.sheetTab}
+                        onChange={e => setSetup(s => ({ ...s, sheetTab: e.target.value }))}
                       />
-                      {setup.ctas.length > 1 && (
-                        <button type="button" className="ct-remove-btn" onClick={() => removeCta(i)} aria-label="Remove CTA">✕</button>
-                      )}
                     </div>
-                  ))}
-                </div>
-                {setup.ctas[setup.ctas.length - 1].trim() !== '' && (
-                  <button type="button" className="ct-btn ct-btn-add" onClick={addCta} style={{ marginTop: 8 }}>
-                    + Add another CTA
-                  </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                    <div style={{ flex: 1, minWidth: 240 }}>
+                      <label className="ct-label">Spreadsheet Title</label>
+                      <input
+                        type="text"
+                        className="ct-input"
+                        value={setup.newTitle}
+                        onChange={e => setSetup(s => ({ ...s, newTitle: e.target.value }))}
+                        placeholder="e.g. NFL Coverage Tracker 2026"
+                      />
+                    </div>
+                    <div style={{ minWidth: 200 }}>
+                      <label className="ct-label">Tab Name</label>
+                      <input
+                        type="text"
+                        className="ct-input"
+                        value={setup.newTab}
+                        onChange={e => setSetup(s => ({ ...s, newTab: e.target.value }))}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(1)}>← Back</button>
                 <button
                   type="button"
                   className="ct-btn ct-btn-primary"
                   onClick={() => setStep(3)}
-                  disabled={!setup.campaign.trim()}
+                  disabled={
+                    !setup.campaign.trim() ||
+                    (setup.destMode === 'existing' && !setup.sheetUrl.trim())
+                  }
                 >
-                  Review rows →
+                  Review &amp; Submit →
                 </button>
               </div>
             </div>
@@ -582,7 +699,7 @@ export default function CoverageTrackerPage() {
           {step === 3 && (
             <div className="ct-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                <p className="ct-card-title" style={{ margin: 0 }}>Review &amp; Edit Rows</p>
+                <p className="ct-card-title" style={{ margin: 0 }}>Review &amp; Submit</p>
                 <span style={{ padding: '2px 10px', background: 'var(--accent)', color: 'var(--accent-fg)', fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {rows.length} {rows.length === 1 ? 'row' : 'rows'}
                 </span>
@@ -695,64 +812,15 @@ export default function CoverageTrackerPage() {
                 </table>
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 16 }}>
                 <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(2)}>← Back</button>
-                <button type="button" className="ct-btn ct-btn-primary"   onClick={() => setStep(4)}>Configure destination →</button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Step 4: Destination ── */}
-          {step === 4 && (
-            <div className="ct-card">
-              <p className="ct-card-title">Configure Destination</p>
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                {(['existing', 'new'] as DestMode[]).map(mode => (
-                  <button
-                    key={mode}
-                    type="button"
-                    className={`ct-btn ct-btn-toggle${destMode === mode ? ' is-active' : ''}`}
-                    onClick={() => setDestMode(mode)}
-                  >
-                    {mode === 'existing' ? 'Append to existing sheet' : 'Create new spreadsheet'}
-                  </button>
-                ))}
-              </div>
-
-              {destMode === 'existing' ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                  <div style={{ flex: 1, minWidth: 300 }}>
-                    <label className="ct-label">Google Sheet URL</label>
-                    <input type="text" className="ct-input" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" />
-                  </div>
-                  <div style={{ minWidth: 200 }}>
-                    <label className="ct-label">Tab Name</label>
-                    <input type="text" className="ct-input" value={sheetTab} onChange={e => setSheetTab(e.target.value)} />
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                  <div style={{ flex: 1, minWidth: 240 }}>
-                    <label className="ct-label">Spreadsheet Title</label>
-                    <input type="text" className="ct-input" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. NFL Coverage Tracker 2026" />
-                  </div>
-                  <div style={{ minWidth: 200 }}>
-                    <label className="ct-label">Tab Name</label>
-                    <input type="text" className="ct-input" value={newTab} onChange={e => setNewTab(e.target.value)} />
-                  </div>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 24 }}>
-                <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(3)}>← Back</button>
                 <button
                   type="button"
                   className="ct-btn ct-btn-primary"
-                  disabled={submitting || (destMode === 'existing' && !sheetUrl.trim())}
+                  disabled={submitting}
                   onClick={() => setShowConfirm(true)}
                 >
-                  {destMode === 'new' ? 'Create Spreadsheet & Add Rows' : 'Append to Google Sheet'}
+                  {setup.destMode === 'new' ? 'Create Spreadsheet & Add Rows' : 'Append to Google Sheet'}
                 </button>
                 <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                   {rows.length} {rows.length === 1 ? 'row' : 'rows'} ready
@@ -762,17 +830,17 @@ export default function CoverageTrackerPage() {
             </div>
           )}
 
-          {/* ── Step 5: Result (success / failure) ── */}
-          {step === 5 && result && result.ok && (
+          {/* ── Step 4: Result (success / failure) ── */}
+          {step === 4 && result && result.ok && (
             <div className="ct-card" style={{ textAlign: 'center', padding: '44px 24px' }}>
               <div className="ct-success-circle">✓</div>
               <h2 className="ct-result-heading">
                 {rows.length === 1 ? 'Coverage Logged!' : `${rows.length} Rows Logged!`}
               </h2>
               <p className="ct-result-detail">
-                {destMode === 'existing'
-                  ? <>Appended to <strong>{sheetTab}</strong> in your existing sheet.</>
-                  : <>Created <strong>{newTitle || 'Coverage Tracker'}</strong> with tab <strong>{newTab}</strong>.</>}
+                {setup.destMode === 'existing'
+                  ? <>Appended to <strong>{setup.sheetTab || DEFAULT_TAB}</strong> in your existing sheet.</>
+                  : <>Created <strong>{setup.newTitle || 'Coverage Tracker'}</strong> with tab <strong>{setup.newTab || DEFAULT_TAB}</strong>.</>}
               </p>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                 {result.sheetUrl && (
@@ -792,7 +860,7 @@ export default function CoverageTrackerPage() {
             </div>
           )}
 
-          {step === 5 && result && !result.ok && (
+          {step === 4 && result && !result.ok && (
             <div className="ct-card" style={{ textAlign: 'center', padding: '44px 24px' }}>
               <div className="ct-failure-circle">✕</div>
               <h2 className="ct-result-heading">Submission Failed</h2>
@@ -808,9 +876,9 @@ export default function CoverageTrackerPage() {
                 <button
                   type="button"
                   className="ct-btn ct-btn-primary"
-                  onClick={() => { setResult(null); setStep(4) }}
+                  onClick={() => { setResult(null); setStep(2) }}
                 >
-                  Re-check Destination &amp; Retry
+                  Re-check Setup &amp; Retry
                 </button>
               </div>
             </div>
@@ -830,7 +898,7 @@ export default function CoverageTrackerPage() {
                 <p className="ct-modal-body">
                   Submit <strong>{rows.length}</strong> {rows.length === 1 ? 'row' : 'rows'} to the {destSummary}?
                   <br /><br />
-                  This will {destMode === 'existing' ? 'append to the live sheet' : 'create a new Google Sheet on your Drive'}.
+                  This will {setup.destMode === 'existing' ? 'append to the live sheet' : 'create a new Google Sheet on your Drive'}.
                 </p>
                 <div className="ct-modal-actions">
                   <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setShowConfirm(false)}>
