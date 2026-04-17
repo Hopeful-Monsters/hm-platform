@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { Job } from '../_types'
-import { StepIndicator } from './ExpenseWizard'
+// StepIndicator now lives in the ToolHeader (see layout.tsx) — no inline render needed here.
 
 // ── JobPicker ────────────────────────────────────────────────────
 // Client component — receives SSR-fetched jobs from the server page,
@@ -41,7 +41,6 @@ export default function JobPicker({
 
   return (
     <>
-      <StepIndicator step={1} />
       <div className="card">
       <div className="card-hdr">
         <div className="card-title">Select a Job</div>

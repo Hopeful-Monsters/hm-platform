@@ -29,70 +29,61 @@
   margin-bottom: 16px;
 }
 
-/* ── Step indicator ─────────────────────────────────────────────── */
+/* ── Step indicator (rendered inside ToolHeader sub-nav) ────────── */
+/*
+ * Mirrors .ct-steps in coverage-tracker.css — same visual treatment,
+ * scoped to this tool. If both tools drift, consider promoting these
+ * to a shared .wiz-* set in globals.css.
+ */
 
-[data-tool="expenses-manager"] .steps {
+[data-tool="expenses-manager"] .em-steps {
   display: flex;
   align-items: center;
-  background: var(--surface);
-  border: 2px solid var(--border);
-  padding: 14px 20px;
-  margin-bottom: 20px;
+  gap: 0;
+  flex: 1;
+  padding: 0 16px;
+  overflow-x: auto;
 }
 
-[data-tool="expenses-manager"] .step {
+[data-tool="expenses-manager"] .em-step {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  padding: 6px 10px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
-[data-tool="expenses-manager"] .step-connector {
-  flex: 1;
-  min-width: 16px;
-  height: 2px;
-  background: var(--border);
-  margin: 0 10px;
-}
+[data-tool="expenses-manager"] .em-step.is-done    { color: #00c864; }
+[data-tool="expenses-manager"] .em-step.is-active  { color: var(--accent); }
 
-[data-tool="expenses-manager"] .step-num {
-  width: 26px;
-  height: 26px;
+[data-tool="expenses-manager"] .em-step-num {
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-heading);
-  font-weight: 900;
-  font-size: 12px;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--border);
+  color: var(--text-muted);
   flex-shrink: 0;
-  background: var(--surface-2);
-  color: var(--text-dim);
 }
 
-[data-tool="expenses-manager"] .step.active .step-num {
-  background: var(--accent);
-  color: var(--accent-fg);
-}
+[data-tool="expenses-manager"] .em-step.is-done .em-step-num   { background: #00c864;       color: #000; }
+[data-tool="expenses-manager"] .em-step.is-active .em-step-num { background: var(--accent); color: #000; }
 
-[data-tool="expenses-manager"] .step.done .step-num {
-  background: #16a34a;
-  color: white;
+[data-tool="expenses-manager"] .em-step-connector {
+  width: 28px;
+  height: 2px;
+  background: var(--border);
+  flex-shrink: 0;
 }
-
-[data-tool="expenses-manager"] .step-lbl {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-[data-tool="expenses-manager"] .step.active .step-lbl { color: var(--text); }
-[data-tool="expenses-manager"] .step.done .step-lbl   { color: #16a34a; }
 
 /* ── Cards ──────────────────────────────────────────────────────── */
 

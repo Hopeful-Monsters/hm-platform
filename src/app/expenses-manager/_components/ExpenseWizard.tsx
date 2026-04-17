@@ -1,39 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import type { Job, CompanyState, QueueItem, Extracted } from '../_types'
+import { useEffect, useState } from 'react'
+import type { Job, QueueItem, Extracted } from '../_types'
 import { fmtSize, isOldDate, buildFilename, afyFolderName, monthLabel } from '../_utils'
 import { useExpenses } from '../_hooks/useExpenses'
+import { useWizard, type WizardStep } from './WizardContext'
 import { DropZone } from './DropZone'
 import { QueueRow } from './QueueRow'
 import { CompanyStatus } from './CompanyStatus'
 import { SupplierCombobox } from './SupplierCombobox'
 
-// ── StepIndicator ─────────────────────────────────────────────────
-// step: 1 = Select Job (JobPicker), 2 = Upload Receipts, 3 = Review & Submit
-
-export function StepIndicator({ step }: { step: number }) {
-  const cls = (n: number) =>
-    `step${step === n ? ' active' : step > n ? ' done' : ''}`
-  return (
-    <div className="steps">
-      <div className={cls(1)}>
-        <div className="step-num">1</div>
-        <div className="step-lbl">Select Job</div>
-      </div>
-      <div className="step-connector" />
-      <div className={cls(2)}>
-        <div className="step-num">2</div>
-        <div className="step-lbl">Upload Receipts</div>
-      </div>
-      <div className="step-connector" />
-      <div className={cls(3)}>
-        <div className="step-num">3</div>
-        <div className="step-lbl">Review &amp; Submit</div>
-      </div>
-    </div>
-  )
-}
+// Step indicator now lives in ToolHeader (see layout.tsx + StepIndicator.tsx).
+// useExpenses still owns the wizard step internally; we mirror it into the
+// shared WizardContext so the sub-nav indicator can read it.
 
 // ── ReviewCard ────────────────────────────────────────────────────
 
@@ -255,10 +234,13 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
     reset,
   } = useExpenses(job)
 
+  // Mirror the internal step into the WizardContext so the ToolHeader
+  // sub-nav indicator stays in sync. useExpenses moves 2 → 3 → 4.
+  const { setStep: setCtxStep } = useWizard()
+  useEffect(() => { setCtxStep(step as WizardStep) }, [step, setCtxStep])
+
   return (
     <>
-      <StepIndicator step={step} />
-
       {/* ── Step 2: Upload Receipts ────────────────────────────── */}
       {step === 2 && (
         <div className="card">
