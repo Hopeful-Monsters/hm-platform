@@ -168,7 +168,7 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
       <div
         style={{
           display:             'grid',
-          gridTemplateColumns: '1fr 200px 200px',
+          gridTemplateColumns: '1fr 220px 220px',
           padding:             '8px 16px',
           borderBottom:        '2px solid var(--border)',
           marginBottom:        2,
@@ -220,7 +220,7 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
             key={u.id}
             style={{
               display:             'grid',
-              gridTemplateColumns: '1fr 200px 200px',
+              gridTemplateColumns: '1fr 220px 220px',
               alignItems:          'start',
               padding:             '16px',
               borderBottom:        '1px solid var(--border)',
@@ -255,38 +255,61 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
               <p style={metaStyle}>Status: {u.status ?? 'unknown'}</p>
             </div>
 
-            {/* Role — dropdown + Save (independent form) */}
-            <div style={{ paddingTop: 2 }}>
+            {/* Role — badge + dropdown + Save (independent form) */}
+            <div style={{ paddingTop: 2, paddingRight: 16 }}>
               {/* Current role badge */}
-              <span style={{ ...badgeStyle, ...badgeColors }}>{roleLabel}</span>
+              <div style={{ marginBottom: 8 }}>
+                <span style={{ ...badgeStyle, marginBottom: 0 , ...badgeColors }}>{roleLabel}</span>
+                {u.isMasterAdmin && (
+                  <p style={{ ...metaStyle, fontSize: 10, marginTop: 4 }}>
+                    Change via Supabase
+                  </p>
+                )}
+              </div>
 
               {/* Dropdown — hidden for master admin (cannot be changed via UI) */}
               {!u.isMasterAdmin && (
                 <form action={setRole} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <input type="hidden" name="userId" value={u.id} />
                   <input type="hidden" name="role"   value={pendingRole} />
-                  <select
-                    value={pendingRole}
-                    onChange={e => setPendingRoles(prev => ({ ...prev, [u.id]: e.target.value }))}
-                    style={{
-                      background:  'var(--surface-2)',
-                      border:      `2px solid ${isDirty ? 'var(--accent)' : 'var(--border)'}`,
-                      color:       'var(--text)',
-                      fontFamily:  'var(--font-heading)',
-                      fontWeight:  700,
-                      fontSize:    12,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
-                      padding:     '4px 8px',
-                      cursor:      'pointer',
-                      width:       '100%',
-                      outline:     'none',
-                    }}
-                  >
-                    {ROLE_OPTIONS.map(r => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={pendingRole}
+                      onChange={e => setPendingRoles(prev => ({ ...prev, [u.id]: e.target.value }))}
+                      style={{
+                        appearance:    'none',
+                        WebkitAppearance: 'none',
+                        background:    'var(--surface-2)',
+                        border:        `2px solid ${isDirty ? 'var(--accent)' : 'var(--border)'}`,
+                        color:         'var(--text)',
+                        fontFamily:    'var(--font-heading)',
+                        fontWeight:    700,
+                        fontSize:      12,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        padding:       '6px 28px 6px 8px',
+                        cursor:        'pointer',
+                        width:         '100%',
+                        outline:       'none',
+                        display:       'block',
+                      }}
+                    >
+                      {ROLE_OPTIONS.map(r => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
+                      ))}
+                    </select>
+                    {/* Custom chevron */}
+                    <span style={{
+                      position:      'absolute',
+                      right:         8,
+                      top:           '50%',
+                      transform:     'translateY(-50%)',
+                      pointerEvents: 'none',
+                      color:         'var(--text-dim)',
+                      fontSize:      10,
+                      lineHeight:    1,
+                    }}>▼</span>
+                  </div>
                   <button
                     type="submit"
                     disabled={!isDirty}
@@ -314,12 +337,6 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
                     Save Role
                   </button>
                 </form>
-              )}
-
-              {u.isMasterAdmin && (
-                <p style={{ ...metaStyle, fontSize: 10, marginTop: 4 }}>
-                  Change via Supabase
-                </p>
               )}
             </div>
 
