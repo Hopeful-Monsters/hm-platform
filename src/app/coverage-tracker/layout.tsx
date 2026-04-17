@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import ToolHeader from '@/components/ToolHeader'
 import { WizardProvider } from './_components/WizardContext'
 import StepIndicator from './_components/StepIndicator'
+import SettingsButton from './_components/SettingsButton'
 import './coverage-tracker.css'
 
 export const metadata: Metadata = {
@@ -32,6 +33,9 @@ export default async function CoverageTrackerLayout({
   if (!user) redirect('/login')
   if (user.user_metadata?.status !== 'approved') redirect('/no-access')
 
+  const role = user.user_metadata?.role as string | undefined
+  const canEditSettings = role === 'admin' || role === 'editor'
+
   return (
     <div
       data-tool="coverage-tracker"
@@ -43,7 +47,11 @@ export default async function CoverageTrackerLayout({
       }}
     >
       <WizardProvider>
-        <ToolHeader toolName="Coverage Tracker" toolSlug="coverage-tracker">
+        <ToolHeader
+          toolName="Coverage Tracker"
+          toolSlug="coverage-tracker"
+          actions={canEditSettings ? <SettingsButton /> : undefined}
+        >
           <StepIndicator />
         </ToolHeader>
         <div style={{ flex: 1 }}>

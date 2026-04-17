@@ -6,55 +6,52 @@ import { revalidatePath } from 'next/cache'
 import { UsersClient, type UserRow } from './UsersClient'
 import { TOOL_SLUGS } from '@/lib/tools'
 
+// Valid roles. Keep in sync with proxy.ts + auth.ts.
+const VALID_ROLES = ['admin', 'editor', 'user'] as const
+type UserRole = typeof VALID_ROLES[number]
+
 // ── Server Actions ────────────────────────────────────────────────
 
-async function promoteToAdmin(formData: FormData) {
+/**
+ * Sets a user's role to one of: 'admin' | 'editor' | 'user'.
+ * Master admin cannot be demoted — that gate lives in Supabase directly.
+ * Sends an email when promoting to admin.
+ */
+async function setRole(formData: FormData) {
   'use server'
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.user_metadata?.role !== 'admin') return
 
   const userId  = formData.get('userId') as string
-  const service = createServiceClient()
+  const newRole = formData.get('role') as string
+  if (!VALID_ROLES.includes(newRole as UserRole)) return
 
+  const service = createServiceClient()
   const { data: userData } = await service.auth.admin.getUserById(userId)
   const existing = userData.user?.user_metadata ?? {}
 
-  await service.auth.admin.updateUserById(userId, {
-    user_metadata: { ...existing, role: 'admin' },
-  })
-
-  if (userData.user?.email) {
-    const resend = new Resend(process.env.RESEND_API_KEY!)
-    await resend.emails.send({
-      from:    'noreply@hopefulmonsters.com.au',
-      to:      userData.user.email,
-      subject: 'Admin Access Granted — Hopeful Monsters',
-      text:    'You have been granted administrator access on hopefulmonsters.com.au.',
-    })
-  }
-
-  revalidatePath('/admin/users')
-}
-
-async function revokeAdmin(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return
-
-  const userId  = formData.get('userId') as string
-  const service = createServiceClient()
-
-  const { data: userData } = await service.auth.admin.getUserById(userId)
-  const existing = userData.user?.user_metadata ?? {}
-
-  // Master admin cannot be revoked — only transferred via Supabase directly
+  // Master admin cannot be demoted via the UI
   if (existing.is_master_admin) return
 
   await service.auth.admin.updateUserById(userId, {
-    user_metadata: { ...existing, role: 'user' },
+    user_metadata: { ...existing, role: newRole },
   })
+
+  // Email notification only when granting admin
+  if (newRole === 'admin' && userData.user?.email) {
+    try {
+      const resend = new Resend(process.env.RESEND_API_KEY!)
+      await resend.emails.send({
+        from:    'noreply@hopefulmonsters.com.au',
+        to:      userData.user.email,
+        subject: 'Admin Access Granted — Hopeful Monsters',
+        text:    'You have been granted administrator access on app.hopefulmonsters.com.au.',
+      })
+    } catch (err) {
+      console.warn('[admin/users] role email failed (non-fatal):', err)
+    }
+  }
 
   revalidatePath('/admin/users')
 }
@@ -104,14 +101,13 @@ export default async function UsersPage() {
     firstName:     u.user_metadata?.first_name ?? null,
     lastName:      u.user_metadata?.last_name  ?? null,
     status:        u.user_metadata?.status     ?? null,
-    role:          u.user_metadata?.role        ?? null,
+    role:          u.user_metadata?.role        ?? 'user',
     isMasterAdmin: !!u.user_metadata?.is_master_admin,
     tools:         userToolsMap.get(u.id) ?? [],
   }))
 
   return (
     <div>
-      {/* Page header */}
       <div style={{ marginBottom: 36 }}>
         <h1
           style={{
@@ -130,8 +126,7 @@ export default async function UsersPage() {
 
       <UsersClient
         users={rows}
-        promoteToAdmin={promoteToAdmin}
-        revokeAdmin={revokeAdmin}
+        setRole={setRole}
         updateToolAccess={updateToolAccess}
       />
     </div>

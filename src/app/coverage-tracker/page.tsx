@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useWizard } from './_components/WizardContext'
+import type { FieldRule, PublicationGroup } from './_components/SettingsModal'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -75,6 +76,52 @@ const EMPTY_SETUP: SetupState = {
   sheetTab:      DEFAULT_TAB,
   newTitle:      '',
   newTab:        DEFAULT_TAB,
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rule evaluator
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Applies org-level field rules to a single CoverageRow.
+ * Rules execute in sort_order ascending (array order). Last write wins when
+ * multiple rules target the same field.
+ *
+ * Only enabled rules run.
+ *
+ * Supported operators:
+ *   eq  — if_field value exactly equals if_value (case-sensitive)
+ *   neq — if_field value does not equal if_value
+ *   in  — if_field value is in the group's member list (publication groups only)
+ */
+function applyRules(
+  row:    CoverageRow,
+  rules:  FieldRule[],
+  groups: PublicationGroup[],
+): CoverageRow {
+  let r = { ...row }
+
+  for (const rule of rules) {
+    if (!rule.enabled) continue
+
+    const fieldVal = r[rule.if_field as keyof CoverageRow] ?? ''
+    let matches = false
+
+    if (rule.if_operator === 'eq') {
+      matches = fieldVal === rule.if_value
+    } else if (rule.if_operator === 'neq') {
+      matches = fieldVal !== rule.if_value
+    } else if (rule.if_operator === 'in' && rule.if_group_id) {
+      const group = groups.find(g => g.id === rule.if_group_id)
+      matches = !!group?.members.some(m => m.value === fieldVal)
+    }
+
+    if (matches) {
+      r = { ...r, [rule.then_field]: rule.then_value }
+    }
+  }
+
+  return r
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,6 +343,22 @@ export default function CoverageTrackerPage() {
     }, 500)
   }, [])
 
+  // ── Rules + publication groups (org-level settings) ──────────
+  const [rules,  setRulesState]  = useState<FieldRule[]>([])
+  const [groups, setGroupsState] = useState<PublicationGroup[]>([])
+
+  useEffect(() => {
+    // Load rules and groups once. Non-fatal — if this fails, rows just won't
+    // have rules applied (the tool still works without them).
+    Promise.all([
+      fetch('/api/coverage-tracker/settings/rules').then(r => r.ok ? r.json() : null),
+      fetch('/api/coverage-tracker/settings/publication-groups').then(r => r.ok ? r.json() : null),
+    ]).then(([rd, gd]) => {
+      if (rd?.rules)   setRulesState(rd.rules)
+      if (gd?.groups)  setGroupsState(gd.groups)
+    }).catch(() => { /* non-fatal — rules simply won't apply */ })
+  }, [])
+
   // ── Wizard state ──────────────────────────────────────────────
   const [rows,        setRows]        = useState<CoverageRow[]>([])
   const [status,      setStatus]      = useState<Status>(null)
@@ -334,7 +397,9 @@ export default function CoverageTrackerPage() {
       try {
         const parsed = parseCSV(e.target!.result as string)
         if (!parsed.length) throw new Error('No data rows found — check the file is a valid Meltwater export')
-        setRows(parsed.map(mapRow))
+        // Apply org rules immediately after mapping — rules use current state
+        // via closure; groups captured from the most recent fetch.
+        setRows(parsed.map(r => applyRules(mapRow(r), rules, groups)))
         setStep(2)
         setStatus(null)
       } catch (err: unknown) {
@@ -781,7 +846,18 @@ export default function CoverageTrackerPage() {
                           </select>
                         </td>
                         <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                          <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r.mediaFormat} onChange={e => updateRow(idx, 'mediaFormat', e.target.value)}>
+                          <select
+                            className="ct-select"
+                            style={{ fontSize: 12, padding: '3px 6px' }}
+                            value={r.mediaFormat}
+                            onChange={e => {
+                              // Update format first, then re-run rules on the updated row
+                              // so format-dependent rules (e.g. TV → image=YES) fire immediately.
+                              const updated = { ...r, mediaFormat: e.target.value }
+                              const ruled   = applyRules(updated, rules, groups)
+                              setRows(prev => prev.map((row, i) => i === idx ? ruled : row))
+                            }}
+                          >
                             {MEDIA_FORMATS.map(o => <option key={o}>{o}</option>)}
                           </select>
                         </td>
