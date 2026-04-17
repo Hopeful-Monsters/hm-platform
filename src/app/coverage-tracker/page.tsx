@@ -344,8 +344,11 @@ export default function CoverageTrackerPage() {
   }, [])
 
   // ── Rules + publication groups (org-level settings) ──────────
-  const [rules,  setRulesState]  = useState<FieldRule[]>([])
-  const [groups, setGroupsState] = useState<PublicationGroup[]>([])
+  // Stored in refs so that processFile and the Format onChange handler always
+  // read the latest values regardless of when they were defined — avoids the
+  // stale-closure problem that would occur if they captured state directly.
+  const rulesRef  = useRef<FieldRule[]>([])
+  const groupsRef = useRef<PublicationGroup[]>([])
 
   useEffect(() => {
     // Load rules and groups once. Non-fatal — if this fails, rows just won't
@@ -354,8 +357,8 @@ export default function CoverageTrackerPage() {
       fetch('/api/coverage-tracker/settings/rules').then(r => r.ok ? r.json() : null),
       fetch('/api/coverage-tracker/settings/publication-groups').then(r => r.ok ? r.json() : null),
     ]).then(([rd, gd]) => {
-      if (rd?.rules)   setRulesState(rd.rules)
-      if (gd?.groups)  setGroupsState(gd.groups)
+      if (rd?.rules)  rulesRef.current  = rd.rules
+      if (gd?.groups) groupsRef.current = gd.groups
     }).catch(() => { /* non-fatal — rules simply won't apply */ })
   }, [])
 
@@ -397,9 +400,9 @@ export default function CoverageTrackerPage() {
       try {
         const parsed = parseCSV(e.target!.result as string)
         if (!parsed.length) throw new Error('No data rows found — check the file is a valid Meltwater export')
-        // Apply org rules immediately after mapping — rules use current state
-        // via closure; groups captured from the most recent fetch.
-        setRows(parsed.map(r => applyRules(mapRow(r), rules, groups)))
+        // Apply org rules immediately after mapping. Read from refs so we always
+        // get the fetched values even though this callback was defined at render time.
+        setRows(parsed.map(r => applyRules(mapRow(r), rulesRef.current, groupsRef.current)))
         setStep(2)
         setStatus(null)
       } catch (err: unknown) {
@@ -825,7 +828,7 @@ export default function CoverageTrackerPage() {
                           padding: '8px 7px', textAlign: 'left', fontSize: 10, fontWeight: 700,
                           textTransform: 'uppercase', letterSpacing: '0.04em',
                           color:      editable ? 'var(--accent)' : 'var(--text-muted)',
-                          background: editable ? 'rgba(255,230,0,0.06)' : 'var(--surface)',
+                          background: editable ? 'var(--surface-2)' : 'var(--surface)',
                           borderBottom: '2px solid var(--border)',
                           whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 9,
                         }}>{h}</th>
@@ -853,8 +856,9 @@ export default function CoverageTrackerPage() {
                             onChange={e => {
                               // Update format first, then re-run rules on the updated row
                               // so format-dependent rules (e.g. TV → image=YES) fire immediately.
+                              // Read from refs to avoid stale closure values.
                               const updated = { ...r, mediaFormat: e.target.value }
-                              const ruled   = applyRules(updated, rules, groups)
+                              const ruled   = applyRules(updated, rulesRef.current, groupsRef.current)
                               setRows(prev => prev.map((row, i) => i === idx ? ruled : row))
                             }}
                           >

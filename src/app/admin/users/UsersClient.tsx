@@ -76,7 +76,6 @@ const badgeStyle: React.CSSProperties = {
   textTransform: 'uppercase',
   padding:       '3px 9px',
   display:       'inline-block',
-  marginBottom:  6,
 }
 
 // ── Component ─────────────────────────────────────────────────────
@@ -168,8 +167,8 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
       <div
         style={{
           display:             'grid',
-          gridTemplateColumns: '1fr 220px 220px',
-          padding:             '8px 16px',
+          gridTemplateColumns: '1fr 240px 240px',
+          padding:             '8px 40px',
           borderBottom:        '2px solid var(--border)',
           marginBottom:        2,
         }}
@@ -196,7 +195,7 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <p style={{ color: 'var(--text-muted)', fontSize: 14, padding: '16px' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: 14, padding: '40px' }}>
           No users match your search.
         </p>
       )}
@@ -211,18 +210,21 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
         const saveKey     = `save-role-${u.id}`
         const updateKey   = `update-${u.id}`
 
-        // Pending role selection for this user (or current role if untouched)
-        const pendingRole = pendingRoles[u.id] ?? (u.isMasterAdmin ? 'admin' : (u.role ?? 'user'))
-        const isDirty     = !u.isMasterAdmin && pendingRole !== (u.role ?? 'user')
+        // Pending role selection for this user (or current role if untouched).
+        // Clamp to a valid ROLE_OPTIONS value so the <select> always shows the correct option.
+        const validRoles   = ROLE_OPTIONS.map(r => r.value)
+        const currentRole  = validRoles.includes(u.role ?? '') ? (u.role as string) : 'user'
+        const pendingRole  = pendingRoles[u.id] ?? currentRole
+        const isDirty      = !u.isMasterAdmin && pendingRole !== currentRole
 
         return (
           <div
             key={u.id}
             style={{
               display:             'grid',
-              gridTemplateColumns: '1fr 220px 220px',
+              gridTemplateColumns: '1fr 240px 240px',
               alignItems:          'start',
-              padding:             '16px',
+              padding:             '40px',
               borderBottom:        '1px solid var(--border)',
               background:          'var(--surface)',
               marginBottom:        1,
@@ -255,61 +257,50 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
               <p style={metaStyle}>Status: {u.status ?? 'unknown'}</p>
             </div>
 
-            {/* Role — badge + dropdown + Save (independent form) */}
-            <div style={{ paddingTop: 2, paddingRight: 16 }}>
+            {/* Role — badge + custom dropdown + Save */}
+            <div style={{ paddingRight: 24 }}>
               {/* Current role badge */}
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ ...badgeStyle, marginBottom: 0 , ...badgeColors }}>{roleLabel}</span>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ ...badgeStyle, ...badgeColors }}>{roleLabel}</span>
                 {u.isMasterAdmin && (
-                  <p style={{ ...metaStyle, fontSize: 10, marginTop: 4 }}>
+                  <p style={{ ...metaStyle, fontSize: 10, marginTop: 6 }}>
                     Change via Supabase
                   </p>
                 )}
               </div>
 
-              {/* Dropdown — hidden for master admin (cannot be changed via UI) */}
+              {/* Dropdown + Save — hidden for master admin */}
               {!u.isMasterAdmin && (
-                <form action={setRole} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <form
+                  action={setRole}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+                >
                   <input type="hidden" name="userId" value={u.id} />
                   <input type="hidden" name="role"   value={pendingRole} />
-                  <div style={{ position: 'relative' }}>
-                    <select
-                      value={pendingRole}
-                      onChange={e => setPendingRoles(prev => ({ ...prev, [u.id]: e.target.value }))}
-                      style={{
-                        appearance:    'none',
-                        WebkitAppearance: 'none',
-                        background:    'var(--surface-2)',
-                        border:        `2px solid ${isDirty ? 'var(--accent)' : 'var(--border)'}`,
-                        color:         'var(--text)',
-                        fontFamily:    'var(--font-heading)',
-                        fontWeight:    700,
-                        fontSize:      12,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        padding:       '6px 28px 6px 8px',
-                        cursor:        'pointer',
-                        width:         '100%',
-                        outline:       'none',
-                        display:       'block',
-                      }}
-                    >
-                      {ROLE_OPTIONS.map(r => (
-                        <option key={r.value} value={r.value}>{r.label}</option>
-                      ))}
-                    </select>
-                    {/* Custom chevron */}
-                    <span style={{
-                      position:      'absolute',
-                      right:         8,
-                      top:           '50%',
-                      transform:     'translateY(-50%)',
-                      pointerEvents: 'none',
-                      color:         'var(--text-dim)',
-                      fontSize:      10,
-                      lineHeight:    1,
-                    }}>▼</span>
-                  </div>
+
+                  <select
+                    value={pendingRole}
+                    onChange={e => setPendingRoles(prev => ({ ...prev, [u.id]: e.target.value }))}
+                    style={{
+                      background:    'var(--surface-2)',
+                      border:        `2px solid ${isDirty ? 'var(--accent)' : 'var(--border)'}`,
+                      color:         'var(--text)',
+                      fontFamily:    'var(--font-heading)',
+                      fontWeight:    700,
+                      fontSize:      12,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      padding:       '7px 10px',
+                      cursor:        'pointer',
+                      width:         '100%',
+                      outline:       'none',
+                    }}
+                  >
+                    {ROLE_OPTIONS.map(r => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+
                   <button
                     type="submit"
                     disabled={!isDirty}
@@ -328,7 +319,7 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
                         ? (hovered === saveKey ? 'var(--accent-fg)' : 'var(--text-muted)')
                         : 'var(--text-dim)',
                       border:     `2px solid ${isDirty ? (hovered === saveKey ? 'var(--accent)' : 'var(--border-2)') : 'var(--border)'}`,
-                      padding:    '4px 10px',
+                      padding:    '5px 10px',
                       cursor:     isDirty ? 'pointer' : 'default',
                       transition: 'all 0.15s',
                       opacity:    isDirty ? 1 : 0.4,
@@ -341,7 +332,7 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
             </div>
 
             {/* Tool access — independent form */}
-            <form action={updateToolAccess} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <form action={updateToolAccess} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <input type="hidden" name="userId" value={u.id} />
               {TOOLS.map(tool => (
                 <label key={tool.value} style={checkboxLabelStyle}>
