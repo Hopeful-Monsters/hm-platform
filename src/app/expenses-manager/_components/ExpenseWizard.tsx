@@ -239,6 +239,20 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
   const { setStep: setCtxStep } = useWizard()
   useEffect(() => { setCtxStep(step as WizardStep) }, [step, setCtxStep])
 
+  // When the review step first loads, run the supplier check for any item
+  // that hasn't been checked yet (company === null). Items that went through
+  // extractItem() will already have a company state; this catches items that
+  // were navigated to review without extraction (e.g. already-ready items).
+  useEffect(() => {
+    if (step !== 3) return
+    for (const item of reviewable) {
+      if (item.company === null) {
+        checkCompany(item.id)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+
   return (
     <>
       {/* ── Step 2: Upload Receipts ────────────────────────────── */}
@@ -334,22 +348,9 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                   }}
                 />
               </div>
-              {driveEnabled && (
-                <div>
-                  <div className={`drive-status-bar${driveStatus === 'connected' ? ' connected' : driveStatus === 'connecting' ? ' connecting' : driveStatus === 'failed' ? ' failed' : ''}`}>
-                    <span>{driveMsg}</span>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={authDrive}
-                      disabled={driveStatus === 'connected' || driveStatus === 'connecting'}
-                      style={{ marginLeft: 'auto' }}
-                    >
-                      {driveStatus === 'connected' ? '✓ Connected' : driveStatus === 'connecting' ? 'Connecting…' : '🔑 Connect Google Account'}
-                    </button>
-                  </div>
-                  <div className="hint" style={{ marginTop: 5 }}>
-                    A Google sign-in popup will appear. If it doesn&apos;t, allow popups for this site in your browser&apos;s address bar, then try again.
-                  </div>
+              {driveEnabled && driveStatus !== 'connected' && (
+                <div className="hint" style={{ marginTop: 5 }}>
+                  A Google sign-in popup will appear. If it doesn&apos;t, allow popups for this site in your browser&apos;s address bar, then try again.
                 </div>
               )}
             </div>

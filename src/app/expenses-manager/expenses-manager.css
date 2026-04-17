@@ -139,6 +139,8 @@
 [data-tool="expenses-manager"] .fc:focus         { border-color: var(--accent); }
 [data-tool="expenses-manager"] .fc::placeholder   { color: var(--text-dim); }
 [data-tool="expenses-manager"] .fc[readonly]      { background: var(--surface-2); color: var(--text-muted); }
+/* Let the browser render the date-picker icon in the correct light/dark tone */
+[data-tool="expenses-manager"] input[type="date"].fc { color-scheme: light dark; }
 
 [data-tool="expenses-manager"] .fg              { margin-bottom: 14px; }
 [data-tool="expenses-manager"] .fg:last-child   { margin-bottom: 0; }
