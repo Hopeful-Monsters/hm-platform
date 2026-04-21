@@ -400,9 +400,10 @@ export default function CoverageTrackerPage() {
       try {
         const parsed = parseCSV(e.target!.result as string)
         if (!parsed.length) throw new Error('No data rows found — check the file is a valid Meltwater export')
-        // Apply org rules immediately after mapping. Read from refs so we always
-        // get the fetched values even though this callback was defined at render time.
-        setRows(parsed.map(r => applyRules(mapRow(r), rulesRef.current, groupsRef.current)))
+        // Store mapped rows without applying rules yet — rules run when the user
+        // advances from Setup to Review, so changes made in Settings always apply
+        // to the current data without needing a re-upload.
+        setRows(parsed.map(r => mapRow(r)))
         setStep(2)
         setStatus(null)
       } catch (err: unknown) {
@@ -751,7 +752,13 @@ export default function CoverageTrackerPage() {
                 <button
                   type="button"
                   className="ct-btn ct-btn-primary"
-                  onClick={() => setStep(3)}
+                  onClick={() => {
+                    // Apply org rules now, using the latest fetched values from
+                    // refs. This runs on every Setup→Review transition so rules
+                    // added or changed in Settings always apply to current data.
+                    setRows(prev => prev.map(r => applyRules(r, rulesRef.current, groupsRef.current)))
+                    setStep(3)
+                  }}
                   disabled={
                     !setup.campaign.trim() ||
                     (setup.destMode === 'existing' && !setup.sheetUrl.trim())
