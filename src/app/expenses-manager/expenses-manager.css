@@ -139,8 +139,13 @@
 [data-tool="expenses-manager"] .fc:focus         { border-color: var(--accent); }
 [data-tool="expenses-manager"] .fc::placeholder   { color: var(--text-dim); }
 [data-tool="expenses-manager"] .fc[readonly]      { background: var(--surface-2); color: var(--text-muted); }
-/* Let the browser render the date-picker icon in the correct light/dark tone */
-[data-tool="expenses-manager"] input[type="date"].fc { color-scheme: light dark; }
+/* Let the browser render the date-picker icon in the correct light/dark tone.
+   Match the app's theme toggle (data-theme on <html>) rather than using
+   "light dark" which defaults to dark and ignores the user's preference. */
+[data-theme="light"] [data-tool="expenses-manager"] input[type="date"].fc { color-scheme: light; }
+[data-theme="dark"]  [data-tool="expenses-manager"] input[type="date"].fc { color-scheme: dark; }
+/* Fallback for when data-theme is absent (defaults to dark) */
+[data-tool="expenses-manager"] input[type="date"].fc { color-scheme: dark; }
 
 [data-tool="expenses-manager"] .fg              { margin-bottom: 14px; }
 [data-tool="expenses-manager"] .fg:last-child   { margin-bottom: 0; }

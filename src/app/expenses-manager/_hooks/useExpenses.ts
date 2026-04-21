@@ -357,7 +357,8 @@ export function useExpenses(selectedJob: Job) {
       currencyCode:          'AUD',
       exchangeRate:          1,
       markup:                snap.markup,
-      ...(d.reference ? { reference: d.reference } : {}),
+      ...(d.reference    ? { reference:    d.reference    } : {}),
+      ...(d.description  ? { description:  d.description  } : {}),
     })
 
     const driveFileId = driveEnabled ? await uploadToDrive(snap) : null

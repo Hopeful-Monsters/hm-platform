@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Job, QueueItem, Extracted } from '../_types'
 import { fmtSize, isOldDate, buildFilename, afyFolderName, monthLabel } from '../_utils'
 import { useExpenses } from '../_hooks/useExpenses'
@@ -239,19 +239,25 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
   const { setStep: setCtxStep } = useWizard()
   useEffect(() => { setCtxStep(step as WizardStep) }, [step, setCtxStep])
 
-  // When the review step first loads, run the supplier check for any item
-  // that hasn't been checked yet (company === null). Items that went through
-  // extractItem() will already have a company state; this catches items that
-  // were navigated to review without extraction (e.g. already-ready items).
+  // Track which item IDs have already had checkCompany triggered, so we
+  // don't fire duplicate checks when reviewable re-renders.
+  const checkedIds = useRef<Set<number>>(new Set())
+
+  // When the review step loads (or when reviewable changes while on step 3),
+  // run the supplier check for any item that hasn't been checked yet.
+  // Using reviewable in the dep array ensures this runs once items are
+  // actually populated — the previous [step]-only dep caused a stale
+  // closure where reviewable was empty on first fire.
   useEffect(() => {
     if (step !== 3) return
     for (const item of reviewable) {
-      if (item.company === null) {
+      if (item.company === null && !checkedIds.current.has(item.id)) {
+        checkedIds.current.add(item.id)
         checkCompany(item.id)
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, reviewable])
 
   return (
     <>

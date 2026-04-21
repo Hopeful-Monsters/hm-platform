@@ -227,6 +227,7 @@ export async function submitExpense(loggedExpense: {
   exchangeRate: number
   markup: number
   reference?: string
+  description?: string
 }): Promise<Record<string, unknown>> {
   const user = await requireUser()
   await checkRateLimit(rateLimits.api, `expenses-manager:submit:${user.id}`)
