@@ -87,7 +87,7 @@ export async function proxy(request: NextRequest) {
   // Both require status === 'approved' to use tools (checked separately below).
   const role = user?.user_metadata?.role as string | undefined
   const isAdmin  = role === 'admin'
-  const isEditor = role === 'editor'
+  const _isEditor = role === 'editor'
 
   // ── Admin route protection ─────────────────────────────────────
   if (isAdminRoute) {

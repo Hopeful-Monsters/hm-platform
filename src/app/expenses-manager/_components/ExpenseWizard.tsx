@@ -37,8 +37,8 @@ function ReviewCard({
 }) {
   const hasFieldErrors = Object.keys(item.fieldErrors ?? {}).length > 0
   const [collapsed, setCollapsed] = useState(false)
-  // Auto-expand the card when validation errors are set on it
-  useEffect(() => { if (hasFieldErrors) setCollapsed(false) }, [hasFieldErrors])
+  // Never collapse while there are validation errors — derive effective state rather than syncing via effect
+  const isCollapsed = collapsed && !hasFieldErrors
   const d      = item.extracted
   const fe     = item.fieldErrors ?? {}
   const isPdf  = item.mimeType === 'application/pdf'
@@ -84,12 +84,12 @@ function ReviewCard({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className={`sbadge ${statusClass}`}>{statusLabel}</span>
-          <span className={`chevron${collapsed ? ' is-collapsed' : ''}`}>▾</span>
+          <span className={`chevron${isCollapsed ? ' is-collapsed' : ''}`}>▾</span>
         </div>
       </div>
 
       {/* Body */}
-      {!collapsed && (
+      {!isCollapsed && (
         <div className="card-body">
           <div className="row2">
             {/* Date */}
@@ -250,7 +250,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
     companies,
     queue,
     driveEnabled, setDriveEnabled,
-    driveStatus, driveMsg,
+    driveStatus, driveMsg: _driveMsg,
     submitError, submitting,
     results, initials,
     readyCount, pendingCount, reviewable,
