@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import type { Job } from '../_types'
 import { getAllCompanies } from '../_actions'
 import { useAppStore, companiesCacheIsValid } from '@/store/app-store'
+import { useWizard } from './WizardContext'
 import JobPicker from './JobPicker'
 import ExpenseWizard from './ExpenseWizard'
 
@@ -22,6 +23,15 @@ export default function ExpensesManagerClient({
   error: string | null
 }) {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+
+  // ── Sub-nav step sync ─────────────────────────────────────────
+  // Step 1 = JobPicker; steps 2–4 are driven from inside ExpenseWizard via
+  // useExpenses. When the user hits "← Back" (selectedJob → null) we reset
+  // the sub-nav indicator to step 1. useExpenses will take over from step 2.
+  const { setStep: setCtxStep } = useWizard()
+  useEffect(() => {
+    if (!selectedJob) setCtxStep(1)
+  }, [selectedJob, setCtxStep])
 
   // ── Prefetch companies ────────────────────────────────────────
   const companiesLoadedAt = useAppStore(s => s.companiesLoadedAt)

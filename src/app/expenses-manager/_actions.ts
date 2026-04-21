@@ -1,15 +1,14 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
+import { requireToolAccess } from '@/lib/auth'
 import { rateLimits } from '@/lib/upstash/ratelimit'
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+// ── Auth helper ───────────────────────────────────────────────────────────────
+// Wraps requireToolAccess for server actions (which throw, not return Responses).
 
 async function requireUser() {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) throw new Error('Unauthorized')
-  return user
+  return requireToolAccess('expenses-manager')
 }
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
@@ -174,26 +173,38 @@ export async function createCompanyAction(name: string): Promise<{ id: unknown; 
 }
 
 // ── Drive ─────────────────────────────────────────────────────────────────────
+// Refresh tokens are stored in the drive_tokens table (service role only).
+// They are never written to user_metadata or included in the Supabase JWT.
 
 /**
  * Check whether the current user has a stored Drive refresh token.
+ * Reads from drive_tokens (service role) — token is never in user_metadata / JWT.
  */
 export async function getDriveStatus(): Promise<'connected' | 'disconnected'> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // requireToolAccess ensures user is authenticated, approved, and has tool access.
+  // Gracefully returns 'disconnected' on any auth failure rather than throwing.
+  const user = await requireToolAccess('expenses-manager').catch(() => null)
   if (!user) return 'disconnected'
-  const meta = (user.user_metadata ?? {}) as Record<string, unknown>
-  return meta.drive_refresh_token ? 'connected' : 'disconnected'
+
+  const { data } = await createServiceClient()
+    .from('drive_tokens')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  return data ? 'connected' : 'disconnected'
 }
 
 /**
  * Remove the stored Drive refresh token, effectively disconnecting Drive.
  */
 export async function disconnectDrive(): Promise<void> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await requireToolAccess('expenses-manager').catch(() => null)
   if (!user) return
-  await supabase.auth.updateUser({ data: { drive_refresh_token: null } })
+
+  await createServiceClient()
+    .from('drive_tokens')
+    .delete()
+    .eq('user_id', user.id)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -216,6 +227,7 @@ export async function submitExpense(loggedExpense: {
   exchangeRate: number
   markup: number
   reference?: string
+  description?: string
 }): Promise<Record<string, unknown>> {
   const user = await requireUser()
   await checkRateLimit(rateLimits.api, `expenses-manager:submit:${user.id}`)

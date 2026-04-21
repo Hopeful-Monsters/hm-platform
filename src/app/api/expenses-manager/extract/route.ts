@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { requireToolAccess } from '@/lib/auth'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
+import { geminiGenerateContent, GeminiUnavailableError } from '@/lib/google/gemini'
 
 // Permitted MIME types — only receipts/invoices (images + PDF)
 const ALLOWED_MIME_TYPES = [
@@ -39,10 +40,9 @@ Rules:
 - Currency is AUD — do not include it in the JSON`
 
 export async function POST(request: Request) {
-  // Auth — must be a signed-in user
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  // Auth — must be signed in, approved, and have expenses-manager access
+  const user = await requireToolAccess('expenses-manager').catch(() => null)
+  if (!user) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   // Rate limit — use the AI limiter (10/min) since this hits an LLM
   const limited = await applyRateLimit(rateLimits.ai, `expenses-manager:extract:${user.id}`)
@@ -64,30 +64,28 @@ export async function POST(request: Request) {
   const today = new Date().toISOString().split('T')[0]
   const prompt = EXTRACT_PROMPT.replace('__TODAY__', today)
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${key}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ inline_data: { mime_type: body.mimeType, data: body.data } }, { text: prompt }] }], // body is typed via Zod — mimeType is a permitted enum value
-        generationConfig: { temperature: 0, maxOutputTokens: 1024 },
-      }),
+  let txt: string
+  try {
+    txt = await geminiGenerateContent({
+      key,
+      models: ['gemini-3.1-flash-lite-preview', 'gemini-2.5-flash-lite', 'gemini-3-flash-preview'],
+      parts: [
+        { inline_data: { mime_type: body.mimeType, data: body.data } }, // body is typed via Zod — mimeType is a permitted enum value
+        { text: prompt },
+      ],
+      generationConfig: { temperature: 0, maxOutputTokens: 1024 },
+    })
+  } catch (e) {
+    if (e instanceof GeminiUnavailableError) {
+      return Response.json(
+        { error: 'Extraction service is temporarily unavailable. Please try again shortly.' },
+        { status: 503 },
+      )
     }
-  )
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
-    return Response.json(
-      { error: err.error?.message || `Gemini error ${res.status}` },
-      { status: res.status }
-    )
+    const msg = e instanceof Error ? e.message : 'Unexpected error during extraction'
+    return Response.json({ error: msg }, { status: 500 })
   }
 
-  const geminiData = await res.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-  }
-  let txt = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || ''
   txt = txt.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
 
   try {

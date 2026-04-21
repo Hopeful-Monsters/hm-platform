@@ -82,7 +82,7 @@ export default async function NoAccessPage({
                 <Link href="/">Go Home →</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href="/auth/login">Sign In</Link>
+                <Link href="/login">Sign In</Link>
               </Button>
             </>
           )}

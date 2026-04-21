@@ -80,28 +80,43 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // ── Role helpers ───────────────────────────────────────────────
+  // Roles: 'admin' | 'editor' | (undefined = standard user)
+  //   admin  — full access including Admin Panel
+  //   editor — can use tools + edit Settings; cannot access Admin Panel
+  // Both require status === 'approved' to use tools (checked separately below).
+  const role = user?.user_metadata?.role as string | undefined
+  const isAdmin  = role === 'admin'
+  const _isEditor = role === 'editor'
+
   // ── Admin route protection ─────────────────────────────────────
   if (isAdminRoute) {
     if (!user) {
-      const loginUrl = new URL('/auth/login', request.url);
+      const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('next', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    if (user.user_metadata?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/auth/no-access', request.url));
+    // Admin Panel is admin-only; editors are redirected to no-access
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/no-access', request.url));
     }
   }
 
+  // ── Settings route protection (/api/coverage-tracker/settings/*) ─
+  // Editors and admins can read/write settings; standard users get 403
+  // from the API handler itself (checked via requireSettingsAccess helper).
+  // No proxy-level redirect needed here — API routes own their own auth.
+
   // ── Tool route protection (page routes only) ──────────────────
   if (toolSlug && !user) {
-    const loginUrl = new URL('/auth/login', request.url);
+    const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (toolSlug && user) {
     if (user.user_metadata?.status !== 'approved') {
-      return NextResponse.redirect(new URL('/auth/no-access', request.url));
+      return NextResponse.redirect(new URL('/no-access', request.url));
     }
 
     const { data: access } = await supabase
@@ -112,7 +127,7 @@ export async function proxy(request: NextRequest) {
       .single();
 
     if (!access || (access.expires_at && new Date(access.expires_at) < new Date())) {
-      const noAccessUrl = new URL('/auth/no-access', request.url);
+      const noAccessUrl = new URL('/no-access', request.url);
       noAccessUrl.searchParams.set('tool', toolSlug);
       return NextResponse.redirect(noAccessUrl);
     }

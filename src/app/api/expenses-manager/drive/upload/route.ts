@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { requireToolAccess } from '@/lib/auth'
+import { createServiceClient } from '@/lib/supabase/service'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
 import { afyFolderName, afyMonthIndex } from '@/app/expenses-manager/_utils'
 
@@ -134,18 +135,21 @@ async function parseUploadForm(request: Request): Promise<ParsedUploadForm> {
 // ── Upload ────────────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  // Auth
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  // Auth — must be signed in, approved, and have expenses-manager access
+  const user = await requireToolAccess('expenses-manager').catch(() => null)
+  if (!user) return Response.json({ error: 'Forbidden' }, { status: 403 })
 
   // Rate limit
   const limited = await applyRateLimit(rateLimits.api, `expenses-manager:drive-upload:${user.id}`)
   if (limited) return limited
 
-  // Refresh token from user_metadata
-  const meta         = (user.user_metadata ?? {}) as Record<string, unknown>
-  const refreshToken = meta.drive_refresh_token as string | undefined
+  // Refresh token from drive_tokens table (service role only — not in user_metadata / JWT)
+  const { data: tokenRow } = await createServiceClient()
+    .from('drive_tokens')
+    .select('refresh_token')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  const refreshToken = tokenRow?.refresh_token as string | undefined
   if (!refreshToken) {
     return Response.json({ error: 'Google Drive not connected. Reconnect in the Expenses Manager.' }, { status: 403 })
   }
@@ -161,7 +165,7 @@ export async function POST(request: Request) {
     accessToken = await getAccessToken(refreshToken)
   } catch (err: unknown) {
     // Likely the refresh token was revoked — clear it so the UI shows "disconnected"
-    await supabase.auth.updateUser({ data: { drive_refresh_token: null } }).catch(() => {})
+    try { await createServiceClient().from('drive_tokens').delete().eq('user_id', user.id) } catch { /* non-fatal */ }
     return Response.json(
       { error: `Drive auth expired — please reconnect. (${(err as Error).message})` },
       { status: 401 },

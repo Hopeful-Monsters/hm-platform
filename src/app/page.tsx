@@ -262,11 +262,18 @@ export default async function Home() {
   // ── Unauthenticated landing ──────────────────────────────────────
   if (!user) {
     return (
-      <>
+      <div
+        style={{
+          minHeight: 'calc(100vh - var(--nav-h))',
+          display: 'flex',
+          alignItems: 'center',
+          background: 'var(--accent)',
+        }}
+      >
         {/* Hero — yellow, two-column */}
         <section
           style={{
-            background: 'var(--accent)',
+            width: '100%',
             padding: '80px 32px 72px',
           }}
         >
@@ -309,7 +316,7 @@ export default async function Home() {
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 {/* Get Started — dark fill on yellow bg */}
                 <Link
-                  href="/auth/signup"
+                  href="/signup"
                   className="btn-hm text-2xl px-10 py-4 transition-all duration-150 hover:opacity-85 hover:-translate-y-0.5"
                   style={{
                     background: 'var(--accent-fg)',
@@ -320,7 +327,7 @@ export default async function Home() {
                 </Link>
                 {/* Sign In — ghost on yellow bg */}
                 <Link
-                  href="/auth/login"
+                  href="/login"
                   className="btn-hm text-2xl px-10 py-4 transition-all duration-150 hover:bg-black/10"
                   style={{
                     background: 'transparent',
@@ -386,7 +393,7 @@ export default async function Home() {
             </div>
           </div>
         </section>
-      </>
+      </div>
     )
   }
 

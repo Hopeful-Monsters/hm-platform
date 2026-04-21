@@ -25,9 +25,20 @@ interface ToolHeaderProps {
   toolName: string
   toolSlug: string
   tabs?: Tab[]
+  /**
+   * Optional slot rendered in the tab/centre area — use when a tool wants
+   * something other than nav links (e.g. a step indicator for a wizard).
+   * When provided, `tabs` is ignored.
+   */
+  children?: React.ReactNode
+  /**
+   * Optional slot pinned to the right edge of the header.
+   * Use for tool-level actions such as a Settings button.
+   */
+  actions?: React.ReactNode
 }
 
-export default function ToolHeader({ toolName, tabs = [] }: ToolHeaderProps) {
+export default function ToolHeader({ toolName, tabs = [], children, actions }: ToolHeaderProps) {
   const pathname = usePathname()
 
   return (
@@ -68,8 +79,12 @@ export default function ToolHeader({ toolName, tabs = [] }: ToolHeaderProps) {
         </span>
       </div>
 
-      {/* Tab links */}
-      {tabs.length > 0 && (
+      {/* Centre slot: custom children (e.g. step indicator) takes precedence over tabs */}
+      {children ? (
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          {children}
+        </div>
+      ) : tabs.length > 0 ? (
         <nav style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
           {tabs.map(tab => {
             const isActive = tab.href === pathname
@@ -101,9 +116,22 @@ export default function ToolHeader({ toolName, tabs = [] }: ToolHeaderProps) {
             )
           })}
         </nav>
+      ) : (
+        <div style={{ flex: 1 }} />
       )}
 
-
+      {/* Right-side actions slot (e.g. Settings button) */}
+      {actions && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 16px',
+          borderLeft: '2px solid var(--border)',
+          flexShrink: 0,
+        }}>
+          {actions}
+        </div>
+      )}
     </div>
   )
 }

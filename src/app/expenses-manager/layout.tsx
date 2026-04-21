@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import ToolHeader from '@/components/ToolHeader'
+import { WizardProvider } from './_components/WizardContext'
+import StepIndicator from './_components/StepIndicator'
+import './expenses-manager.css'
 
 export const metadata: Metadata = {
   title:       'Expenses Manager',
@@ -13,13 +16,10 @@ export const metadata: Metadata = {
  * Access gating: proxy.ts enforces auth + tool_access on every request
  * before reaching this layout — no additional DB call needed here.
  *
- * Adding tool sections:
- *   Pass a `tabs` array to <ToolHeader /> as the tool grows:
- *   tabs={[
- *     { href: '/expenses-manager',         label: 'Overview' },
- *     { href: '/expenses-manager/submit',  label: 'Submit' },
- *     { href: '/expenses-manager/reports', label: 'Reports' },
- *   ]}
+ * Sub-nav: the 3-step wizard indicator (Select Job → Upload → Review) lives
+ * inside the ToolHeader, matching the coverage-tracker pattern. Step 4
+ * (Success) is a post-submit outcome screen and doesn't appear in the
+ * indicator.
  */
 export default function ExpensesManagerLayout({
   children,
@@ -28,21 +28,22 @@ export default function ExpensesManagerLayout({
 }) {
   return (
     <div
+      data-tool="expenses-manager"
       style={{
-        minHeight: 'calc(100vh - var(--nav-h))',
-        background: 'var(--bg)',
-        display: 'flex',
+        minHeight:     'calc(100vh - var(--nav-h))',
+        background:    'var(--bg)',
+        display:       'flex',
         flexDirection: 'column',
       }}
     >
-      <ToolHeader
-        toolName="Expenses Manager"
-        toolSlug="expenses-manager"
-        // tabs={[]} — add tabs here as pages are built
-      />
-      <div style={{ flex: 1 }}>
-        {children}
-      </div>
+      <WizardProvider>
+        <ToolHeader toolName="Expenses Manager" toolSlug="expenses-manager">
+          <StepIndicator />
+        </ToolHeader>
+        <div style={{ flex: 1 }}>
+          {children}
+        </div>
+      </WizardProvider>
     </div>
   )
 }

@@ -20,7 +20,7 @@ export async function notifyAdmin(email: string): Promise<void> {
     const resend = new Resend(process.env.RESEND_API_KEY!)
     await resend.emails.send({
       from:    'noreply@hopefulmonsters.com.au',
-      to:      process.env.ADMIN_EMAIL || 'admin@hm-platform.com',
+      to:      process.env.ADMIN_EMAIL || 'hello@hopefulmonsters.com.au',
       subject: 'New User Signup',
       text:    `New user signed up: ${email}. Please approve at /admin/approvals`,
     })

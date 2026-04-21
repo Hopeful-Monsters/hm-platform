@@ -5,17 +5,25 @@ import type { CompanyState } from '../_types'
 export function CompanyStatus({
   company,
   supplierName,
+  hasError,
   onRecheck,
   onChoose,
   onCreate,
 }: {
   company: CompanyState | null
   supplierName: string
+  hasError?: boolean
   onRecheck: () => void
   onChoose: (id: string | number, name: string) => void
   onCreate: (name: string) => void
 }) {
-  if (!company) return null
+  if (!company) {
+    // Show a prompt if validation fired but no check has run yet
+    if (hasError) return (
+      <div className="co-row warn">⚠ Supplier not yet verified in Streamtime</div>
+    )
+    return null
+  }
 
   if (company.status === 'checking')
     return (

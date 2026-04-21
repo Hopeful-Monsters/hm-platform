@@ -16,6 +16,7 @@
   --accent-fg:     #FFFFFF;
   --accent-label:  #c4321c; /* Eye brow labels: darker red in light mode for contrast */
   --pink:          #FF3EBF;
+  --error:         #dc2626;
   --nav-h:         54px;
   --tool-nav-h:    48px;
 }
@@ -33,6 +34,7 @@
   --accent-fg:     #0A0A0A;
   --accent-label:  #FFE600;
   --pink:          #FF3EBF;
+  --error:         #f87171; /* Lighter red for dark-mode readability */
 }
 
 /* ══ TAILWIND TOKEN EXPOSURE ═════════════════════════════════════ */

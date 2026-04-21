@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Job, CompanyState, QueueItem, SubmitResult } from '../_types'
+import type { Job, CompanyState, QueueItem, SubmitResult, Extracted } from '../_types'
 import { todayStr, sleep, buildFilename } from '../_utils'
 import {
   getAllCompanies,
@@ -108,7 +108,7 @@ export function useExpenses(selectedJob: Job) {
   function addFiles(files: FileList) {
     const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     Array.from(files).forEach(file => {
-      if (file.size > 20 * 1024 * 1024) { alert(`${file.name}: too large (max 20 MB).`); return }
+      if (file.size > 5 * 1024 * 1024) { alert(`${file.name}: too large (max 5 MB).`); return }
       if (!ALLOWED.includes(file.type))  { alert(`${file.name}: unsupported type.`); return }
       const id = nextId.current++
       const item: QueueItem = {
@@ -155,6 +155,7 @@ export function useExpenses(selectedJob: Job) {
     }
     if (!b64) { updateItem(snap.id, { status: 'error', error: 'Could not read file.' }); return }
 
+    let extractedSupplier = ''
     try {
       const res = await fetch('/api/expenses-manager/extract', {
         method: 'POST',
@@ -164,11 +165,12 @@ export function useExpenses(selectedJob: Job) {
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error || `Worker error ${res.status}`)
 
+      extractedSupplier = data.supplier || ''
       updateItem(snap.id, {
         status: 'ready',
         extracted: {
           date:        data.date        || todayStr(),
-          supplier:    data.supplier    || '',
+          supplier:    extractedSupplier,
           itemName:    data.itemName    || '',
           reference:   data.reference   || '',
           amountExGST: data.amountExGST ?? '',
@@ -182,19 +184,27 @@ export function useExpenses(selectedJob: Job) {
       await sleep(300); return
     }
 
-    await checkCompany(snap.id)
+    // Pass the supplier name directly — the updateItem call above is batched
+    // and may not have flushed by the time checkCompany reads from state.
+    await checkCompany(snap.id, extractedSupplier)
     await sleep(300)
   }
 
   // ── Company validation ────────────────────────────────────────
 
-  async function checkCompany(itemId: number) {
-    // Read the current supplier name directly from state
-    let supplier = ''
-    setQueue(prev => {
-      supplier = prev.find(i => i.id === itemId)?.extracted.supplier?.trim() ?? ''
-      return prev
-    })
+  async function checkCompany(itemId: number, supplierOverride?: string) {
+    // Prefer the caller-supplied name (avoids stale-closure reads against
+    // batched state updates). Fall back to a direct queue read for calls
+    // triggered from the UI where the queue is already settled.
+    let supplier = supplierOverride?.trim() ?? ''
+    if (!supplier) {
+      setQueue(prev => {
+        supplier = prev.find(i => i.id === itemId)?.extracted.supplier?.trim() ?? ''
+        return prev
+      })
+      // Give React one tick to flush so the setQueue read above lands
+      await new Promise(r => setTimeout(r, 0))
+    }
     if (!supplier) return
 
     const checking: CompanyState = {
@@ -255,14 +265,14 @@ export function useExpenses(selectedJob: Job) {
   }
 
   // ── Google Drive ──────────────────────────────────────────────
-  // Server-side OAuth: refresh token stored in Supabase user_metadata.
-  // The auth flow opens a popup → /api/expenses-manager/drive/auth → Google →
-  // /api/expenses-manager/drive/callback → postMessage → this handler.
-  // Uploads go to /api/expenses-manager/drive/upload (route handler, handles 20 MB files).
+  // Server-side OAuth: refresh token stored in drive_tokens table (service role only).
+  // The auth flow opens a popup → /api/drive/auth → Google →
+  // /api/drive/callback → postMessage → this handler.
+  // Uploads go to /api/expenses-manager/drive/upload (route handler, handles 5 MB files).
 
   function authDrive() {
     const popup = window.open(
-      '/api/expenses-manager/drive/auth',
+      '/api/drive/auth',
       'drive-auth',
       'width=520,height=660,left=200,top=100',
     )
@@ -297,7 +307,8 @@ export function useExpenses(selectedJob: Job) {
     }
     window.addEventListener('message', onMessage)
 
-    // Detect popup closed without completing (e.g. user dismissed it)
+    // Detect popup closed without completing (e.g. user dismissed it).
+    // Also uncheck the Drive toggle so the UI stays consistent.
     const poll = setInterval(() => {
       if (!popup.closed) return
       clearInterval(poll)
@@ -305,6 +316,7 @@ export function useExpenses(selectedJob: Job) {
       if (!completed) {
         setDriveStatus('disconnected')
         setDriveMsg('Not connected')
+        setDriveEnabled(false)
       }
     }, 500)
   }
@@ -355,7 +367,8 @@ export function useExpenses(selectedJob: Job) {
       currencyCode:          'AUD',
       exchangeRate:          1,
       markup:                snap.markup,
-      ...(d.reference ? { reference: d.reference } : {}),
+      ...(d.reference    ? { reference:    d.reference    } : {}),
+      ...(d.description  ? { description:  d.description  } : {}),
     })
 
     const driveFileId = driveEnabled ? await uploadToDrive(snap) : null
@@ -371,9 +384,31 @@ export function useExpenses(selectedJob: Job) {
     if (!snapshot.length) { setSubmitError('No ready expenses to submit.'); return }
     if (driveEnabled && driveStatus !== 'connected') { setSubmitError('Google Drive enabled but not connected.'); return }
 
-    const unresolved = snapshot.filter(i => !['matched', 'created'].includes(i.company?.status || ''))
-    if (unresolved.length) {
-      setSubmitError(`${unresolved.length} expense(s) have unresolved supplier companies.`)
+    // Field-level validation — build per-item error maps and surface them
+    // on the cards so the user can see exactly what needs fixing.
+    let hasErrors = false
+    for (const item of snapshot) {
+      const d = item.extracted
+      const fe: Partial<Record<keyof Extracted | 'company', string>> = {}
+
+      if (!d.date)                                        fe.date        = 'Date is required'
+      if (!d.supplier)                                    fe.supplier    = 'Supplier is required'
+      if (!d.itemName)                                    fe.itemName    = 'Expense name is required'
+      if (!d.reference)                                   fe.reference   = 'Reference is required'
+      if (isNaN(parseFloat(String(d.amountExGST))))       fe.amountExGST = 'Cost ex GST is required'
+      if (!['matched', 'created'].includes(item.company?.status || ''))
+                                                          fe.company     = 'Supplier must be resolved in Streamtime'
+
+      if (Object.keys(fe).length > 0) {
+        hasErrors = true
+        updateItem(item.id, { fieldErrors: fe })
+      } else {
+        updateItem(item.id, { fieldErrors: {} })
+      }
+    }
+
+    if (hasErrors) {
+      setSubmitError('Some expenses have missing or unresolved fields — see highlighted items below.')
       return
     }
 

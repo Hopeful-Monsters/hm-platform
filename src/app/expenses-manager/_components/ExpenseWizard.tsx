@@ -1,39 +1,18 @@
 'use client'
 
-import { useState } from 'react'
-import type { Job, CompanyState, QueueItem, Extracted } from '../_types'
+import { useEffect, useRef, useState } from 'react'
+import type { Job, QueueItem, Extracted } from '../_types'
 import { fmtSize, isOldDate, buildFilename, afyFolderName, monthLabel } from '../_utils'
 import { useExpenses } from '../_hooks/useExpenses'
+import { useWizard, type WizardStep } from './WizardContext'
 import { DropZone } from './DropZone'
 import { QueueRow } from './QueueRow'
 import { CompanyStatus } from './CompanyStatus'
 import { SupplierCombobox } from './SupplierCombobox'
 
-// ── StepIndicator ─────────────────────────────────────────────────
-// step: 1 = Select Job (JobPicker), 2 = Upload Receipts, 3 = Review & Submit
-
-export function StepIndicator({ step }: { step: number }) {
-  const cls = (n: number) =>
-    `step${step === n ? ' active' : step > n ? ' done' : ''}`
-  return (
-    <div className="steps">
-      <div className={cls(1)}>
-        <div className="step-num">1</div>
-        <div className="step-lbl">Select Job</div>
-      </div>
-      <div className="step-connector" />
-      <div className={cls(2)}>
-        <div className="step-num">2</div>
-        <div className="step-lbl">Upload Receipts</div>
-      </div>
-      <div className="step-connector" />
-      <div className={cls(3)}>
-        <div className="step-num">3</div>
-        <div className="step-lbl">Review &amp; Submit</div>
-      </div>
-    </div>
-  )
-}
+// Step indicator now lives in ToolHeader (see layout.tsx + StepIndicator.tsx).
+// useExpenses still owns the wizard step internally; we mirror it into the
+// shared WizardContext so the sub-nav indicator can read it.
 
 // ── ReviewCard ────────────────────────────────────────────────────
 
@@ -56,8 +35,12 @@ function ReviewCard({
   onChoose: (id: number, cid: string | number, name: string) => void
   onCreate: (id: number, name: string) => void
 }) {
+  const hasFieldErrors = Object.keys(item.fieldErrors ?? {}).length > 0
   const [collapsed, setCollapsed] = useState(false)
+  // Never collapse while there are validation errors — derive effective state rather than syncing via effect
+  const isCollapsed = collapsed && !hasFieldErrors
   const d      = item.extracted
+  const fe     = item.fieldErrors ?? {}
   const isPdf  = item.mimeType === 'application/pdf'
   const exGST  = parseFloat(String(d.amountExGST)) || 0
   const gstAmt = parseFloat(String(d.gstAmount)) || Math.round(exGST * item.gstPct / 100 * 100) / 100
@@ -69,7 +52,13 @@ function ReviewCard({
   const statusLabel = ({ ready: 'Ready', done: 'Submitted', error: 'Error' } as Record<string, string>)[item.status] ?? item.status
 
   function patchExtracted(fields: Partial<Extracted>) {
-    onUpdate(item.id, i => ({ extracted: { ...i.extracted, ...fields } }))
+    onUpdate(item.id, i => ({
+      extracted: { ...i.extracted, ...fields },
+      // Clear field errors for any key being patched
+      fieldErrors: Object.fromEntries(
+        Object.entries(i.fieldErrors ?? {}).filter(([k]) => !(k in fields))
+      ),
+    }))
   }
 
   function recalcGST(ex: number, pct: number) {
@@ -79,11 +68,11 @@ function ReviewCard({
   }
 
   return (
-    <div className="card" style={{ marginBottom: 14 }}>
+    <div className="card" style={{ marginBottom: 14, ...(hasFieldErrors ? { borderColor: 'var(--error)' } : {}) }}>
       {/* Header */}
       <div
         className="card-hdr collapsible"
-        style={{ background: 'var(--surface-2)' }}
+        style={{ background: 'var(--surface-2)', ...(hasFieldErrors ? { borderBottomColor: 'var(--error)' } : {}) }}
         onClick={() => setCollapsed(c => !c)}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -95,12 +84,12 @@ function ReviewCard({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className={`sbadge ${statusClass}`}>{statusLabel}</span>
-          <span className={`chevron${collapsed ? ' is-collapsed' : ''}`}>▾</span>
+          <span className={`chevron${isCollapsed ? ' is-collapsed' : ''}`}>▾</span>
         </div>
       </div>
 
       {/* Body */}
-      {!collapsed && (
+      {!isCollapsed && (
         <div className="card-body">
           <div className="row2">
             {/* Date */}
@@ -110,9 +99,11 @@ function ReviewCard({
                 type="date"
                 className="fc"
                 value={d.date || ''}
+                style={fe.date ? { borderColor: 'var(--error)' } : undefined}
                 onChange={e => patchExtracted({ date: e.target.value })}
               />
-              {isOldDate(d.date) && (
+              {fe.date && <div className="field-error">{fe.date}</div>}
+              {!fe.date && isOldDate(d.date) && (
                 <div className="alert alert-warning" style={{ marginTop: 6, marginBottom: 0, padding: '7px 11px', fontSize: 12 }}>
                   Date is before the current month.
                 </div>
@@ -124,29 +115,39 @@ function ReviewCard({
               <SupplierCombobox
                 value={d.supplier || ''}
                 companies={companies}
-                onInput={v => onUpdate(item.id, i => ({ extracted: { ...i.extracted, supplier: v }, company: null }))}
+                hasError={!!(fe.supplier || fe.company)}
+                onInput={v => onUpdate(item.id, i => ({ extracted: { ...i.extracted, supplier: v }, company: null, fieldErrors: { ...i.fieldErrors, supplier: undefined, company: undefined } }))}
                 onSelect={(cid, name) => onUpdate(item.id, i => ({
                   extracted: { ...i.extracted, supplier: name },
                   company: { status: 'matched', matchedId: cid, matchedName: name, similar: [], chosenId: cid, chosenName: name, errorMsg: null },
+                  fieldErrors: { ...i.fieldErrors, supplier: undefined, company: undefined },
                 }))}
                 onCreateFromInput={name => onCreate(item.id, name)}
               />
+              {fe.supplier && <div className="field-error">{fe.supplier}</div>}
               <div className="co-block">
                 <CompanyStatus
                   company={item.company}
                   supplierName={d.supplier}
+                  hasError={!!fe.company}
                   onRecheck={() => onRecheck(item.id)}
                   onChoose={(cid, name) => onChoose(item.id, cid, name)}
                   onCreate={name => onCreate(item.id, name)}
                 />
               </div>
+              {fe.company && !fe.supplier && <div className="field-error">{fe.company}</div>}
             </div>
           </div>
 
           {/* Expense name */}
           <div className="fg">
             <label className="lbl">Expense Name <span className="req">*</span></label>
-            <input type="text" className="fc" value={d.itemName || ''} onChange={e => patchExtracted({ itemName: e.target.value })} />
+            <input
+              type="text" className="fc" value={d.itemName || ''}
+              style={fe.itemName ? { borderColor: 'var(--error)' } : undefined}
+              onChange={e => patchExtracted({ itemName: e.target.value })}
+            />
+            {fe.itemName && <div className="field-error">{fe.itemName}</div>}
           </div>
 
           {/* Description */}
@@ -165,20 +166,26 @@ function ReviewCard({
           {/* Reference */}
           <div className="fg">
             <label className="lbl">Reference <span className="req">*</span></label>
-            <input type="text" className="fc" value={d.reference || ''} onChange={e => patchExtracted({ reference: e.target.value })} />
+            <input
+              type="text" className="fc" value={d.reference || ''}
+              style={fe.reference ? { borderColor: 'var(--error)' } : undefined}
+              onChange={e => patchExtracted({ reference: e.target.value })}
+            />
+            {fe.reference && <div className="field-error">{fe.reference}</div>}
           </div>
 
           {/* Amounts */}
           <div className="row4" style={{ alignItems: 'end' }}>
             <div className="fg" style={{ marginBottom: 0 }}>
               <label className="lbl">Cost Ex GST <span className="req">*</span></label>
-              <div className="pfx">
+              <div className="pfx" style={fe.amountExGST ? { outline: '2px solid var(--error)' } : undefined}>
                 <span className="pfx-lbl">$</span>
                 <input
                   type="number" className="fc" value={exGST || ''} step="0.01" min="0"
                   onChange={e => recalcGST(parseFloat(e.target.value) || 0, item.gstPct)}
                 />
               </div>
+              {fe.amountExGST && <div className="field-error">{fe.amountExGST}</div>}
             </div>
             <div className="fg" style={{ marginBottom: 0 }}>
               <label className="lbl">GST <span className="req">*</span></label>
@@ -243,7 +250,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
     companies,
     queue,
     driveEnabled, setDriveEnabled,
-    driveStatus, driveMsg,
+    driveStatus, driveMsg: _driveMsg,
     submitError, submitting,
     results, initials,
     readyCount, pendingCount, reviewable,
@@ -255,10 +262,33 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
     reset,
   } = useExpenses(job)
 
+  // Mirror the internal step into the WizardContext so the ToolHeader
+  // sub-nav indicator stays in sync. useExpenses moves 2 → 3 → 4.
+  const { setStep: setCtxStep } = useWizard()
+  useEffect(() => { setCtxStep(step as WizardStep) }, [step, setCtxStep])
+
+  // Track which item IDs have already had checkCompany triggered, so we
+  // don't fire duplicate checks when reviewable re-renders.
+  const checkedIds = useRef<Set<number>>(new Set())
+
+  // When the review step loads (or when reviewable changes while on step 3),
+  // run the supplier check for any item that hasn't been checked yet.
+  // Using reviewable in the dep array ensures this runs once items are
+  // actually populated — the previous [step]-only dep caused a stale
+  // closure where reviewable was empty on first fire.
+  useEffect(() => {
+    if (step !== 3) return
+    for (const item of reviewable) {
+      if (item.company === null && !checkedIds.current.has(item.id)) {
+        checkedIds.current.add(item.id)
+        checkCompany(item.id)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, reviewable])
+
   return (
     <>
-      <StepIndicator step={step} />
-
       {/* ── Step 2: Upload Receipts ────────────────────────────── */}
       {step === 2 && (
         <div className="card">
@@ -341,25 +371,20 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                 <input
                   type="checkbox"
                   checked={driveEnabled}
-                  onChange={e => setDriveEnabled(e.target.checked)}
+                  onChange={e => {
+                    const checked = e.target.checked
+                    setDriveEnabled(checked)
+                    // Trigger auth immediately when enabling — no separate button press needed.
+                    // authDrive() will also call setDriveEnabled(false) if the popup is dismissed.
+                    if (checked && driveStatus !== 'connected') {
+                      authDrive()
+                    }
+                  }}
                 />
               </div>
-              {driveEnabled && (
-                <div>
-                  <div className={`drive-status-bar${driveStatus === 'connected' ? ' connected' : driveStatus === 'connecting' ? ' connecting' : driveStatus === 'failed' ? ' failed' : ''}`}>
-                    <span>{driveMsg}</span>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={authDrive}
-                      disabled={driveStatus === 'connected' || driveStatus === 'connecting'}
-                      style={{ marginLeft: 'auto' }}
-                    >
-                      {driveStatus === 'connected' ? '✓ Connected' : driveStatus === 'connecting' ? 'Connecting…' : '🔑 Connect Google Account'}
-                    </button>
-                  </div>
-                  <div className="hint" style={{ marginTop: 5 }}>
-                    A Google sign-in popup will appear. If it doesn&apos;t, allow popups for this site in your browser&apos;s address bar, then try again.
-                  </div>
+              {driveEnabled && driveStatus !== 'connected' && (
+                <div className="hint" style={{ marginTop: 5 }}>
+                  A Google sign-in popup will appear. If it doesn&apos;t, allow popups for this site in your browser&apos;s address bar, then try again.
                 </div>
               )}
             </div>

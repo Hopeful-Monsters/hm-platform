@@ -38,6 +38,8 @@ export interface QueueItem {
   company: CompanyState | null
   error: string | null
   driveFileId: string | null
+  /** Field-level validation errors surfaced on submit attempt */
+  fieldErrors?: Partial<Record<keyof Extracted | 'company', string>>
 }
 
 export interface SubmitResult {

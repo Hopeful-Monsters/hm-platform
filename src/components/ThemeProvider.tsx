@@ -14,9 +14,11 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 interface ThemeProviderProps {
   children: React.ReactNode
   defaultTheme?: Theme
+  /** CSP nonce from the x-nonce request header — required for the anti-FOUC inline script. */
+  nonce?: string
 }
 
-export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProviderProps) {
+export function ThemeProvider({ children, defaultTheme = 'dark', nonce }: ThemeProviderProps) {
   // Read localStorage synchronously during first render (safe: ThemeProvider is client-only)
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === 'undefined') return defaultTheme
@@ -40,13 +42,19 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     localStorage.setItem('hm-theme', theme)
   }, [theme, mounted])
 
-  // Prevent flash on initial render — apply default class server-side via script
+  // Prevent flash on initial render — apply default class server-side via script.
+  // defaultTheme is validated to a safe literal before interpolation (prevents XSS if prop
+  // were ever user-derived). The nonce is required by the CSP set in proxy.ts; without it
+  // the script is blocked by the 'nonce-{nonce}' directive and FOUC prevention silently fails.
+  const safeDefault = defaultTheme === 'light' ? 'light' : 'dark'
+
   if (!mounted) {
     return (
       <ThemeContext.Provider value={{ theme, setTheme }}>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('hm-theme')||'${defaultTheme}';document.documentElement.classList.add(t)})()`,
+            __html: `(function(){var t=localStorage.getItem('hm-theme')||'${safeDefault}';document.documentElement.classList.add(t)})()`,
           }}
         />
         {children}

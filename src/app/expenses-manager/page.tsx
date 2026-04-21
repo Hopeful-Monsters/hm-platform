@@ -1,12 +1,14 @@
 import { normaliseJob } from './_utils'
 import { searchJobs } from './_actions'
 import ExpensesManagerClient from './_components/ExpensesManagerClient'
-import './expenses-manager.css'
 
 // ── Expenses Manager page (server component) ──────────────────────
 // Fetches jobs via Streamtime Server Action at request time and passes
 // them to the client orchestrator. Job selection and wizard rendering
 // happen entirely client-side — no navigation to /[jobId] needed.
+//
+// The outer `data-tool="expenses-manager"` wrapper and CSS import live
+// in layout.tsx so they cover every page under this route.
 
 export default async function ExpensesManagerPage() {
   let jobs: ReturnType<typeof normaliseJob>[] = []
@@ -23,10 +25,8 @@ export default async function ExpensesManagerPage() {
   }
 
   return (
-    <div data-tool="expenses-manager">
-      <main className="main">
-        <ExpensesManagerClient jobs={jobs} error={error} />
-      </main>
-    </div>
+    <main className="main">
+      <ExpensesManagerClient jobs={jobs} error={error} />
+    </main>
   )
 }

@@ -14,7 +14,8 @@ async function approveUser(formData: FormData) {
   if (!user || user.user_metadata?.role !== 'admin') return
 
   const userId        = formData.get('userId') as string
-  const selectedTools = formData.getAll('tools') as string[]
+  // Validate slugs against the canonical list — rejects any forged values
+  const selectedTools = (formData.getAll('tools') as string[]).filter(slug => TOOL_SLUGS.includes(slug))
 
   const service = createServiceClient()
 
@@ -180,7 +181,7 @@ const checkboxLabelStyle: React.CSSProperties = {
 export default async function ApprovalsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') redirect('/auth/login')
+  if (!user || user.user_metadata?.role !== 'admin') redirect('/login')
 
   const service = createServiceClient()
   const { data: users } = await service.auth.admin.listUsers()
