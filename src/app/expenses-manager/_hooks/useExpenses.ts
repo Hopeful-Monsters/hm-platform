@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { Job, CompanyState, QueueItem, SubmitResult } from '../_types'
+import type { Job, CompanyState, QueueItem, SubmitResult, Extracted } from '../_types'
 import { todayStr, sleep, buildFilename } from '../_utils'
 import {
   getAllCompanies,
