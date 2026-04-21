@@ -6,12 +6,14 @@ import { searchCompanies } from '../_actions'
 export function SupplierCombobox({
   value,
   companies,
+  hasError,
   onInput,
   onSelect,
   onCreateFromInput,
 }: {
   value: string
   companies: Array<{ id: string | number; name: string }>
+  hasError?: boolean
   onInput: (v: string) => void
   onSelect: (id: string | number, name: string) => void
   onCreateFromInput: (name: string) => void
@@ -69,6 +71,7 @@ export function SupplierCombobox({
         className="fc"
         value={value}
         autoComplete="off"
+        style={hasError ? { borderColor: 'var(--error)' } : undefined}
         onChange={e => handleInput(e.target.value)}
         onFocus={() => { cancelClose(); setOpen(true) }}
         onBlur={scheduleClose}

@@ -35,8 +35,12 @@ function ReviewCard({
   onChoose: (id: number, cid: string | number, name: string) => void
   onCreate: (id: number, name: string) => void
 }) {
+  const hasFieldErrors = Object.keys(item.fieldErrors ?? {}).length > 0
   const [collapsed, setCollapsed] = useState(false)
+  // Auto-expand the card when validation errors are set on it
+  useEffect(() => { if (hasFieldErrors) setCollapsed(false) }, [hasFieldErrors])
   const d      = item.extracted
+  const fe     = item.fieldErrors ?? {}
   const isPdf  = item.mimeType === 'application/pdf'
   const exGST  = parseFloat(String(d.amountExGST)) || 0
   const gstAmt = parseFloat(String(d.gstAmount)) || Math.round(exGST * item.gstPct / 100 * 100) / 100
@@ -48,7 +52,13 @@ function ReviewCard({
   const statusLabel = ({ ready: 'Ready', done: 'Submitted', error: 'Error' } as Record<string, string>)[item.status] ?? item.status
 
   function patchExtracted(fields: Partial<Extracted>) {
-    onUpdate(item.id, i => ({ extracted: { ...i.extracted, ...fields } }))
+    onUpdate(item.id, i => ({
+      extracted: { ...i.extracted, ...fields },
+      // Clear field errors for any key being patched
+      fieldErrors: Object.fromEntries(
+        Object.entries(i.fieldErrors ?? {}).filter(([k]) => !(k in fields))
+      ),
+    }))
   }
 
   function recalcGST(ex: number, pct: number) {
@@ -58,11 +68,11 @@ function ReviewCard({
   }
 
   return (
-    <div className="card" style={{ marginBottom: 14 }}>
+    <div className="card" style={{ marginBottom: 14, ...(hasFieldErrors ? { borderColor: 'var(--error)' } : {}) }}>
       {/* Header */}
       <div
         className="card-hdr collapsible"
-        style={{ background: 'var(--surface-2)' }}
+        style={{ background: 'var(--surface-2)', ...(hasFieldErrors ? { borderBottomColor: 'var(--error)' } : {}) }}
         onClick={() => setCollapsed(c => !c)}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -89,9 +99,11 @@ function ReviewCard({
                 type="date"
                 className="fc"
                 value={d.date || ''}
+                style={fe.date ? { borderColor: 'var(--error)' } : undefined}
                 onChange={e => patchExtracted({ date: e.target.value })}
               />
-              {isOldDate(d.date) && (
+              {fe.date && <div className="field-error">{fe.date}</div>}
+              {!fe.date && isOldDate(d.date) && (
                 <div className="alert alert-warning" style={{ marginTop: 6, marginBottom: 0, padding: '7px 11px', fontSize: 12 }}>
                   Date is before the current month.
                 </div>
@@ -103,29 +115,39 @@ function ReviewCard({
               <SupplierCombobox
                 value={d.supplier || ''}
                 companies={companies}
-                onInput={v => onUpdate(item.id, i => ({ extracted: { ...i.extracted, supplier: v }, company: null }))}
+                hasError={!!(fe.supplier || fe.company)}
+                onInput={v => onUpdate(item.id, i => ({ extracted: { ...i.extracted, supplier: v }, company: null, fieldErrors: { ...i.fieldErrors, supplier: undefined, company: undefined } }))}
                 onSelect={(cid, name) => onUpdate(item.id, i => ({
                   extracted: { ...i.extracted, supplier: name },
                   company: { status: 'matched', matchedId: cid, matchedName: name, similar: [], chosenId: cid, chosenName: name, errorMsg: null },
+                  fieldErrors: { ...i.fieldErrors, supplier: undefined, company: undefined },
                 }))}
                 onCreateFromInput={name => onCreate(item.id, name)}
               />
+              {fe.supplier && <div className="field-error">{fe.supplier}</div>}
               <div className="co-block">
                 <CompanyStatus
                   company={item.company}
                   supplierName={d.supplier}
+                  hasError={!!fe.company}
                   onRecheck={() => onRecheck(item.id)}
                   onChoose={(cid, name) => onChoose(item.id, cid, name)}
                   onCreate={name => onCreate(item.id, name)}
                 />
               </div>
+              {fe.company && !fe.supplier && <div className="field-error">{fe.company}</div>}
             </div>
           </div>
 
           {/* Expense name */}
           <div className="fg">
             <label className="lbl">Expense Name <span className="req">*</span></label>
-            <input type="text" className="fc" value={d.itemName || ''} onChange={e => patchExtracted({ itemName: e.target.value })} />
+            <input
+              type="text" className="fc" value={d.itemName || ''}
+              style={fe.itemName ? { borderColor: 'var(--error)' } : undefined}
+              onChange={e => patchExtracted({ itemName: e.target.value })}
+            />
+            {fe.itemName && <div className="field-error">{fe.itemName}</div>}
           </div>
 
           {/* Description */}
@@ -144,20 +166,26 @@ function ReviewCard({
           {/* Reference */}
           <div className="fg">
             <label className="lbl">Reference <span className="req">*</span></label>
-            <input type="text" className="fc" value={d.reference || ''} onChange={e => patchExtracted({ reference: e.target.value })} />
+            <input
+              type="text" className="fc" value={d.reference || ''}
+              style={fe.reference ? { borderColor: 'var(--error)' } : undefined}
+              onChange={e => patchExtracted({ reference: e.target.value })}
+            />
+            {fe.reference && <div className="field-error">{fe.reference}</div>}
           </div>
 
           {/* Amounts */}
           <div className="row4" style={{ alignItems: 'end' }}>
             <div className="fg" style={{ marginBottom: 0 }}>
               <label className="lbl">Cost Ex GST <span className="req">*</span></label>
-              <div className="pfx">
+              <div className="pfx" style={fe.amountExGST ? { outline: '2px solid var(--error)' } : undefined}>
                 <span className="pfx-lbl">$</span>
                 <input
                   type="number" className="fc" value={exGST || ''} step="0.01" min="0"
                   onChange={e => recalcGST(parseFloat(e.target.value) || 0, item.gstPct)}
                 />
               </div>
+              {fe.amountExGST && <div className="field-error">{fe.amountExGST}</div>}
             </div>
             <div className="fg" style={{ marginBottom: 0 }}>
               <label className="lbl">GST <span className="req">*</span></label>
