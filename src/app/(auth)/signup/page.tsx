@@ -56,30 +56,18 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div
-        style={{
-          minHeight: 'calc(100vh - var(--nav-h))',
-          background: 'var(--bg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '48px 24px',
-        }}
-      >
-        <div className="animate-fade-up" style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}>
+      <div className="auth-page-shell">
+        <div className="animate-fade-up auth-card text-center">
           <p className="eyebrow" style={{ marginBottom: 12 }}>You&rsquo;re in the queue</p>
-          <h1 className="display-lg" style={{ color: 'var(--text)', marginBottom: 20 }}>
+          <h1 className="display-lg hm-text" style={{ marginBottom: 20 }}>
             Check your<br />
-            <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>inbox.</span>
+            <span className="hm-accent italic">inbox.</span>
           </h1>
-          <p style={{ fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: 32 }}>
-            We&rsquo;ve sent a confirmation link to <strong style={{ color: 'var(--text)' }}>{email}</strong>.
+          <p className="hm-text-muted" style={{ fontSize: 16, lineHeight: 1.65, marginBottom: 32 }}>
+            We&rsquo;ve sent a confirmation link to <strong className="hm-text">{email}</strong>.
             Once confirmed, your account will be pending admin approval. You&rsquo;ll hear from us soon.
           </p>
-          <Link
-            href="/login"
-            style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, fontSize: 14 }}
-          >
+          <Link href="/login" className="hm-link" style={{ fontSize: 14 }}>
             Back to sign in →
           </Link>
         </div>
@@ -88,44 +76,23 @@ export default function SignupPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: 'calc(100vh - var(--nav-h))',
-        background: 'var(--bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 24px',
-      }}
-    >
-      <div className="animate-fade-up" style={{ maxWidth: 480, width: '100%' }}>
+    <div className="auth-page-shell">
+      <div className="animate-fade-up auth-card">
         <p className="eyebrow" style={{ marginBottom: 12 }}>Request access</p>
 
-        <h1
-          className="display-lg"
-          style={{ color: 'var(--text)', marginBottom: 32 }}
-        >
-          Sign <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>Up.</span>
+        <h1 className="display-lg hm-text" style={{ marginBottom: 32 }}>
+          Sign <span className="hm-accent italic">Up.</span>
         </h1>
 
         {error && (
-          <div
-            style={{
-              background: '#180000',
-              borderLeft: '4px solid #FF4444',
-              padding: '12px 16px',
-              marginBottom: 20,
-              fontSize: 13,
-              color: '#FF8888',
-            }}
-          >
+          <div className="hm-error-banner" style={{ marginBottom: 20 }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleEmailSignup} style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
+          <div className="hm-name-row" style={{ marginBottom: 16 }}>
+            <div className="hm-field">
               <label className="hm-label" htmlFor="firstName">First Name</label>
               <input
                 id="firstName"
@@ -137,7 +104,7 @@ export default function SignupPage() {
                 className="hm-input"
               />
             </div>
-            <div style={{ flex: 1 }}>
+            <div className="hm-field">
               <label className="hm-label" htmlFor="lastName">Last Name</label>
               <input
                 id="lastName"
@@ -177,49 +144,19 @@ export default function SignupPage() {
             />
           </div>
 
-          <p
-            style={{
-              fontSize: 12,
-              color: 'var(--text-dim)',
-              marginBottom: 24,
-              lineHeight: 1.5,
-            }}
-          >
+          <p className="hm-helper-text" style={{ marginBottom: 24 }}>
             Access is approved manually. You&rsquo;ll be notified by email once your account is reviewed.
           </p>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            size="lg"
-            style={{ width: '100%' }}
-          >
+          <Button type="submit" disabled={loading} size="lg" className="w-full">
             {loading ? 'Creating account…' : 'Create Account →'}
           </Button>
         </form>
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--text-dim)',
-            }}
-          >
-            or
-          </span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <div className="hm-divider" style={{ marginBottom: 16 }}>
+          <div className="hm-divider-line" />
+          <span className="hm-divider-label">or</span>
+          <div className="hm-divider-line" />
         </div>
 
         <Button
@@ -228,17 +165,15 @@ export default function SignupPage() {
           size="lg"
           disabled={loading}
           onClick={handleGoogleSignup}
-          style={{ width: '100%', marginBottom: 28 }}
+          className="w-full"
+          style={{ marginBottom: 28 }}
         >
           Continue with Google
         </Button>
 
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
+        <p className="hm-text-muted text-center" style={{ fontSize: 13 }}>
           Already have an account?{' '}
-          <Link
-            href="/login"
-            style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
-          >
+          <Link href="/login" className="hm-link font-semibold">
             Sign in
           </Link>
         </p>

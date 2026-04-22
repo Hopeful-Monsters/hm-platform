@@ -30,9 +30,9 @@
   --text:          #FFFFFF;
   --text-muted:    #777777;
   --text-dim:      #666666; /* Improved contrast from #444444 to #666666 */
-  --accent:        #FFE600;
+  --accent:        #FFFF00;
   --accent-fg:     #0A0A0A;
-  --accent-label:  #FFE600;
+  --accent-label:  #FFFF00;
   --pink:          #FF3EBF;
   --error:         #f87171; /* Lighter red for dark-mode readability */
 }
@@ -274,4 +274,101 @@ textarea.hm-input {
 .card-hover:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* ══ AUTH PAGE UTILITIES ═════════════════════════════════════════ */
+/* Shared by /signup and /login. Replaces inline style="" props    */
+/* that violate the nonce-based CSP on style-src in production.    */
+
+.auth-page-shell {
+  min-height: calc(100vh - var(--nav-h));
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.auth-card {
+  max-width: 480px;
+  width: 100%;
+}
+
+.auth-card.text-center {
+  text-align: center;
+}
+
+/* Colour helpers — avoids inline color: var(--x) which CSP blocks */
+.hm-text        { color: var(--text); }
+.hm-text-muted  { color: var(--text-muted); }
+.hm-text-dim    { color: var(--text-dim); }
+.hm-accent      { color: var(--accent); }
+
+.hm-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.hm-link:hover { text-decoration: underline; }
+
+/* Inline error banner */
+.hm-error-banner {
+  background: #180000;
+  border-left: 4px solid #FF4444;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #FF8888;
+}
+
+/* Two-column name row */
+.hm-name-row {
+  display: flex;
+  gap: 12px;
+}
+.hm-name-row .hm-field {
+  flex: 1;
+}
+
+/* Helper text below password field */
+.hm-helper-text {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* OR divider */
+.hm-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hm-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.hm-divider-label {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* No-access page */
+.hm-pink { color: var(--pink); }
+
+.hm-no-access-body {
+  font-size: 16px;
+  line-height: 1.65;
+  max-width: 380px;
+  margin: 0 auto 32px;
+}
+
+.hm-action-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
 }

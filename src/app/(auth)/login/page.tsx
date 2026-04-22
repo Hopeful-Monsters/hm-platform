@@ -42,40 +42,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: 'calc(100vh - var(--nav-h))',
-        background: 'var(--bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 24px',
-      }}
-    >
-      <div className="animate-fade-up" style={{ maxWidth: 480, width: '100%' }}>
+    <div className="auth-page-shell">
+      <div className="animate-fade-up auth-card">
         {/* Eyebrow */}
         <p className="eyebrow" style={{ marginBottom: 12 }}>Welcome back</p>
 
         {/* Heading */}
-        <h1
-          className="display-lg"
-          style={{ color: 'var(--text)', marginBottom: 32 }}
-        >
-          Sign <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>In.</span>
+        <h1 className="display-lg hm-text" style={{ marginBottom: 32 }}>
+          Sign <span className="hm-accent italic">In.</span>
         </h1>
 
         {/* Error */}
         {error && (
-          <div
-            style={{
-              background: '#180000',
-              borderLeft: '4px solid #FF4444',
-              padding: '12px 16px',
-              marginBottom: 20,
-              fontSize: 13,
-              color: '#FF8888',
-            }}
-          >
+          <div className="hm-error-banner" style={{ marginBottom: 20 }}>
             {error}
           </div>
         )}
@@ -108,39 +87,16 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            size="lg"
-            style={{ width: '100%' }}
-          >
+          <Button type="submit" disabled={loading} size="lg" className="w-full">
             {loading ? 'Signing In…' : 'Sign In →'}
           </Button>
         </form>
 
         {/* Divider */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--text-dim)',
-            }}
-          >
-            or
-          </span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <div className="hm-divider" style={{ marginBottom: 16 }}>
+          <div className="hm-divider-line" />
+          <span className="hm-divider-label">or</span>
+          <div className="hm-divider-line" />
         </div>
 
         {/* Google OAuth */}
@@ -150,24 +106,16 @@ export default function LoginPage() {
           size="lg"
           disabled={loading}
           onClick={handleGoogleLogin}
-          style={{ width: '100%', marginBottom: 28 }}
+          className="w-full"
+          style={{ marginBottom: 28 }}
         >
           Continue with Google
         </Button>
 
         {/* Footer */}
-        <p
-          style={{
-            fontSize: 13,
-            color: 'var(--text-muted)',
-            textAlign: 'center',
-          }}
-        >
+        <p className="hm-text-muted text-center" style={{ fontSize: 13 }}>
           No account?{' '}
-          <Link
-            href="/signup"
-            style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
-          >
+          <Link href="/signup" className="hm-link">
             Sign up
           </Link>
         </p>
