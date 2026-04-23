@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { TOOL_SLUGS } from '@/lib/tools';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // ── Content Security Policy ────────────────────────────────────
   // A fresh nonce is generated per request. Next.js reads the CSP header,
   // extracts the nonce, and automatically applies it to all scripts it generates.
