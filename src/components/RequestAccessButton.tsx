@@ -5,14 +5,13 @@ import { useState } from 'react'
 type RequestState = 'idle' | 'submitting' | 'success' | 'already_requested' | 'error'
 
 interface Props {
-  toolSlug:  string
-  toolLabel: string
-  /** If a pending request already exists for this tool, pass true to pre-set the success state */
+  toolSlug:         string
+  toolLabel:        string
   alreadyRequested?: boolean
 }
 
 export default function RequestAccessButton({ toolSlug, alreadyRequested = false }: Props) {
-  const [state, setState] = useState<RequestState>(alreadyRequested ? 'already_requested' : 'idle')
+  const [state,    setState]    = useState<RequestState>(alreadyRequested ? 'already_requested' : 'idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   async function handleRequest() {
@@ -28,7 +27,6 @@ export default function RequestAccessButton({ toolSlug, alreadyRequested = false
       const data = await res.json()
 
       if (res.status === 409) {
-        // Already requested or already has access — treat as success
         setState('already_requested')
         return
       }
@@ -46,61 +44,26 @@ export default function RequestAccessButton({ toolSlug, alreadyRequested = false
     }
   }
 
-  const baseButtonStyle: React.CSSProperties = {
-    fontFamily:    'var(--font-heading)',
-    fontWeight:    900,
-    fontSize:      13,
-    letterSpacing: '0.15em',
-    textTransform: 'uppercase',
-    border:        'none',
-    padding:       '8px 18px',
-    cursor:        'pointer',
-    transition:    'opacity 0.15s',
-  }
-
   if (state === 'success' || state === 'already_requested') {
     return (
-      <span
-        style={{
-          fontFamily:    'var(--font-heading)',
-          fontWeight:    900,
-          fontSize:      13,
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          color:         'var(--text-muted)',
-        }}
-      >
+      <span className="request-access-status">
         {state === 'success' ? 'Request sent ✓' : 'Request pending'}
       </span>
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+    <div className="request-access-container">
       <button
         onClick={handleRequest}
         disabled={state === 'submitting'}
-        style={{
-          ...baseButtonStyle,
-          background: 'var(--surface-2)',
-          color:      'var(--text)',
-          opacity:    state === 'submitting' ? 0.5 : 1,
-        }}
+        className="request-access-btn"
       >
         {state === 'submitting' ? 'Requesting…' : 'Request Access →'}
       </button>
 
       {state === 'error' && errorMsg && (
-        <p
-          style={{
-            fontSize:   13,
-            color:      'rgb(239,68,68)',
-            fontFamily: 'var(--font-body)',
-            margin:     0,
-          }}
-        >
-          {errorMsg}
-        </p>
+        <p className="request-access-error">{errorMsg}</p>
       )}
     </div>
   )
