@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import '@/app/tool.css'
 import ToolHeader from '@/components/ToolHeader'
 import { WizardProvider } from './_components/WizardContext'
 import StepIndicator from './_components/StepIndicator'
