@@ -26,7 +26,8 @@ export default function SiteHeader() {
 
   useEffect(() => {
     if (!user || user.user_metadata?.status !== 'approved') {
-      setUserTools([])
+      // Use a resolved promise so setState is called inside a callback, not synchronously
+      Promise.resolve().then(() => setUserTools([]))
       return
     }
     const supabase = createClient()
