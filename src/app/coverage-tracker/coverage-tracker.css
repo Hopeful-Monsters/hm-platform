@@ -314,3 +314,561 @@
   margin: 0 0 20px;
   line-height: 1.6;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Settings Modal  (.sm-*)
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="coverage-tracker"] .sm-backdrop {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0, 0, 0, 0.75);
+  z-index:         100;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         24px;
+}
+
+[data-tool="coverage-tracker"] .sm-panel {
+  background:     var(--surface);
+  border:         2px solid var(--border);
+  width:          100%;
+  max-width:      760px;
+  max-height:     85vh;
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
+}
+
+[data-tool="coverage-tracker"] .sm-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         16px 20px;
+  border-bottom:   2px solid var(--border);
+  flex-shrink:     0;
+}
+
+[data-tool="coverage-tracker"] .sm-header-left {
+  display:     flex;
+  align-items: center;
+  gap:         16px;
+}
+
+[data-tool="coverage-tracker"] .sm-title {
+  font-family:    var(--font-heading);
+  font-weight:    900;
+  font-size:      18px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color:          var(--text);
+}
+
+[data-tool="coverage-tracker"] .sm-tabs {
+  display: flex;
+  gap:     2px;
+}
+
+[data-tool="coverage-tracker"] .sm-tab {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background:     transparent;
+  color:          var(--text-muted);
+  border:         2px solid var(--border);
+  padding:        4px 12px;
+  cursor:         pointer;
+}
+
+[data-tool="coverage-tracker"] .sm-tab.is-active {
+  background:   var(--accent);
+  color:        var(--accent-fg);
+  border-color: var(--accent);
+}
+
+[data-tool="coverage-tracker"] .sm-body {
+  flex:       1;
+  overflow-y: auto;
+  padding:    20px;
+}
+
+[data-tool="coverage-tracker"] .sm-footer {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         14px 20px;
+  border-top:      2px solid var(--border);
+  flex-shrink:     0;
+  background:      var(--surface);
+}
+
+[data-tool="coverage-tracker"] .sm-footer-actions {
+  display: flex;
+  gap:     10px;
+}
+
+/* ── Form atoms ─────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .sm-input {
+  width:       100%;
+  background:  var(--surface-2);
+  border:      2px solid var(--border);
+  color:       var(--text);
+  font-family: var(--font-body);
+  font-size:   13px;
+  padding:     6px 10px;
+  outline:     none;
+  box-sizing:  border-box;
+}
+
+[data-tool="coverage-tracker"] .sm-input:disabled {
+  opacity: 0.6;
+}
+
+[data-tool="coverage-tracker"] .sm-select {
+  width:       100%;
+  background:  var(--surface-2);
+  border:      2px solid var(--border);
+  color:       var(--text);
+  font-family: var(--font-body);
+  font-size:   13px;
+  padding:     6px 10px;
+  outline:     none;
+  box-sizing:  border-box;
+  cursor:      pointer;
+}
+
+[data-tool="coverage-tracker"] .sm-select-auto {
+  width:     auto;
+  min-width: 170px;
+}
+
+[data-tool="coverage-tracker"] .sm-label {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color:          var(--text-dim);
+  display:        block;
+  margin-bottom:  4px;
+}
+
+[data-tool="coverage-tracker"] .sm-label--no-margin {
+  margin: 0;
+}
+
+[data-tool="coverage-tracker"] .sm-checkbox {
+  accent-color: var(--accent);
+  width:        13px;
+  height:       13px;
+}
+
+[data-tool="coverage-tracker"] .sm-btn-primary {
+  font-family:    var(--font-heading);
+  font-weight:    900;
+  font-size:      12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background:     var(--accent);
+  color:          var(--accent-fg);
+  border:         none;
+  padding:        7px 16px;
+  cursor:         pointer;
+}
+
+[data-tool="coverage-tracker"] .sm-btn-primary:disabled {
+  opacity: 0.5;
+}
+
+[data-tool="coverage-tracker"] .sm-btn-ghost {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background:     transparent;
+  color:          var(--text-muted);
+  border:         2px solid var(--border);
+  padding:        5px 12px;
+  cursor:         pointer;
+}
+
+[data-tool="coverage-tracker"] .sm-btn-ghost:disabled {
+  opacity: 0.5;
+}
+
+[data-tool="coverage-tracker"] .sm-btn-close {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      14px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background:     transparent;
+  color:          var(--text-muted);
+  border:         2px solid var(--border);
+  padding:        4px 10px;
+  cursor:         pointer;
+}
+
+[data-tool="coverage-tracker"] .sm-btn-danger {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background:     transparent;
+  color:          #FF6B6B;
+  border:         2px solid #FF6B6B;
+  cursor:         pointer;
+}
+
+/* Rule controls use compact padding */
+[data-tool="coverage-tracker"] .sm-rule-controls .sm-btn-ghost,
+[data-tool="coverage-tracker"] .sm-rule-controls .sm-btn-danger {
+  padding: 2px 7px;
+}
+
+/* ── Rule rows ───────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .sm-rule-row {
+  background:    var(--surface);
+  border:        2px solid var(--border);
+  margin-bottom: 6px;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-row.is-disabled {
+  opacity: 0.55;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-header {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  padding:     9px 12px;
+  cursor:      pointer;
+  user-select: none;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-expand-btn {
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  color:       var(--text-dim);
+  font-size:   11px;
+  padding:     0 2px;
+  flex-shrink: 0;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-dot {
+  width:         8px;
+  height:        8px;
+  border-radius: 50%;
+  flex-shrink:   0;
+  display:       inline-block;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-dot.is-active   { background: var(--accent);   }
+[data-tool="coverage-tracker"] .sm-rule-dot.is-inactive { background: var(--border-2); }
+
+[data-tool="coverage-tracker"] .sm-rule-summary {
+  flex:          1;
+  font-family:   var(--font-body);
+  font-size:     12px;
+  color:         var(--text-muted);
+  overflow:      hidden;
+  white-space:   nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-note {
+  font-family:   var(--font-body);
+  font-size:     11px;
+  color:         var(--text-dim);
+  font-style:    italic;
+  max-width:     180px;
+  overflow:      hidden;
+  white-space:   nowrap;
+  text-overflow: ellipsis;
+  flex-shrink:   0;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-controls {
+  display:     flex;
+  gap:         4px;
+  flex-shrink: 0;
+}
+
+[data-tool="coverage-tracker"] .sm-rule-body {
+  padding:    0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+[data-tool="coverage-tracker"] .sm-enable-row {
+  display:       flex;
+  align-items:   center;
+  margin-top:    12px;
+  margin-bottom: 12px;
+}
+
+[data-tool="coverage-tracker"] .sm-enable-label {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  cursor:      pointer;
+}
+
+[data-tool="coverage-tracker"] .sm-condition-row {
+  display:       flex;
+  gap:           8px;
+  flex-wrap:     wrap;
+  margin-bottom: 8px;
+  align-items:   flex-end;
+}
+
+[data-tool="coverage-tracker"] .sm-condition-field { flex: 0 0 140px; }
+[data-tool="coverage-tracker"] .sm-condition-op    { flex: 0 0 160px; }
+[data-tool="coverage-tracker"] .sm-condition-val   { flex: 1 1 160px; }
+
+[data-tool="coverage-tracker"] .sm-action-row {
+  display:       flex;
+  gap:           8px;
+  flex-wrap:     wrap;
+  align-items:   flex-end;
+  margin-bottom: 8px;
+}
+
+[data-tool="coverage-tracker"] .sm-action-arrow {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      10px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color:          var(--text-dim);
+  margin:         0 4px 0 0;
+  align-self:     center;
+  padding-top:    16px;
+}
+
+[data-tool="coverage-tracker"] .sm-action-then { flex: 0 0 140px; }
+[data-tool="coverage-tracker"] .sm-action-val  { flex: 1 1 140px; }
+
+[data-tool="coverage-tracker"] .sm-rules-filter-row {
+  display:         flex;
+  align-items:     flex-start;
+  justify-content: space-between;
+  gap:             16px;
+  margin-bottom:   16px;
+  flex-wrap:       wrap;
+}
+
+[data-tool="coverage-tracker"] .sm-rules-explainer {
+  font-size:   13px;
+  color:       var(--text-muted);
+  line-height: 1.55;
+  margin:      0;
+  flex:        1;
+  min-width:   260px;
+}
+
+[data-tool="coverage-tracker"] .sm-rules-filter {
+  flex-shrink: 0;
+  min-width:   170px;
+}
+
+[data-tool="coverage-tracker"] .sm-status-text {
+  font-size: 12px;
+  margin:    0;
+}
+
+[data-tool="coverage-tracker"] .sm-status-text--error   { color: #FF6B6B; }
+[data-tool="coverage-tracker"] .sm-status-text--success { color: #4ADE80; }
+[data-tool="coverage-tracker"] .sm-status-text--unsaved { color: var(--text-dim); }
+[data-tool="coverage-tracker"] .sm-status-text--muted   { color: var(--text-muted); font-size: 13px; }
+
+/* ── Publication Groups panel ────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .sm-groups-empty {
+  color:         var(--text-muted);
+  font-size:     13px;
+  margin-bottom: 20px;
+}
+
+[data-tool="coverage-tracker"] .sm-group-row {
+  background:    var(--surface);
+  border:        2px solid var(--border);
+  margin-bottom: 6px;
+}
+
+[data-tool="coverage-tracker"] .sm-group-header {
+  display:     flex;
+  align-items: center;
+}
+
+[data-tool="coverage-tracker"] .sm-group-expand-btn {
+  flex:        1;
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  background:  none;
+  border:      none;
+  padding:     11px 14px;
+  cursor:      pointer;
+  text-align:  left;
+  min-width:   0;
+}
+
+[data-tool="coverage-tracker"] .sm-group-caret {
+  color:       var(--text-dim);
+  font-size:   10px;
+  flex-shrink: 0;
+}
+
+[data-tool="coverage-tracker"] .sm-group-name {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color:          var(--text);
+  overflow:       hidden;
+  white-space:    nowrap;
+  text-overflow:  ellipsis;
+}
+
+[data-tool="coverage-tracker"] .sm-group-count {
+  color:       var(--text-dim);
+  font-size:   11px;
+  flex-shrink: 0;
+}
+
+[data-tool="coverage-tracker"] .sm-group-delete-btn {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background:     transparent;
+  color:          #FF6B6B;
+  border:         2px solid #FF6B6B;
+  padding:        4px 10px;
+  margin:         0 10px;
+  cursor:         pointer;
+  flex-shrink:    0;
+}
+
+[data-tool="coverage-tracker"] .sm-group-delete-btn:disabled {
+  opacity: 0.5;
+}
+
+[data-tool="coverage-tracker"] .sm-group-body {
+  padding:    0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+[data-tool="coverage-tracker"] .sm-group-note {
+  font-size:     12px;
+  color:         var(--text-muted);
+  margin-top:    10px;
+  margin-bottom: 8px;
+}
+
+[data-tool="coverage-tracker"] .sm-member-chips {
+  display:       flex;
+  flex-wrap:     wrap;
+  gap:           6px;
+  margin-top:    10px;
+  margin-bottom: 12px;
+  max-height:    200px;
+  overflow-y:    auto;
+}
+
+[data-tool="coverage-tracker"] .sm-members-empty {
+  font-size:     12px;
+  color:         var(--text-dim);
+  margin-top:    10px;
+  margin-bottom: 10px;
+}
+
+[data-tool="coverage-tracker"] .sm-member-chip {
+  display:     inline-flex;
+  align-items: center;
+  gap:         5px;
+  font-family: var(--font-body);
+  font-size:   12px;
+  background:  var(--surface-2);
+  border:      1px solid var(--border);
+  color:       var(--text-muted);
+  padding:     2px 6px 2px 8px;
+}
+
+[data-tool="coverage-tracker"] .sm-member-remove-btn {
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  color:       #FF6B6B;
+  font-size:   11px;
+  line-height: 1;
+  padding:     0 1px;
+}
+
+[data-tool="coverage-tracker"] .sm-member-remove-btn:disabled {
+  opacity: 0.4;
+}
+
+[data-tool="coverage-tracker"] .sm-textarea-resize {
+  height:      80px;
+  resize:      vertical;
+  line-height: 1.5;
+}
+
+[data-tool="coverage-tracker"] .sm-textarea-lg {
+  height:      120px;
+  resize:      vertical;
+  line-height: 1.5;
+}
+
+[data-tool="coverage-tracker"] .sm-group-error {
+  font-size:  12px;
+  color:      #FF6B6B;
+  margin-top: 6px;
+}
+
+[data-tool="coverage-tracker"] .sm-group-error--create {
+  font-size:     12px;
+  color:         #FF6B6B;
+  margin-bottom: 10px;
+}
+
+[data-tool="coverage-tracker"] .sm-new-group-panel {
+  margin-top:  20px;
+  background:  var(--surface);
+  border:      2px solid var(--border);
+  border-left: 4px solid var(--accent);
+  padding:     16px;
+}
+
+[data-tool="coverage-tracker"] .sm-new-group-title {
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color:          var(--text-dim);
+  margin-bottom:  14px;
+}
+
+[data-tool="coverage-tracker"] .sm-new-group-row {
+  display:       flex;
+  gap:           12px;
+  margin-bottom: 12px;
+  flex-wrap:     wrap;
+}
+
+[data-tool="coverage-tracker"] .sm-new-group-field {
+  flex:      1;
+  min-width: 200px;
+}
