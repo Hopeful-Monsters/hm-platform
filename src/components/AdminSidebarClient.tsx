@@ -14,61 +14,24 @@ export default function AdminSidebarClient({ userEmail }: { userEmail?: string }
   const pathname = usePathname()
 
   return (
-    <aside
-      style={{
-        background: 'var(--surface)',
-        borderRight: '2px solid var(--border)',
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100%',
-      }}
-    >
-      {/* Sidebar header */}
-      <div
-        style={{
-          padding: '24px 20px 20px',
-          borderBottom: '2px solid var(--border)',
-        }}
-      >
-        <p className="eyebrow" style={{ marginBottom: 8 }}>Control Panel</p>
-        <p
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
-            fontSize: 28,
-            textTransform: 'uppercase',
-            letterSpacing: '-0.01em',
-            color: 'var(--text)',
-            lineHeight: 0.92,
-          }}
-        >
-          Admin
-        </p>
+    <aside className="admin-sidebar" aria-label="Admin navigation">
+      <div className="admin-sidebar-header">
+        <p className="eyebrow mb-2">Control Panel</p>
+        <p className="admin-sidebar-heading">Admin</p>
       </div>
 
-      {/* Nav links */}
-      <nav style={{ flex: 1, padding: '12px 0' }}>
+      <nav className="admin-sidebar-nav" aria-label="Admin pages">
         {adminLinks.map(link => {
           const isActive = pathname === link.href
           return (
             <Link
               key={link.href}
               href={link.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'block border-l-[3px] transition-colors duration-150',
-                isActive
-                  ? 'text-[var(--accent)] border-l-[var(--accent)]'
-                  : 'text-[var(--text-muted)] border-l-transparent hover:text-[var(--text)] hover:border-l-[var(--border-2)]'
+                'admin-sidebar-link',
+                isActive && 'admin-sidebar-link--active'
               )}
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 700,
-                fontSize: 16,
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                textDecoration: 'none',
-                padding: '10px 20px',
-              }}
             >
               {link.label}
             </Link>
@@ -76,36 +39,10 @@ export default function AdminSidebarClient({ userEmail }: { userEmail?: string }
         })}
       </nav>
 
-      {/* Signed-in user */}
       {userEmail && (
-        <div
-          style={{
-            padding: '16px 20px',
-            borderTop: '2px solid var(--border)',
-          }}
-        >
-          <p
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontWeight: 700,
-              fontSize: 10,
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              color: 'var(--text-dim)',
-              marginBottom: 4,
-            }}
-          >
-            Signed in as
-          </p>
-          <p
-            style={{
-              fontSize: 13,
-              color: 'var(--text-muted)',
-              wordBreak: 'break-all',
-            }}
-          >
-            {userEmail}
-          </p>
+        <div className="admin-sidebar-footer">
+          <p className="admin-sidebar-footer-label">Signed in as</p>
+          <p className="admin-sidebar-footer-email">{userEmail}</p>
         </div>
       )}
     </aside>
