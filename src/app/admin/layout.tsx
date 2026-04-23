@@ -8,16 +8,9 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        minHeight: 'calc(100vh - var(--nav-h))',
-        background: 'var(--bg)',
-        display: 'grid',
-        gridTemplateColumns: '240px 1fr',
-      }}
-    >
+    <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] min-h-[calc(100vh-var(--nav-h))]">
       <AdminSidebar />
-      <main style={{ minWidth: 0, padding: '36px 40px' }}>
+      <main className="min-w-0 p-9 px-10">
         {children}
       </main>
     </div>
