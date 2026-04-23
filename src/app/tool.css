@@ -1,0 +1,57 @@
+/* Shared wizard step indicator — used by all tools */
+[data-tool] .wizard-steps {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 0;
+  overflow-x: auto;
+  height: 100%;
+}
+
+[data-tool] .wizard-step-row {
+  display: flex;
+  align-items: center;
+}
+
+[data-tool] .wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  height: 100%;
+  transition: color 0.15s;
+}
+
+[data-tool] .wizard-step.is-active {
+  color: var(--accent);
+}
+
+[data-tool] .wizard-step.is-done {
+  color: var(--text-muted);
+}
+
+[data-tool] .wizard-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  font-size: 11px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+[data-tool] .wizard-step-connector {
+  width: 24px;
+  height: 2px;
+  background: var(--border-2);
+  flex-shrink: 0;
+}

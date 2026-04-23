@@ -20,56 +20,6 @@
   padding: 24px 20px;
 }
 
-/* ── Step indicator (rendered inside sub-nav) ───────────────────── */
-
-[data-tool="coverage-tracker"] .ct-steps {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  flex: 1;
-  padding: 0 16px;
-  overflow-x: auto;
-}
-
-[data-tool="coverage-tracker"] .ct-step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-[data-tool="coverage-tracker"] .ct-step.is-done    { color: #00c864; }
-[data-tool="coverage-tracker"] .ct-step.is-active  { color: var(--accent); }
-
-[data-tool="coverage-tracker"] .ct-step-num {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 800;
-  background: var(--border);
-  color: var(--text-muted);
-}
-
-[data-tool="coverage-tracker"] .ct-step.is-done .ct-step-num   { background: #00c864;       color: #000; }
-[data-tool="coverage-tracker"] .ct-step.is-active .ct-step-num { background: var(--accent); color: #000; }
-
-[data-tool="coverage-tracker"] .ct-step-connector {
-  width: 28px;
-  height: 2px;
-  background: var(--border);
-  flex-shrink: 0;
-}
-
 /* ── Cards ──────────────────────────────────────────────────────── */
 
 [data-tool="coverage-tracker"] .ct-card {

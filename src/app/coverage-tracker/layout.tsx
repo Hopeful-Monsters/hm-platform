@@ -5,6 +5,7 @@ import ToolHeader from '@/components/ToolHeader'
 import { WizardProvider } from './_components/WizardContext'
 import StepIndicator from './_components/StepIndicator'
 import SettingsButton from './_components/SettingsButton'
+import '@/app/tool.css'
 import './coverage-tracker.css'
 
 export const metadata: Metadata = {
