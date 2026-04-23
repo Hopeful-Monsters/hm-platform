@@ -3,10 +3,6 @@
 import { useState } from 'react'
 import SettingsModal from './SettingsModal'
 
-/**
- * Rendered in the ToolHeader actions slot.
- * Only mounted when the user has admin or editor role (checked in layout.tsx).
- */
 export default function SettingsButton() {
   const [open, setOpen] = useState(false)
 
@@ -15,25 +11,7 @@ export default function SettingsButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        style={{
-          display:       'flex',
-          alignItems:    'center',
-          gap:           6,
-          fontFamily:    'var(--font-heading)',
-          fontWeight:    700,
-          fontSize:      12,
-          textTransform: 'uppercase',
-          letterSpacing: '0.12em',
-          background:    'transparent',
-          color:         'var(--text-muted)',
-          border:        'none',
-          padding:       '4px 2px',
-          cursor:        'pointer',
-          transition:    'color 0.15s',
-          whiteSpace:    'nowrap',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)' }}
-        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}
+        className="ct-settings-btn"
         aria-label="Open Coverage Tracker Settings"
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">

@@ -1058,3 +1058,27 @@
   justify-content: center;
   flex-wrap:       wrap;
 }
+
+/* ── Settings button ──────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-settings-btn {
+  display:        flex;
+  align-items:    center;
+  gap:            6px;
+  font-family:    var(--font-heading);
+  font-weight:    700;
+  font-size:      12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background:     transparent;
+  color:          var(--text-muted);
+  border:         none;
+  padding:        4px 2px;
+  cursor:         pointer;
+  transition:     color 0.15s;
+  white-space:    nowrap;
+}
+
+[data-tool="coverage-tracker"] .ct-settings-btn:hover {
+  color: var(--text);
+}
