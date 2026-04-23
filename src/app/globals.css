@@ -1020,3 +1020,176 @@ textarea.hm-input {
 }
 
 .hm-accent-fg { color: var(--accent-fg); }
+
+/* ══ SUPPORT FORM ════════════════════════════════════════════════ */
+
+.support-form {
+  max-width: 720px;
+}
+
+/* Two-column grid for name + tool selector */
+.support-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Standard field spacing */
+.support-form-field {
+  margin-bottom: 24px;
+}
+
+/* Urgency field — slightly more breathing room before submit */
+.support-form-field-lg {
+  margin-bottom: 32px;
+}
+
+/* Screenshot row — horizontal label + attach button layout */
+.support-screenshot-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.support-screenshot-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.support-screenshot-label .hm-label-optional {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
+/* Attached file pill */
+.support-file-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  flex: 1;
+  min-width: 0;
+}
+
+.support-file-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.support-file-name {
+  font-size: 14px;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support-file-size {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.support-file-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Add file button */
+.support-attach-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.support-attach-btn:hover {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.support-attach-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Success card */
+.support-success-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-left: 4px solid var(--accent);
+  padding: 40px 36px;
+  max-width: 720px;
+}
+
+.support-success-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Optional label suffix used inside FieldLabel */
+.hm-label-optional {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-dim);
+  margin-left: 8px;
+}
+
+/* hm-select — like hm-input but with custom chevron */
+.hm-select {
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  padding: 14px 40px 14px 16px;
+  outline: none;
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.hm-select:focus {
+  border-color: var(--accent);
+}
+
+.hm-select.placeholder {
+  color: var(--text-dim);
+}
