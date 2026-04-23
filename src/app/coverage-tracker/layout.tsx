@@ -38,15 +38,7 @@ export default async function CoverageTrackerLayout({
   const canEditSettings = role === 'admin' || role === 'editor'
 
   return (
-    <div
-      data-tool="coverage-tracker"
-      style={{
-        minHeight:      'calc(100vh - var(--nav-h))',
-        background:     'var(--bg)',
-        display:        'flex',
-        flexDirection:  'column',
-      }}
-    >
+    <div data-tool="coverage-tracker">
       <WizardProvider>
         <ToolHeader
           toolName="Coverage Tracker"
@@ -55,7 +47,7 @@ export default async function CoverageTrackerLayout({
         >
           <StepIndicator />
         </ToolHeader>
-        <div style={{ flex: 1 }}>
+        <div className="tool-content">
           {children}
         </div>
       </WizardProvider>
