@@ -1,3 +1,16 @@
+/* ── Tool shell — layout wrapper shared by both tools ───────────── */
+
+[data-tool] {
+  min-height:     calc(100vh - var(--nav-h));
+  background:     var(--bg);
+  display:        flex;
+  flex-direction: column;
+}
+
+[data-tool] .tool-content {
+  flex: 1;
+}
+
 /* Shared wizard step indicator — used by all tools */
 [data-tool] .wizard-steps {
   display: flex;
