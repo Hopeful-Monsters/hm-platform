@@ -872,3 +872,189 @@
   flex:      1;
   min-width: 200px;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Page — Drive banner, setup, review table, result screens
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Drive banner ───────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-drive-banner {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             16px;
+}
+
+[data-tool="coverage-tracker"] .ct-drive-banner--connecting {
+  border-color: var(--accent);
+}
+
+[data-tool="coverage-tracker"] .ct-drive-title {
+  margin:      0;
+  font-weight: 600;
+  color:       var(--text);
+  font-size:   14px;
+}
+
+[data-tool="coverage-tracker"] .ct-drive-sub {
+  margin:    4px 0 0;
+  font-size: 12px;
+  color:     var(--text-muted);
+}
+
+[data-tool="coverage-tracker"] .ct-drive-banner .ct-btn {
+  flex-shrink: 0;
+}
+
+/* ── Setup step ─────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-field-wrap {
+  margin-bottom: 18px;
+}
+
+[data-tool="coverage-tracker"] .ct-dest-section {
+  border-top:  2px solid var(--border);
+  margin:      24px 0 20px;
+  padding-top: 20px;
+}
+
+[data-tool="coverage-tracker"] .ct-dest-toggle {
+  display:       flex;
+  gap:           8px;
+  margin-bottom: 16px;
+}
+
+[data-tool="coverage-tracker"] .ct-dest-row {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       16px;
+}
+
+[data-tool="coverage-tracker"] .ct-dest-url-field   { flex: 1; min-width: 300px; }
+[data-tool="coverage-tracker"] .ct-dest-title-field { flex: 1; min-width: 240px; }
+[data-tool="coverage-tracker"] .ct-dest-tab-field   { min-width: 200px; }
+
+[data-tool="coverage-tracker"] .ct-step-actions {
+  display:    flex;
+  gap:        10px;
+  margin-top: 4px;
+}
+
+/* ── Review step ─────────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-review-header {
+  display:       flex;
+  align-items:   center;
+  gap:           12px;
+  margin-bottom: 20px;
+}
+
+[data-tool="coverage-tracker"] .ct-card-title--no-margin {
+  margin: 0;
+}
+
+[data-tool="coverage-tracker"] .ct-row-badge {
+  padding:        2px 10px;
+  background:     var(--accent);
+  color:          var(--accent-fg);
+  font-size:      11px;
+  font-weight:    800;
+  font-family:    var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+[data-tool="coverage-tracker"] .ct-batch-defaults-row {
+  display:     flex;
+  flex-wrap:   wrap;
+  gap:         12px;
+  align-items: flex-end;
+}
+
+[data-tool="coverage-tracker"] .ct-batch-field   { min-width: 130px; }
+[data-tool="coverage-tracker"] .ct-batch-actions { display: flex; gap: 8px; }
+
+[data-tool="coverage-tracker"] .ct-review-table-wrap {
+  overflow-x: auto;
+  border:     2px solid var(--border);
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+[data-tool="coverage-tracker"] .ct-review-table {
+  border-collapse: collapse;
+  width:           100%;
+  min-width:       1400px;
+  font-size:       12px;
+}
+
+[data-tool="coverage-tracker"] .ct-review-th {
+  padding:        8px 7px;
+  text-align:     left;
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color:          var(--text-muted);
+  background:     var(--surface);
+  border-bottom:  2px solid var(--border);
+  white-space:    nowrap;
+  position:       sticky;
+  top:            0;
+  z-index:        9;
+}
+
+[data-tool="coverage-tracker"] .ct-review-th.is-editable {
+  color:      var(--accent);
+  background: var(--surface-2);
+}
+
+[data-tool="coverage-tracker"] .ct-review-table tbody tr:nth-child(odd)  { background: var(--surface); }
+[data-tool="coverage-tracker"] .ct-review-table tbody tr:nth-child(even) { background: var(--bg);      }
+
+[data-tool="coverage-tracker"] .ct-review-td      { padding: 4px 7px; color: var(--text); }
+[data-tool="coverage-tracker"] .ct-col-num        { padding: 4px 7px; color: var(--text-muted); font-size: 11px; text-align: center; }
+[data-tool="coverage-tracker"] .ct-col-nowrap     { padding: 4px 7px; color: var(--text); white-space: nowrap; }
+[data-tool="coverage-tracker"] .ct-col-edit       { padding: 2px 4px; background: rgba(255, 230, 0, 0.04); }
+[data-tool="coverage-tracker"] .ct-col-right      { padding: 4px 7px; color: var(--text); text-align: right; white-space: nowrap; }
+[data-tool="coverage-tracker"] .ct-col-headline   { padding: 4px 7px; color: var(--text); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-tool="coverage-tracker"] .ct-col-link       { padding: 4px 7px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+[data-tool="coverage-tracker"] .ct-review-table .ct-select {
+  font-size: 12px;
+  padding:   3px 6px;
+}
+
+[data-tool="coverage-tracker"] .ct-table-link {
+  color:           var(--accent);
+  text-decoration: none;
+  font-size:       12px;
+}
+
+[data-tool="coverage-tracker"] .ct-submit-bar {
+  display:     flex;
+  align-items: center;
+  gap:         14px;
+  flex-wrap:   wrap;
+  margin-top:  16px;
+}
+
+[data-tool="coverage-tracker"] .ct-row-count-info {
+  font-size: 13px;
+  color:     var(--text-muted);
+}
+
+/* ── Result screens ─────────────────────────────────────────────── */
+
+[data-tool="coverage-tracker"] .ct-card-result {
+  text-align: center;
+  padding:    44px 24px;
+}
+
+[data-tool="coverage-tracker"] .ct-result-actions {
+  display:         flex;
+  gap:             10px;
+  justify-content: center;
+  flex-wrap:       wrap;
+}
