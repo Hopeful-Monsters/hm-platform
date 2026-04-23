@@ -1,17 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
-export default function LoginPage() {
-  const [email, setEmail]       = useState('')
+function LoginContent() {
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const router = useRouter()
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState('')
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const resetSuccess = searchParams.get('reset') === 'success'
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,24 +46,26 @@ export default function LoginPage() {
   return (
     <div className="auth-page-shell">
       <div className="animate-fade-up auth-card">
-        {/* Eyebrow */}
-        <p className="eyebrow" style={{ marginBottom: 12 }}>Welcome back</p>
+        <p className="eyebrow mb-3">Welcome back</p>
 
-        {/* Heading */}
-        <h1 className="display-lg hm-text" style={{ marginBottom: 32 }}>
+        <h1 className="display-lg hm-text mb-8">
           Sign <span className="hm-accent italic">In.</span>
         </h1>
 
-        {/* Error */}
+        {resetSuccess && (
+          <div className="hm-success-banner mb-5">
+            Password updated. Sign in with your new password.
+          </div>
+        )}
+
         {error && (
-          <div className="hm-error-banner" style={{ marginBottom: 20 }}>
+          <div className="hm-error-banner mb-5" role="alert">
             {error}
           </div>
         )}
 
-        {/* Email form */}
-        <form onSubmit={handleEmailLogin} style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 16 }}>
+        <form onSubmit={handleEmailLogin} className="mb-4">
+          <div className="mb-4">
             <label className="hm-label" htmlFor="email">Email</label>
             <input
               id="email"
@@ -70,11 +74,12 @@ export default function LoginPage() {
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
+              aria-required="true"
               className="hm-input"
             />
           </div>
 
-          <div style={{ marginBottom: 24 }}>
+          <div className="mb-6">
             <label className="hm-label" htmlFor="password">Password</label>
             <input
               id="password"
@@ -83,8 +88,12 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              aria-required="true"
               className="hm-input"
             />
+            <Link href="/forgot-password" className="hm-forgot-link">
+              Forgot password?
+            </Link>
           </div>
 
           <Button type="submit" disabled={loading} size="lg" className="w-full">
@@ -92,28 +101,24 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {/* Divider */}
-        <div className="hm-divider" style={{ marginBottom: 16 }}>
+        <div className="hm-divider mb-4">
           <div className="hm-divider-line" />
           <span className="hm-divider-label">or</span>
           <div className="hm-divider-line" />
         </div>
 
-        {/* Google OAuth */}
         <Button
           type="button"
           variant="outline"
           size="lg"
           disabled={loading}
           onClick={handleGoogleLogin}
-          className="w-full"
-          style={{ marginBottom: 28 }}
+          className="w-full mb-7"
         >
           Continue with Google
         </Button>
 
-        {/* Footer */}
-        <p className="hm-text-muted text-center" style={{ fontSize: 13 }}>
+        <p className="hm-text-muted text-center text-sm">
           No account?{' '}
           <Link href="/signup" className="hm-link">
             Sign up
@@ -121,5 +126,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   )
 }
