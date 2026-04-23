@@ -2,6 +2,11 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
+import SignOutButton from '@/components/SignOutButton'
+import RequestAccessButton from '@/components/RequestAccessButton'
+import { LoadingSpinner } from '@/components/tool/LoadingSpinner'
+import { TOOLS } from '@/lib/tools'
 
 export const metadata: Metadata = {
   title:       'Hopeful Monsters',
@@ -12,12 +17,7 @@ export const metadata: Metadata = {
     type:        'website',
   },
 }
-import { createClient } from '@/lib/supabase/server'
-import SignOutButton from '@/components/SignOutButton'
-import RequestAccessButton from '@/components/RequestAccessButton'
-import { TOOLS } from '@/lib/tools'
 
-// ── Tool card ─────────────────────────────────────────────────────
 function ToolCard({
   href,
   label,
@@ -30,83 +30,22 @@ function ToolCard({
   cta: string
 }) {
   return (
-    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
-      <div
-        className="card-hover"
-        style={{
-          background: 'var(--surface)',
-          borderLeft: '4px solid var(--accent)',
-          border: '2px solid var(--border)',
-          borderLeftWidth: 4,
-          borderLeftColor: 'var(--accent)',
-          padding: '32px 28px',
-          height: '100%',
-        }}
-      >
-        <p className="eyebrow" style={{ marginBottom: 12 }}>Tool</p>
-        <h3
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
-            fontSize: 30,
-            textTransform: 'uppercase',
-            letterSpacing: '-0.01em',
-            color: 'var(--text)',
-            lineHeight: 0.95,
-            marginBottom: 12,
-          }}
-        >
-          {label}
-        </h3>
-        <p
-          style={{
-            fontSize: 14,
-            color: 'var(--text-muted)',
-            lineHeight: 1.65,
-            marginBottom: 24,
-          }}
-        >
-          {description}
-        </p>
-        <span
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
-            fontSize: 14,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            color: 'var(--accent)',
-          }}
-        >
-          {cta} →
-        </span>
-      </div>
+    <Link href={href} className="tool-card card-hover">
+      <p className="eyebrow mb-3">Tool</p>
+      <h3 className="tool-card-label">{label}</h3>
+      <p className="tool-card-desc">{description}</p>
+      <span className="tool-card-cta">{cta} →</span>
     </Link>
   )
 }
 
-// ── Tool grid skeleton — shown while ToolGrid streams in ──────────
 function ToolGridSkeleton() {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: 2,
-      }}
-    >
+    <div className="tool-grid">
       {[0, 1].map(i => (
         <div
           key={i}
-          style={{
-            background: 'var(--surface)',
-            border: '2px solid var(--border)',
-            borderLeftWidth: 4,
-            borderLeftColor: 'var(--border)',
-            padding: '32px 28px',
-            height: 220,
-            opacity: 0.5,
-          }}
+          className="bg-[var(--surface)] border-2 border-[var(--border)] border-l-4 border-l-[var(--border)] p-8 h-[220px] opacity-50"
           aria-hidden
         />
       ))}
@@ -114,9 +53,6 @@ function ToolGridSkeleton() {
   )
 }
 
-// ── Async tool grid — streams in independently ────────────────────
-// Isolated here so the welcome hero above renders immediately while
-// the two DB queries (tool_access + tool_access_requests) are in flight.
 async function ToolGrid({ userId, role }: { userId: string; role?: string }) {
   const supabase = await createClient()
 
@@ -133,13 +69,7 @@ async function ToolGrid({ userId, role }: { userId: string; role?: string }) {
   const pendingRequests = accessRequests?.map(r => r.tool_slug) ?? []
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: 2,
-      }}
-    >
+    <div className="tool-grid">
       {TOOLS.map(tool => {
         const hasAccess = userTools.includes(tool.slug)
         if (hasAccess) {
@@ -155,45 +85,10 @@ async function ToolGrid({ userId, role }: { userId: string; role?: string }) {
         }
         const isPending = pendingRequests.includes(tool.slug)
         return (
-          <div
-            key={tool.slug}
-            style={{
-              background:      'var(--surface)',
-              border:          '2px solid var(--border)',
-              borderLeftWidth: 4,
-              borderLeftColor: 'var(--border-2)',
-              padding:         '32px 28px',
-              opacity:         0.75,
-            }}
-          >
-            <p className="eyebrow" style={{ marginBottom: 12, color: 'var(--text-muted)' }}>
-              No access
-            </p>
-            <h3
-              style={{
-                fontFamily:    'var(--font-heading)',
-                fontWeight:    900,
-                fontSize:      30,
-                textTransform: 'uppercase',
-                letterSpacing: '-0.01em',
-                color:         'var(--text-muted)',
-                lineHeight:    0.95,
-                marginBottom:  12,
-              }}
-            >
-              {tool.label}
-            </h3>
-            <p
-              style={{
-                fontSize:     14,
-                color:        'var(--text-muted)',
-                lineHeight:   1.65,
-                marginBottom: 24,
-                opacity:      0.7,
-              }}
-            >
-              {tool.description}
-            </p>
+          <div key={tool.slug} className="tool-card--locked">
+            <p className="eyebrow mb-3 hm-text-muted">No access</p>
+            <h3 className="tool-card-label hm-text-muted">{tool.label}</h3>
+            <p className="tool-card-desc opacity-70 mb-6">{tool.description}</p>
             <RequestAccessButton
               toolSlug={tool.slug}
               toolLabel={tool.label}
@@ -204,190 +99,52 @@ async function ToolGrid({ userId, role }: { userId: string; role?: string }) {
       })}
 
       {role === 'admin' && (
-        <Link href="/admin" style={{ textDecoration: 'none', display: 'block' }}>
-          <div
-            className="card-hover"
-            style={{
-              background: 'var(--surface)',
-              border: '2px solid var(--border)',
-              borderLeft: '4px solid var(--pink)',
-              padding: '32px 28px',
-              height: '100%',
-            }}
-          >
-            <p className="eyebrow" style={{ marginBottom: 12 }}>Admin only</p>
-            <h3
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 900,
-                fontSize: 30,
-                textTransform: 'uppercase',
-                color: 'var(--text)',
-                lineHeight: 0.95,
-                marginBottom: 12,
-              }}
-            >
-              Admin Dashboard
-            </h3>
-            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.65, marginBottom: 24 }}>
-              Manage users, approve requests, and control tool access.
-            </p>
-            <span
-              style={{
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 900,
-                fontSize: 14,
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: 'var(--accent)',
-              }}
-            >
-              Open →
-            </span>
-          </div>
+        <Link href="/admin" className="tool-card card-hover tool-card--pink">
+          <p className="eyebrow mb-3">Admin only</p>
+          <h3 className="tool-card-label">Admin Dashboard</h3>
+          <p className="tool-card-desc mb-6">Manage users, approve requests, and control tool access.</p>
+          <span className="tool-card-cta">Open →</span>
         </Link>
       )}
     </div>
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────
 export default async function Home() {
-  // getCurrentUser() is memoised via React cache() — the call in layout.tsx
-  // already resolved this; we get the cached result with no extra round-trip.
   const user   = await getCurrentUser()
   const status = user?.user_metadata?.status
   const role   = user?.user_metadata?.role
 
-  // ── Unauthenticated landing ──────────────────────────────────────
   if (!user) {
     return (
-      <div
-        style={{
-          minHeight: 'calc(100vh - var(--nav-h))',
-          display: 'flex',
-          alignItems: 'center',
-          background: 'var(--accent)',
-        }}
-      >
-        {/* Hero — yellow, two-column */}
-        <section
-          style={{
-            width: '100%',
-            padding: '80px 32px 72px',
-          }}
-        >
-          <div
-            className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
-            style={{ maxWidth: 1200, margin: '0 auto' }}
-          >
-            {/* LHS — copy + CTAs */}
+      <div className="hero-landing">
+        <section className="hero-landing-inner">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-[1200px] mx-auto">
             <div>
-              <h1
-                className="display-xl"
-                style={{ color: 'var(--accent-fg)', marginBottom: 24 }}
-              >
+              <h1 className="display-xl hm-accent-fg mb-6">
                 Tools for<br />
-                <span
-                  style={{
-                    WebkitTextStroke: '3px var(--accent-fg)',
-                    color: 'transparent',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  bold
-                </span>{' '}brands.
+                <span className="text-outline-on-accent">bold</span> brands.
               </h1>
-
-              <p
-                style={{
-                  fontSize: 18,
-                  color: 'rgba(0,0,0,0.65)',
-                  lineHeight: 1.6,
-                  maxWidth: 420,
-                  marginBottom: 36,
-                  fontWeight: 500,
-                }}
-              >
+              <p className="text-lg text-black/65 leading-relaxed max-w-[420px] mb-9 font-medium">
                 A curated set of tools for expenses, coverage tracking, and
                 administrative workflows — built for teams that move fast.
               </p>
-
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                {/* Get Started — dark fill on yellow bg */}
-                <Link
-                  href="/signup"
-                  className="btn-hm text-2xl px-10 py-4 transition-all duration-150 hover:opacity-85 hover:-translate-y-0.5"
-                  style={{
-                    background: 'var(--accent-fg)',
-                    color: 'var(--accent)',
-                  }}
-                >
+              <div className="hero-cta-row">
+                <Link href="/signup" className="btn-hm text-2xl px-10 py-4 hero-cta-primary">
                   Get Started →
                 </Link>
-                {/* Sign In — ghost on yellow bg */}
-                <Link
-                  href="/login"
-                  className="btn-hm text-2xl px-10 py-4 transition-all duration-150 hover:bg-black/10"
-                  style={{
-                    background: 'transparent',
-                    border: '2px solid var(--accent-fg)',
-                    color: 'var(--accent-fg)',
-                  }}
-                >
+                <Link href="/login" className="btn-hm text-2xl px-10 py-4 hero-cta-ghost">
                   Sign In
                 </Link>
               </div>
             </div>
 
-            {/* RHS — tool cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="flex flex-col gap-[10px]">
               {TOOLS.map(tool => (
-                <div
-                  key={tool.slug}
-                  style={{
-                    background: 'rgba(0,0,0,0.08)',
-                    border: '2px solid rgba(0,0,0,0.12)',
-                    borderLeft: '4px solid rgba(0,0,0,0.25)',
-                    padding: '22px 24px',
-                  }}
-                >
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontWeight: 700,
-                      fontSize: 11,
-                      letterSpacing: '0.25em',
-                      textTransform: 'uppercase',
-                      color: 'rgba(0,0,0,0.45)',
-                      marginBottom: 8,
-                    }}
-                  >
-                    Tool
-                  </p>
-                  <h3
-                    style={{
-                      fontFamily: 'var(--font-heading)',
-                      fontWeight: 900,
-                      fontSize: 26,
-                      textTransform: 'uppercase',
-                      letterSpacing: '-0.01em',
-                      color: 'var(--accent-fg)',
-                      lineHeight: 0.95,
-                      marginBottom: 10,
-                    }}
-                  >
-                    {tool.label}
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: 14,
-                      color: 'rgba(0,0,0,0.55)',
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    {tool.description}
-                  </p>
+                <div key={tool.slug} className="hero-preview-card">
+                  <p className="hero-preview-eyebrow">Tool</p>
+                  <h3 className="hero-preview-title">{tool.label}</h3>
+                  <p className="hero-preview-desc">{tool.description}</p>
                 </div>
               ))}
             </div>
@@ -397,37 +154,16 @@ export default async function Home() {
     )
   }
 
-  // ── Pending approval ────────────────────────────────────────────
   if (status !== 'approved') {
     return (
-      <div
-        style={{
-          minHeight: 'calc(100vh - var(--nav-h))',
-          background: 'var(--bg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '48px 24px',
-          textAlign: 'center',
-        }}
-      >
-        <div className="animate-fade-up" style={{ maxWidth: 480 }}>
-          <p className="eyebrow" style={{ marginBottom: 12 }}>Almost there</p>
-          <h1
-            className="display-lg"
-            style={{ color: 'var(--text)', marginBottom: 20 }}
-          >
+      <div className="auth-page-shell">
+        <div className="animate-fade-up text-center max-w-[480px]">
+          <p className="eyebrow mb-3">Almost there</p>
+          <h1 className="display-lg hm-text mb-5">
             Pending<br />
-            <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>Approval.</span>
+            <span className="hm-accent italic">Approval.</span>
           </h1>
-          <p
-            style={{
-              fontSize: 16,
-              color: 'var(--text-muted)',
-              lineHeight: 1.65,
-              marginBottom: 32,
-            }}
-          >
+          <p className="pending-body">
             Your account has been created. An admin will review and approve your access
             shortly — you&rsquo;ll receive an email when you&rsquo;re in.
           </p>
@@ -437,57 +173,21 @@ export default async function Home() {
     )
   }
 
-  // ── Approved dashboard ──────────────────────────────────────────
-  // Welcome hero renders immediately. ToolGrid is in a Suspense boundary so
-  // the hero appears as part of the static shell while the two DB queries
-  // (tool_access + tool_access_requests) stream in concurrently.
   return (
     <>
-      {/* Welcome hero — renders before ToolGrid queries resolve */}
-      <section
-        style={{
-          background: 'var(--accent)',
-          padding: '48px 32px 40px',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <span
-          className="watermark"
-          style={{
-            fontSize: '30vw',
-            lineHeight: 1,
-            color: 'rgba(0,0,0,0.045)',
-            bottom: -30,
-            right: -10,
-          }}
-        >
-          HM
-        </span>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <p className="eyebrow" style={{ marginBottom: 8, color: 'rgba(0,0,0,0.45)' }}>
-            Your dashboard
-          </p>
-          <h1
-            className="display-lg"
-            style={{ color: 'var(--accent-fg)', lineHeight: 0.9 }}
-          >
+      <section className="dashboard-hero">
+        <span className="watermark-hero" aria-hidden>HM</span>
+        <div className="dashboard-hero-inner">
+          <p className="dashboard-hero-eyebrow">Your dashboard</p>
+          <h1 className="display-lg hm-accent-fg" style={{ lineHeight: 0.9 }}>
             Welcome back,<br />
             {user.email?.split('@')[0]}.
           </h1>
         </div>
       </section>
 
-      {/* Tool grid — streams in after tool_access queries resolve */}
-      <section
-        style={{
-          background: 'var(--bg)',
-          padding: '48px 32px',
-          maxWidth: 1100,
-          margin: '0 auto',
-        }}
-      >
-        <p className="eyebrow" style={{ marginBottom: 20 }}>Your tools</p>
+      <section className="tools-section">
+        <p className="eyebrow mb-5">Your tools</p>
         <Suspense fallback={<ToolGridSkeleton />}>
           <ToolGrid userId={user.id} role={role} />
         </Suspense>
