@@ -11,16 +11,11 @@ import { DesktopNav, MobileNav } from './navigation'
 import type { User } from '@supabase/supabase-js'
 
 export default function SiteHeader() {
-  // Initialise from the server-resolved user passed down via UserProvider.
-  // This means the header renders correctly on the first paint without waiting
-  // for a client-side getUser() call to complete — eliminating the loading flash.
   const serverUser = useUser()
   const [user, setUser]             = useState<User | null>(serverUser)
   const [userTools, setUserTools]   = useState<string[]>([])
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Keep user state reactive for sign-in / sign-out events that happen
-  // during the session (e.g. signing out updates the nav immediately).
   useEffect(() => {
     const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -31,7 +26,6 @@ export default function SiteHeader() {
 
   useEffect(() => {
     if (!user || user.user_metadata?.status !== 'approved') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserTools([])
       return
     }
@@ -43,55 +37,21 @@ export default function SiteHeader() {
       .then(({ data }) => setUserTools(data?.map(r => r.tool_slug) ?? []))
   }, [user])
 
-  const navStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 'var(--nav-h)',
-    background: 'var(--bg)',
-    borderBottom: '2px solid var(--border)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '0 24px',
-    zIndex: 1000,
-    gap: 16,
-  }
-
   return (
     <>
-      <header style={navStyle}>
-        {/* Left — logo + desktop nav */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24, minWidth: 0 }}>
-          <Link
-            href="/"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontWeight: 900,
-              fontSize: 17,
-              letterSpacing: '0.2em',
-              color: 'var(--accent)',
-              textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-            }}
-          >
+      <header className="site-header">
+        <div className="site-header-left">
+          <Link href="/" className="site-header-logo">
             <span className="hidden sm:inline">HOPEFUL MONSTERS.</span>
           </Link>
-
           <DesktopNav
-              userRole={user?.user_metadata?.role}
-              userTools={userTools}
-              isAuthenticated={!!user}
-            />
+            userRole={user?.user_metadata?.role}
+            userTools={userTools}
+            isAuthenticated={!!user}
+          />
         </div>
 
-        {/* Right — theme toggle, sign out / auth */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div className="site-header-right">
           <ThemeToggle />
 
           {user ? (
@@ -100,63 +60,31 @@ export default function SiteHeader() {
             </div>
           ) : (
             <>
-              {/* Sign In — colour set via Tailwind so hover override works */}
-              <Link
-                href="/login"
-                className="hidden sm:flex text-[var(--text-muted)] hover:text-[var(--text)] transition-colors duration-150"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 900,
-                  fontSize: 14,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  textDecoration: 'none',
-                  padding: '6px 12px',
-                }}
-              >
+              <Link href="/login" className="site-header-nav-link hidden sm:inline-flex">
                 Sign In
               </Link>
-              {/* Sign Up — bg/colour via Tailwind so hover override works */}
-              <Link
-                href="/signup"
-                className="bg-[var(--accent)] text-[var(--accent-fg)] hover:opacity-80 transition-opacity duration-150"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 900,
-                  fontSize: 14,
-                  letterSpacing: '0.15em',
-                  textTransform: 'uppercase',
-                  textDecoration: 'none',
-                  padding: '7px 16px',
-                  display: 'inline-block',
-                }}
-              >
+              <Link href="/signup" className="site-header-signup">
                 Sign Up
               </Link>
             </>
           )}
 
-          {/* Mobile menu toggle — hidden on desktop */}
           <button
-            className="flex md:hidden items-center justify-center"
+            className="btn-icon flex md:hidden"
             onClick={() => setMobileOpen(o => !o)}
-            style={{
-              background: 'none',
-              border: '2px solid var(--border-2)',
-              color: 'var(--text-muted)',
-              padding: 6,
-              cursor: 'pointer',
-            }}
+            aria-label="Open menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
           >
-            <Menu size={16} />
+            <Menu size={16} aria-hidden />
           </button>
         </div>
       </header>
 
-      {/* Spacer to offset fixed header */}
-      <div style={{ height: 'var(--nav-h)' }} />
+      <div className="site-header-spacer" aria-hidden />
 
       <MobileNav
+        id="mobile-nav"
         isOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
         userRole={user?.user_metadata?.role}
