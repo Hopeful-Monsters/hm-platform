@@ -108,20 +108,8 @@ export default async function UsersPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 36 }}>
-        <h1
-          style={{
-            fontFamily:    'var(--font-heading)',
-            fontWeight:    900,
-            fontSize:      48,
-            textTransform: 'uppercase',
-            color:         'var(--text)',
-            lineHeight:    0.92,
-            letterSpacing: '-0.01em',
-          }}
-        >
-          User Management
-        </h1>
+      <div className="mb-9">
+        <h1 className="users-page-heading">User Management</h1>
       </div>
 
       <UsersClient
