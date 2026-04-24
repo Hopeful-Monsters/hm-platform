@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Job, QueueItem, Extracted } from '../_types'
 import { fmtSize, isOldDate, buildFilename, afyFolderName, monthLabel } from '../_utils'
+import { cn } from '@/lib/utils'
 import { useExpenses } from '../_hooks/useExpenses'
 import { useWizard, type WizardStep } from './WizardContext'
 import { DropZone } from './DropZone'
@@ -68,21 +69,20 @@ function ReviewCard({
   }
 
   return (
-    <div className="card" style={{ marginBottom: 14, ...(hasFieldErrors ? { borderColor: 'var(--error)' } : {}) }}>
+    <div className={cn('card mb-[14px]', hasFieldErrors && 'has-error')}>
       {/* Header */}
       <div
-        className="card-hdr collapsible"
-        style={{ background: 'var(--surface-2)', ...(hasFieldErrors ? { borderBottomColor: 'var(--error)' } : {}) }}
+        className={cn('card-hdr collapsible', hasFieldErrors && 'has-error')}
         onClick={() => setCollapsed(c => !c)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>{isPdf ? '📄' : '🖼️'}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{isPdf ? '📄' : '🖼️'}</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{item.file.name}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{fmtSize(item.file.size)}</div>
+            <div className="em-item-name">{item.file.name}</div>
+            <div className="em-item-size">{fmtSize(item.file.size)}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="flex items-center gap-2">
           <span className={`sbadge ${statusClass}`}>{statusLabel}</span>
           <span className={`chevron${isCollapsed ? ' is-collapsed' : ''}`}>▾</span>
         </div>
@@ -97,14 +97,13 @@ function ReviewCard({
               <label className="lbl">Date <span className="req">*</span></label>
               <input
                 type="date"
-                className="fc"
+                className={cn('fc', fe.date && 'has-error')}
                 value={d.date || ''}
-                style={fe.date ? { borderColor: 'var(--error)' } : undefined}
                 onChange={e => patchExtracted({ date: e.target.value })}
               />
               {fe.date && <div className="field-error">{fe.date}</div>}
               {!fe.date && isOldDate(d.date) && (
-                <div className="alert alert-warning" style={{ marginTop: 6, marginBottom: 0, padding: '7px 11px', fontSize: 12 }}>
+                <div className="alert alert-warning em-date-warn">
                   Date is before the current month.
                 </div>
               )}
@@ -143,8 +142,7 @@ function ReviewCard({
           <div className="fg">
             <label className="lbl">Expense Name <span className="req">*</span></label>
             <input
-              type="text" className="fc" value={d.itemName || ''}
-              style={fe.itemName ? { borderColor: 'var(--error)' } : undefined}
+              type="text" className={cn('fc', fe.itemName && 'has-error')} value={d.itemName || ''}
               onChange={e => patchExtracted({ itemName: e.target.value })}
             />
             {fe.itemName && <div className="field-error">{fe.itemName}</div>}
@@ -167,18 +165,17 @@ function ReviewCard({
           <div className="fg">
             <label className="lbl">Reference <span className="req">*</span></label>
             <input
-              type="text" className="fc" value={d.reference || ''}
-              style={fe.reference ? { borderColor: 'var(--error)' } : undefined}
+              type="text" className={cn('fc', fe.reference && 'has-error')} value={d.reference || ''}
               onChange={e => patchExtracted({ reference: e.target.value })}
             />
             {fe.reference && <div className="field-error">{fe.reference}</div>}
           </div>
 
           {/* Amounts */}
-          <div className="row4" style={{ alignItems: 'end' }}>
-            <div className="fg" style={{ marginBottom: 0 }}>
+          <div className="row4 items-end">
+            <div className="fg mb-0">
               <label className="lbl">Cost Ex GST <span className="req">*</span></label>
-              <div className="pfx" style={fe.amountExGST ? { outline: '2px solid var(--error)' } : undefined}>
+              <div className={cn('pfx', fe.amountExGST && 'has-error')}>
                 <span className="pfx-lbl">$</span>
                 <input
                   type="number" className="fc" value={exGST || ''} step="0.01" min="0"
@@ -187,7 +184,7 @@ function ReviewCard({
               </div>
               {fe.amountExGST && <div className="field-error">{fe.amountExGST}</div>}
             </div>
-            <div className="fg" style={{ marginBottom: 0 }}>
+            <div className="fg mb-0">
               <label className="lbl">GST <span className="req">*</span></label>
               <div className="pfx">
                 <input
@@ -201,17 +198,16 @@ function ReviewCard({
                 <span className="pfx-lbl">%</span>
               </div>
             </div>
-            <div className="fg" style={{ marginBottom: 0 }}>
+            <div className="fg mb-0">
               <label className="lbl">Total Inc GST</label>
               <div className="pfx">
                 <span className="pfx-lbl">$</span>
                 <input
-                  type="number" className="fc" value={total || ''} step="0.01" readOnly
-                  style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                  type="number" className="fc fc-readonly" value={total || ''} step="0.01" readOnly
                 />
               </div>
             </div>
-            <div className="fg" style={{ marginBottom: 0 }}>
+            <div className="fg mb-0">
               <label className="lbl">Markup <span className="req">*</span></label>
               <div className="pfx">
                 <input
@@ -230,7 +226,7 @@ function ReviewCard({
           </div>
 
           {/* Drive filename */}
-          <div className="fg" style={{ marginTop: 14 }}>
+          <div className="fg mt-[14px]">
             <label className="lbl">Drive Filename</label>
             <div className="fname-box">{fn || '—'}</div>
           </div>
@@ -307,7 +303,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
             </div>
             <DropZone onFiles={addFiles} />
             {queue.length > 0 && (
-              <div style={{ marginTop: 16 }}>
+              <div className="mt-4">
                 <div className="queue-hdr">
                   <div className="queue-count"><span>{readyCount}</span> receipt(s) ready</div>
                   <button className="btn btn-ghost btn-sm" onClick={clearQueue}>Clear all</button>
@@ -319,7 +315,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                 </div>
               </div>
             )}
-            <div className="step-ftr" style={{ marginTop: 16 }}>
+            <div className="step-ftr mt-4">
               <button className="btn btn-secondary" disabled={pendingCount === 0} onClick={extractAll}>
                 Extract Details
               </button>
@@ -339,7 +335,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
             <button className="btn btn-secondary btn-sm" onClick={() => setStep(2)}>← Back</button>
           </div>
           <div className="card-body">
-            <div className="job-banner" style={{ marginBottom: 16 }}>
+            <div className="job-banner mb-4">
               <div>
                 <div className="job-banner-label">Job</div>
                 <div className="job-banner-name">{job.full || job.name}</div>
@@ -383,15 +379,15 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                 />
               </div>
               {driveEnabled && driveStatus !== 'connected' && (
-                <div className="hint" style={{ marginTop: 5 }}>
+                <div className="hint mt-[5px]">
                   A Google sign-in popup will appear. If it doesn&apos;t, allow popups for this site in your browser&apos;s address bar, then try again.
                 </div>
               )}
             </div>
-            {submitError && <div className="alert alert-error" style={{ marginTop: 14 }}>{submitError}</div>}
+            {submitError && <div className="alert alert-error mt-[14px]">{submitError}</div>}
             <div className="step-ftr">
               <button className="btn btn-success btn-lg" disabled={submitting} onClick={handleSubmit}>
-                {submitting ? <><span className="spin" style={{ marginRight: 6 }} /> Submitting…</> : '✓ Submit All Expenses'}
+                {submitting ? <><span className="spin mr-[6px]" /> Submitting…</> : '✓ Submit All Expenses'}
               </button>
             </div>
           </div>
@@ -401,15 +397,15 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
       {/* ── Step 4: Success ────────────────────────────────────── */}
       {step === 4 && (
         <div className="card">
-          <div className="card-body" style={{ textAlign: 'center', padding: '44px 24px' }}>
+          <div className="card-body em-result-body">
             <div className="success-circle">✓</div>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 28, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text)', marginBottom: 8 }}>
+            <h2 className="em-result-heading">
               {results.filter(r => r.ok).length === 1 ? 'Expense Logged!' : `${results.filter(r => r.ok).length} Expenses Logged!`}
             </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 16, lineHeight: 1.6 }}>
+            <p className="em-result-detail">
               Logged to <strong>{job.full || job.name}</strong>.
               {results.filter(r => !r.ok).length > 0 && (
-                <span style={{ color: 'var(--error)' }}> {results.filter(r => !r.ok).length} failed.</span>
+                <span className="em-error-count"> {results.filter(r => !r.ok).length} failed.</span>
               )}
             </p>
             <div className="bulk-result-list">
@@ -435,8 +431,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                       href={`https://drive.google.com/file/d/${r.driveFileId}/view`}
                       target="_blank"
                       rel="noreferrer"
-                      className="btn btn-secondary btn-sm"
-                      style={{ marginLeft: 'auto' }}
+                      className="btn btn-secondary btn-sm ml-auto"
                     >
                       Drive ↗
                     </a>
@@ -444,7 +439,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginTop: 16 }}>
+            <div className="em-result-actions">
               <a
                 href={`https://hopefulmonsters.app.streamtime.net/#jobs/${job.id}`}
                 target="_blank"
@@ -454,7 +449,7 @@ export default function ExpenseWizard({ job, onBack }: { job: Job; onBack: () =>
                 View in Streamtime →
               </a>
             </div>
-            <div style={{ marginTop: 24 }}>
+            <div className="mt-6">
               <button className="btn btn-primary" onClick={reset}>Log More Expenses</button>
             </div>
           </div>
