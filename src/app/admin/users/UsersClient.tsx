@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { cn } from '@/lib/utils'
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -31,51 +32,11 @@ const ROLE_OPTIONS = [
   { value: 'user',   label: 'User'   },
 ]
 
-// Role sort weight — lower = higher privilege, sorts first ascending
 const ROLE_WEIGHT: Record<string, number> = {
   master_admin: 0,
   admin:        1,
   editor:       2,
   user:         3,
-}
-
-// Role badge styles
-const ROLE_BADGE: Record<string, React.CSSProperties> = {
-  master_admin: { background: '#1a0a00', color: 'var(--accent)'  },
-  admin:        { background: '#001820', color: '#00B4D8'         },
-  editor:       { background: '#0d0d1a', color: '#A78BFA'         },
-  user:         { background: 'var(--surface-2)', color: 'var(--text-muted)' },
-}
-
-// ── Style helpers ─────────────────────────────────────────────────
-
-const metaStyle: React.CSSProperties = {
-  fontFamily:    'var(--font-heading)',
-  fontSize:      11,
-  fontWeight:    700,
-  letterSpacing: '0.3em',
-  textTransform: 'uppercase',
-  color:         'var(--text-dim)',
-}
-
-const checkboxLabelStyle: React.CSSProperties = {
-  display:    'flex',
-  alignItems: 'center',
-  gap:        8,
-  fontSize:   13,
-  color:      'var(--text-muted)',
-  cursor:     'pointer',
-  fontFamily: 'var(--font-body)',
-}
-
-const badgeStyle: React.CSSProperties = {
-  fontFamily:    'var(--font-heading)',
-  fontWeight:    700,
-  fontSize:      11,
-  letterSpacing: '0.2em',
-  textTransform: 'uppercase',
-  padding:       '3px 9px',
-  display:       'inline-block',
 }
 
 // ── Component ─────────────────────────────────────────────────────
@@ -87,12 +48,9 @@ interface UsersClientProps {
 }
 
 export function UsersClient({ users, setRole, updateToolAccess }: UsersClientProps) {
-  const [query,   setQuery]   = useState('')
-  const [sortKey, setSortKey] = useState<SortKey>('name')
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [hovered, setHovered] = useState<string | null>(null)
-
-  // Track pending role selections per user before save
+  const [query,        setQuery]        = useState('')
+  const [sortKey,      setSortKey]      = useState<SortKey>('name')
+  const [sortDir,      setSortDir]      = useState<SortDir>('asc')
   const [pendingRoles, setPendingRoles] = useState<Record<string, string>>({})
 
   const handleSort = (key: SortKey) => {
@@ -141,160 +99,77 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
   return (
     <div>
       {/* Search */}
-      <div style={{ marginBottom: 24 }}>
+      <div className="mb-6">
         <input
           type="search"
           placeholder="Search by name or email…"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          style={{
-            width:      '100%',
-            maxWidth:   400,
-            background: 'var(--surface)',
-            border:     '2px solid var(--border)',
-            color:      'var(--text)',
-            fontFamily: 'var(--font-body)',
-            fontSize:   14,
-            padding:    '9px 14px',
-            outline:    'none',
-          }}
-          onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
-          onBlur={e  => { e.currentTarget.style.borderColor = 'var(--border)' }}
+          className="users-search"
         />
       </div>
 
       {/* Table header */}
-      <div
-        style={{
-          display:             'grid',
-          gridTemplateColumns: '1fr 240px 240px',
-          padding:             '8px 40px',
-          borderBottom:        '2px solid var(--border)',
-          marginBottom:        2,
-        }}
-      >
+      <div className="users-table-header">
         {(['name', 'role'] as SortKey[]).map((key, i) => (
           <button
             key={key}
             onClick={() => handleSort(key)}
-            style={{
-              ...metaStyle,
-              background: 'none',
-              border:     'none',
-              padding:    0,
-              cursor:     'pointer',
-              textAlign:  'left',
-              color:      sortKey === key ? 'var(--text)' : 'var(--text-dim)',
-            }}
+            className={cn('users-sort-btn', sortKey === key && 'is-active')}
           >
             {i === 0 ? 'User' : 'Role'}{sortArrow(key)}
           </button>
         ))}
-        <span style={metaStyle}>Tool Access</span>
+        <span className="users-meta">Tool Access</span>
       </div>
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <p style={{ color: 'var(--text-muted)', fontSize: 14, padding: '40px' }}>
-          No users match your search.
-        </p>
+        <p className="users-empty">No users match your search.</p>
       )}
 
       {/* User rows */}
       {filtered.map(u => {
-        const name        = displayName(u)
-        const role        = effectiveRole(u)
-        const badgeColors = ROLE_BADGE[role] ?? ROLE_BADGE.user
-        const roleLabel   = role === 'master_admin' ? 'Master Admin'
+        const name       = displayName(u)
+        const role       = effectiveRole(u)
+        const roleLabel  = role === 'master_admin' ? 'Master Admin'
           : ROLE_OPTIONS.find(r => r.value === role)?.label ?? role
-        const saveKey     = `save-role-${u.id}`
-        const updateKey   = `update-${u.id}`
+        const badgeClass = `users-badge users-badge--${role.replace('_', '-')}`
 
-        // Pending role selection for this user (or current role if untouched).
-        // Clamp to a valid ROLE_OPTIONS value so the <select> always shows the correct option.
-        const validRoles   = ROLE_OPTIONS.map(r => r.value)
-        const currentRole  = validRoles.includes(u.role ?? '') ? (u.role as string) : 'user'
-        const pendingRole  = pendingRoles[u.id] ?? currentRole
-        const isDirty      = !u.isMasterAdmin && pendingRole !== currentRole
+        const validRoles  = ROLE_OPTIONS.map(r => r.value)
+        const currentRole = validRoles.includes(u.role ?? '') ? (u.role as string) : 'user'
+        const pendingRole = pendingRoles[u.id] ?? currentRole
+        const isDirty     = !u.isMasterAdmin && pendingRole !== currentRole
 
         return (
-          <div
-            key={u.id}
-            style={{
-              display:             'grid',
-              gridTemplateColumns: '1fr 240px 240px',
-              alignItems:          'start',
-              padding:             '40px',
-              borderBottom:        '1px solid var(--border)',
-              background:          'var(--surface)',
-              marginBottom:        1,
-            }}
-          >
+          <div key={u.id} className="users-row">
             {/* User info */}
             <div>
-              {name && (
-                <p style={{
-                  fontFamily:    'var(--font-heading)',
-                  fontWeight:    700,
-                  fontSize:      17,
-                  textTransform: 'uppercase',
-                  color:         'var(--text)',
-                  marginBottom:  2,
-                }}>
-                  {name}
-                </p>
-              )}
-              <p style={{
-                fontFamily:    name ? 'var(--font-body)' : 'var(--font-heading)',
-                fontSize:      name ? 13 : 17,
-                fontWeight:    name ? 400 : 700,
-                textTransform: name ? 'none' : 'uppercase',
-                color:         name ? 'var(--text-muted)' : 'var(--text)',
-                marginBottom:  4,
-              }}>
+              {name && <p className="users-name">{name}</p>}
+              <p className={name ? 'users-email' : 'users-email--primary'}>
                 {u.email ?? '—'}
               </p>
-              <p style={metaStyle}>Status: {u.status ?? 'unknown'}</p>
+              <p className="users-meta">Status: {u.status ?? 'unknown'}</p>
             </div>
 
-            {/* Role — badge + custom dropdown + Save */}
-            <div style={{ paddingRight: 24 }}>
-              {/* Current role badge */}
-              <div style={{ marginBottom: 10 }}>
-                <span style={{ ...badgeStyle, ...badgeColors }}>{roleLabel}</span>
+            {/* Role — badge + dropdown + Save */}
+            <div className="users-role-col">
+              <div className="mb-[10px]">
+                <span className={badgeClass}>{roleLabel}</span>
                 {u.isMasterAdmin && (
-                  <p style={{ ...metaStyle, fontSize: 10, marginTop: 6 }}>
-                    Change via Supabase
-                  </p>
+                  <p className="users-master-note">Change via Supabase</p>
                 )}
               </div>
 
-              {/* Dropdown + Save — hidden for master admin */}
               {!u.isMasterAdmin && (
-                <form
-                  action={setRole}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
-                >
+                <form action={setRole} className="users-role-form">
                   <input type="hidden" name="userId" value={u.id} />
                   <input type="hidden" name="role"   value={pendingRole} />
 
                   <select
                     value={pendingRole}
                     onChange={e => setPendingRoles(prev => ({ ...prev, [u.id]: e.target.value }))}
-                    style={{
-                      background:    'var(--surface-2)',
-                      border:        `2px solid ${isDirty ? 'var(--accent)' : 'var(--border)'}`,
-                      color:         'var(--text)',
-                      fontFamily:    'var(--font-heading)',
-                      fontWeight:    700,
-                      fontSize:      12,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
-                      padding:       '7px 10px',
-                      cursor:        'pointer',
-                      width:         '100%',
-                      outline:       'none',
-                    }}
+                    className={cn('users-role-select', isDirty && 'is-dirty')}
                   >
                     {ROLE_OPTIONS.map(r => (
                       <option key={r.value} value={r.value}>{r.label}</option>
@@ -304,26 +179,7 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
                   <button
                     type="submit"
                     disabled={!isDirty}
-                    onMouseEnter={() => setHovered(saveKey)}
-                    onMouseLeave={() => setHovered(null)}
-                    style={{
-                      fontFamily:    'var(--font-heading)',
-                      fontWeight:    900,
-                      fontSize:      11,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.12em',
-                      background:    isDirty
-                        ? (hovered === saveKey ? 'var(--accent)' : 'var(--surface-2)')
-                        : 'transparent',
-                      color: isDirty
-                        ? (hovered === saveKey ? 'var(--accent-fg)' : 'var(--text-muted)')
-                        : 'var(--text-dim)',
-                      border:     `2px solid ${isDirty ? (hovered === saveKey ? 'var(--accent)' : 'var(--border-2)') : 'var(--border)'}`,
-                      padding:    '5px 10px',
-                      cursor:     isDirty ? 'pointer' : 'default',
-                      transition: 'all 0.15s',
-                      opacity:    isDirty ? 1 : 0.4,
-                    }}
+                    className={cn('users-action-btn', isDirty && 'is-dirty')}
                   >
                     Save Role
                   </button>
@@ -331,40 +187,22 @@ export function UsersClient({ users, setRole, updateToolAccess }: UsersClientPro
               )}
             </div>
 
-            {/* Tool access — independent form */}
-            <form action={updateToolAccess} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Tool access */}
+            <form action={updateToolAccess} className="users-tool-form">
               <input type="hidden" name="userId" value={u.id} />
               {TOOLS.map(tool => (
-                <label key={tool.value} style={checkboxLabelStyle}>
+                <label key={tool.value} className="users-checkbox-label">
                   <input
                     type="checkbox"
                     name="tools"
                     value={tool.value}
                     defaultChecked={u.tools.includes(tool.value)}
-                    style={{ accentColor: 'var(--accent)', width: 13, height: 13 }}
+                    className="users-checkbox"
                   />
                   {tool.label}
                 </label>
               ))}
-              <button
-                type="submit"
-                onMouseEnter={() => setHovered(updateKey)}
-                onMouseLeave={() => setHovered(null)}
-                style={{
-                  fontFamily:    'var(--font-heading)',
-                  fontWeight:    900,
-                  fontSize:      11,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.12em',
-                  background:    hovered === updateKey ? 'var(--accent)' : 'var(--surface-2)',
-                  color:         hovered === updateKey ? 'var(--accent-fg)' : 'var(--text-muted)',
-                  border:        `2px solid ${hovered === updateKey ? 'var(--accent)' : 'var(--border)'}`,
-                  padding:       '5px 12px',
-                  cursor:        'pointer',
-                  marginTop:     4,
-                  transition:    'all 0.15s',
-                }}
-              >
+              <button type="submit" className="users-update-btn">
                 Update
               </button>
             </form>
