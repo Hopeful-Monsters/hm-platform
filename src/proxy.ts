@@ -28,7 +28,6 @@ export async function proxy(request: NextRequest) {
     `base-uri 'self'`,
     `form-action 'self'`,
     `upgrade-insecure-requests`,
-    `require-trusted-types-for 'script'`,
   ].join('; ');
 
   const requestHeaders = new Headers(request.headers);
