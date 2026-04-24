@@ -701,3 +701,139 @@
   [data-tool="expenses-manager"] .step-ftr                 { flex-direction: column-reverse; }
   [data-tool="expenses-manager"] .step-ftr .btn            { width: 100%; justify-content: center; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Error states & field variants
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="expenses-manager"] .card.has-error {
+  border-color: var(--error);
+}
+
+[data-tool="expenses-manager"] .card-hdr.has-error {
+  border-bottom-color: var(--error);
+}
+
+[data-tool="expenses-manager"] .fc.has-error {
+  border-color: var(--error);
+}
+
+[data-tool="expenses-manager"] .pfx.has-error {
+  outline: 2px solid var(--error);
+}
+
+[data-tool="expenses-manager"] .fc.fc-readonly {
+  background: var(--surface-2);
+  color:      var(--text-muted);
+}
+
+/* Compact date warning — overrides default alert padding */
+[data-tool="expenses-manager"] .em-date-warn {
+  margin-top:    6px;
+  margin-bottom: 0;
+  padding:       7px 11px;
+  font-size:     12px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Review card header elements
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="expenses-manager"] .em-item-name {
+  font-size:   13px;
+  font-weight: 600;
+}
+
+[data-tool="expenses-manager"] .em-item-size {
+  font-size: 11px;
+  color:     var(--text-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Spin size variants (used in QueueRow and CompanyStatus)
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="expenses-manager"] .spin-sm {
+  width:        16px;
+  height:       16px;
+  border-width: 2px;
+}
+
+[data-tool="expenses-manager"] .spin-xs {
+  width:        12px;
+  height:       12px;
+  border-width: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Supplier combobox searching state
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="expenses-manager"] .supplier-searching {
+  color:      var(--text-muted);
+  font-size:  12px;
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Result / success screen (step 4)
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="expenses-manager"] .em-result-body {
+  text-align: center;
+  padding:    44px 24px;
+}
+
+[data-tool="expenses-manager"] .em-result-heading {
+  font-family:    var(--font-heading);
+  font-weight:    900;
+  font-size:      28px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color:          var(--text);
+  margin-bottom:  8px;
+}
+
+[data-tool="expenses-manager"] .em-result-detail {
+  color:         var(--text-muted);
+  font-size:     14px;
+  margin-bottom: 16px;
+  line-height:   1.6;
+}
+
+[data-tool="expenses-manager"] .em-error-count {
+  color: var(--error);
+}
+
+[data-tool="expenses-manager"] .em-result-actions {
+  display:         flex;
+  gap:             10px;
+  justify-content: center;
+  flex-wrap:       wrap;
+  margin-top:      16px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   JobPicker empty state
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="expenses-manager"] .empty-title {
+  font-weight:   500;
+  margin-bottom: 4px;
+}
+
+[data-tool="expenses-manager"] .empty-hint {
+  font-size: 12px;
+  color:     var(--text-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CompanyStatus similar-match use link
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-tool="expenses-manager"] .co-similar-use {
+  font-family: var(--font-heading);
+  font-size:   11px;
+  font-weight: 900;
+  color:       var(--accent-label);
+}
