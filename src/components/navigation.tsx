@@ -12,7 +12,6 @@ interface NavItem {
   label: string
   adminOnly?: boolean
   toolSlug?: string
-  /** Show only when a user is authenticated (any status) */
   authOnly?: boolean
 }
 
@@ -73,11 +72,12 @@ export function DesktopNav({ userRole, userTools, isAuthenticated }: NavProps) {
 }
 
 interface MobileNavProps extends NavProps {
+  id?: string
   isOpen: boolean
   onClose: () => void
 }
 
-export function MobileNav({ isOpen, onClose, userRole, userTools, isAuthenticated }: MobileNavProps) {
+export function MobileNav({ id, isOpen, onClose, userRole, userTools, isAuthenticated }: MobileNavProps) {
   const pathname = usePathname()
   const items = filterItems(navItems, userRole, userTools, isAuthenticated)
 
@@ -91,54 +91,31 @@ export function MobileNav({ isOpen, onClose, userRole, userTools, isAuthenticate
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
             onClick={onClose}
+            aria-hidden
           />
           <motion.div
+            id={id}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            style={{
-              position: 'fixed',
-              right: 0,
-              top: 0,
-              bottom: 0,
-              zIndex: 999,
-              width: 280,
-              background: 'var(--surface)',
-              borderLeft: '2px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
+            className="mobile-nav-panel"
           >
-            {/* Mobile nav header */}
-            <div
-              style={{
-                height: 'var(--nav-h)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 20px',
-                borderBottom: '2px solid var(--border)',
-                flexShrink: 0,
-              }}
-            >
-              <span className="eyebrow" style={{ color: 'var(--accent-label)' }}>Menu</span>
+            <div className="mobile-nav-header">
+              <span className="eyebrow">Menu</span>
               <button
                 onClick={onClose}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: 4,
-                }}
+                aria-label="Close menu"
+                className="btn-icon btn-icon--borderless"
               >
-                <X size={18} />
+                <X size={18} aria-hidden />
               </button>
             </div>
 
-            {/* Mobile nav items */}
-            <nav style={{ padding: '16px 0', flex: 1 }}>
+            <nav className="mobile-nav-items" aria-label="Mobile navigation">
               {items.map(item => {
                 const isActive = item.href === '/'
                   ? pathname === '/'
@@ -150,19 +127,12 @@ export function MobileNav({ isOpen, onClose, userRole, userTools, isAuthenticate
                     onClick={onClose}
                     className={cn(
                       'block border-l-4 transition-colors duration-150',
+                      'font-heading font-black text-xl uppercase tracking-[0.1em] no-underline',
+                      'py-3 px-5',
                       isActive
                         ? 'text-[var(--accent)] border-l-[var(--accent)]'
                         : 'text-[var(--text-muted)] border-l-transparent hover:text-[var(--text)] hover:border-l-[var(--border-2)]'
                     )}
-                    style={{
-                      padding: '12px 20px',
-                      fontFamily: 'var(--font-heading)',
-                      fontWeight: 900,
-                      fontSize: 20,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      textDecoration: 'none',
-                    }}
                   >
                     {item.label}
                   </Link>
@@ -170,16 +140,7 @@ export function MobileNav({ isOpen, onClose, userRole, userTools, isAuthenticate
               })}
             </nav>
 
-            {/* Sign Out at bottom */}
-            <div
-              style={{
-                borderTop: '2px solid var(--border)',
-                padding: '12px 16px',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                flexShrink: 0,
-              }}
-            >
+            <div className="mobile-nav-footer">
               <SignOutButton />
             </div>
           </motion.div>

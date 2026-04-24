@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface SignOutButtonProps {
   compact?: boolean
@@ -20,36 +21,10 @@ export default function SignOutButton({ compact = false }: SignOutButtonProps) {
   return (
     <button
       onClick={handleSignOut}
-      style={{
-        fontFamily: 'var(--font-heading)',
-        fontWeight: 900,
-        fontSize: compact ? '12px' : '14px',
-        letterSpacing: '0.15em',
-        textTransform: 'uppercase',
-        background: 'none',
-        border: '2px solid var(--border-2)',
-        color: 'var(--text-muted)',
-        padding: compact ? '5px 10px' : '6px 14px',
-        cursor: 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-        transition: 'border-color 0.15s, color 0.15s',
-        borderRadius: 0,
-        flexShrink: 0,
-      }}
-      onMouseEnter={e => {
-        const el = e.currentTarget
-        el.style.borderColor = 'var(--pink)'
-        el.style.color = 'var(--pink)'
-      }}
-      onMouseLeave={e => {
-        const el = e.currentTarget
-        el.style.borderColor = 'var(--border-2)'
-        el.style.color = 'var(--text-muted)'
-      }}
+      aria-label="Sign out"
+      className={cn('btn-sign-out', compact && 'btn-sign-out--compact')}
     >
-      <LogOut size={compact ? 12 : 14} />
+      <LogOut size={compact ? 12 : 14} aria-hidden />
       {!compact && 'Sign Out'}
     </button>
   )

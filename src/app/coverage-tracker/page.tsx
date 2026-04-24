@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useWizard } from './_components/WizardContext'
+import { cn } from '@/lib/utils'
 import type { FieldRule, PublicationGroup } from './_components/SettingsModal'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -232,14 +233,14 @@ function RepeatingField({
   onSetOp:     (idx: number, op: Operator) => void
 }) {
   return (
-    <div style={{ marginBottom: 18 }}>
+    <div className="ct-field-wrap">
       <label className="ct-label">{label}</label>
       <div className="ct-field-group">
         {items.map((item, i) => (
           <div key={i}>
             {/* AND/OR toggle ABOVE this item (between items[i-1] and items[i]) */}
             {i > 0 && (
-              <div className="ct-op-toggle" style={{ marginBottom: 6 }}>
+              <div className="ct-op-toggle mb-[6px]">
                 {(['AND', 'OR'] as Operator[]).map(op => (
                   <button
                     key={op}
@@ -275,7 +276,7 @@ function RepeatingField({
         ))}
       </div>
       {items[items.length - 1].trim() !== '' && (
-        <button type="button" className="ct-btn ct-btn-add" onClick={onAdd} style={{ marginTop: 8 }}>
+        <button type="button" className="ct-btn ct-btn-add mt-2" onClick={onAdd}>
           + Add another {label.replace(/\(s\)$/, '').replace(/\(.*\)$/, '').trim().toLowerCase()}
         </button>
       )}
@@ -587,12 +588,12 @@ export default function CoverageTrackerPage() {
 
       {/* ── Drive connection banner ── */}
       {driveStatus !== 'connected' && (
-        <div className="ct-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, borderColor: driveStatus === 'connecting' ? 'var(--accent)' : 'var(--border)' }}>
+        <div className={cn('ct-card ct-drive-banner', driveStatus === 'connecting' && 'ct-drive-banner--connecting')}>
           <div>
-            <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)', fontSize: 14 }}>
+            <p className="ct-drive-title">
               {driveStatus === 'connecting' ? 'Connecting to Google Drive…' : 'Connect Google Drive to get started'}
             </p>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+            <p className="ct-drive-sub">
               Your Google account writes directly to Sheets — no spreadsheet sharing setup required.
             </p>
           </div>
@@ -601,7 +602,6 @@ export default function CoverageTrackerPage() {
             onClick={connectDrive}
             disabled={driveStatus === 'connecting' || driveStatus === 'unknown'}
             className="ct-btn ct-btn-primary"
-            style={{ flexShrink: 0 }}
           >
             {driveStatus === 'connecting' ? 'Connecting…' : 'Connect Drive'}
           </button>
@@ -625,7 +625,7 @@ export default function CoverageTrackerPage() {
                 <p className="ct-drop-text">Drop your Meltwater CSV here, or click to browse</p>
                 <p className="ct-drop-hint">Accepts the standard UTF-16 tab-delimited .csv export from Meltwater</p>
               </div>
-              <input ref={fileInputRef} type="file" accept=".csv,.tsv" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f) }} />
+              <input ref={fileInputRef} type="file" accept=".csv,.tsv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) processFile(f) }} />
               <StatusBanner status={status} />
             </div>
           )}
@@ -636,7 +636,7 @@ export default function CoverageTrackerPage() {
               <p className="ct-card-title">Campaign Setup</p>
 
               {/* Campaign */}
-              <div style={{ marginBottom: 18 }}>
+              <div className="ct-field-wrap">
                 <label className="ct-label">Campaign</label>
                 <input
                   type="text"
@@ -684,10 +684,10 @@ export default function CoverageTrackerPage() {
               />
 
               {/* ── Destination ── */}
-              <div style={{ borderTop: '2px solid var(--border)', margin: '24px 0 20px', paddingTop: 20 }}>
-                <p className="ct-card-title" style={{ marginBottom: 16 }}>Destination</p>
+              <div className="ct-dest-section">
+                <p className="ct-card-title ct-card-title--no-margin mb-4">Destination</p>
 
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <div className="ct-dest-toggle">
                   {(['existing', 'new'] as DestMode[]).map(mode => (
                     <button
                       key={mode}
@@ -701,8 +701,8 @@ export default function CoverageTrackerPage() {
                 </div>
 
                 {setup.destMode === 'existing' ? (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                    <div style={{ flex: 1, minWidth: 300 }}>
+                  <div className="ct-dest-row">
+                    <div className="ct-dest-url-field">
                       <label className="ct-label">Google Sheet URL</label>
                       <input
                         type="text"
@@ -712,7 +712,7 @@ export default function CoverageTrackerPage() {
                         placeholder="https://docs.google.com/spreadsheets/d/…"
                       />
                     </div>
-                    <div style={{ minWidth: 200 }}>
+                    <div className="ct-dest-tab-field">
                       <label className="ct-label">Tab Name</label>
                       <input
                         type="text"
@@ -723,8 +723,8 @@ export default function CoverageTrackerPage() {
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                    <div style={{ flex: 1, minWidth: 240 }}>
+                  <div className="ct-dest-row">
+                    <div className="ct-dest-title-field">
                       <label className="ct-label">Spreadsheet Title</label>
                       <input
                         type="text"
@@ -734,7 +734,7 @@ export default function CoverageTrackerPage() {
                         placeholder="e.g. NFL Coverage Tracker 2026"
                       />
                     </div>
-                    <div style={{ minWidth: 200 }}>
+                    <div className="ct-dest-tab-field">
                       <label className="ct-label">Tab Name</label>
                       <input
                         type="text"
@@ -747,7 +747,7 @@ export default function CoverageTrackerPage() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <div className="ct-step-actions">
                 <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(1)}>← Back</button>
                 <button
                   type="button"
@@ -773,9 +773,9 @@ export default function CoverageTrackerPage() {
           {/* ── Step 3: Review table ── */}
           {step === 3 && (
             <div className="ct-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                <p className="ct-card-title" style={{ margin: 0 }}>Review &amp; Submit</p>
-                <span style={{ padding: '2px 10px', background: 'var(--accent)', color: 'var(--accent-fg)', fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div className="ct-review-header">
+                <p className="ct-card-title ct-card-title--no-margin">Review &amp; Submit</p>
+                <span className="ct-row-badge">
                   {rows.length} {rows.length === 1 ? 'row' : 'rows'}
                 </span>
               </div>
@@ -785,7 +785,7 @@ export default function CoverageTrackerPage() {
                 <p className="ct-batch-title">
                   Batch defaults — set values below, then apply to all rows or only the blanks
                 </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+                <div className="ct-batch-defaults-row">
                   {[
                     { lbl: 'Media Type',   val: bMediaType, set: setBMediaType, opts: MEDIA_TYPES },
                     { lbl: 'Key Messages', val: bKeyMsg,    set: setBKeyMsg,    opts: YES_NO },
@@ -793,7 +793,7 @@ export default function CoverageTrackerPage() {
                     { lbl: 'Image',        val: bImage,     set: setBImage,     opts: YES_NO },
                     { lbl: 'CTA',          val: bCta,       set: setBCta,       opts: YES_NO },
                   ].map(({ lbl, val, set, opts }) => (
-                    <div key={lbl} style={{ minWidth: 130 }}>
+                    <div key={lbl} className="ct-batch-field">
                       <label className="ct-label">{lbl}</label>
                       <select className="ct-select" value={val} onChange={e => set(e.target.value)}>
                         <option value="">— keep —</option>
@@ -801,7 +801,7 @@ export default function CoverageTrackerPage() {
                       </select>
                     </div>
                   ))}
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="ct-batch-actions">
                     <button type="button" className="ct-btn ct-btn-primary"   onClick={() => applyBatch('all')}>Apply to All</button>
                     <button type="button" className="ct-btn ct-btn-secondary" onClick={() => applyBatch('blanks')}>Apply to Blanks</button>
                   </div>
@@ -809,8 +809,8 @@ export default function CoverageTrackerPage() {
               </div>
 
               {/* Preview table — Campaign column removed (now set once in Setup) */}
-              <div style={{ overflowX: 'auto', border: '2px solid var(--border)', maxHeight: 480, overflowY: 'auto' }}>
-                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 1400, fontSize: 12 }}>
+              <div className="ct-review-table-wrap">
+                <table className="ct-review-table">
                   <thead>
                     <tr>
                       {[
@@ -831,34 +831,26 @@ export default function CoverageTrackerPage() {
                         { h: 'CTA',         editable: true  },
                         { h: 'LINK',        editable: false },
                       ].map(({ h, editable }) => (
-                        <th key={h} style={{
-                          padding: '8px 7px', textAlign: 'left', fontSize: 10, fontWeight: 700,
-                          textTransform: 'uppercase', letterSpacing: '0.04em',
-                          color:      editable ? 'var(--accent)' : 'var(--text-muted)',
-                          background: editable ? 'var(--surface-2)' : 'var(--surface)',
-                          borderBottom: '2px solid var(--border)',
-                          whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 9,
-                        }}>{h}</th>
+                        <th key={h} className={cn('ct-review-th', editable && 'is-editable')}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r, idx) => (
-                      <tr key={idx} style={{ background: idx % 2 === 0 ? 'var(--surface)' : 'var(--bg)' }}>
-                        <td style={{ padding: '4px 7px', color: 'var(--text-muted)', fontSize: 11, textAlign: 'center' }}>{idx + 1}</td>
-                        <td style={{ padding: '4px 7px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{r.date}</td>
-                        <td style={{ padding: '4px 7px', color: 'var(--text)', whiteSpace: 'nowrap' }}>{r.publication}</td>
-                        <td style={{ padding: '4px 7px', color: 'var(--text)' }}>{r.country}</td>
-                        <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                          <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r.mediaType} onChange={e => updateRow(idx, 'mediaType', e.target.value)}>
+                      <tr key={idx}>
+                        <td className="ct-col-num">{idx + 1}</td>
+                        <td className="ct-col-nowrap">{r.date}</td>
+                        <td className="ct-col-nowrap">{r.publication}</td>
+                        <td className="ct-review-td">{r.country}</td>
+                        <td className="ct-col-edit">
+                          <select className="ct-select" value={r.mediaType} onChange={e => updateRow(idx, 'mediaType', e.target.value)}>
                             <option value="">—</option>
                             {MEDIA_TYPES.map(o => <option key={o}>{o}</option>)}
                           </select>
                         </td>
-                        <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
+                        <td className="ct-col-edit">
                           <select
                             className="ct-select"
-                            style={{ fontSize: 12, padding: '3px 6px' }}
                             value={r.mediaFormat}
                             onChange={e => {
                               // Update format first, then re-run rules on the updated row
@@ -872,26 +864,26 @@ export default function CoverageTrackerPage() {
                             {MEDIA_FORMATS.map(o => <option key={o}>{o}</option>)}
                           </select>
                         </td>
-                        <td style={{ padding: '4px 7px', color: 'var(--text)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.headline}>{r.headline}</td>
-                        <td style={{ padding: '4px 7px', color: 'var(--text)', textAlign: 'right', whiteSpace: 'nowrap' }}>{r.reach ? Number(r.reach).toLocaleString() : ''}</td>
-                        <td style={{ padding: '4px 7px', color: 'var(--text)', textAlign: 'right', whiteSpace: 'nowrap' }}>{r.ave !== '' ? Number(r.ave).toFixed(2) : '—'}</td>
-                        <td style={{ padding: '4px 7px', color: 'var(--text)', textAlign: 'right', whiteSpace: 'nowrap' }}>{r.prValue !== '' ? Number(r.prValue).toFixed(2) : '—'}</td>
-                        <td style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                          <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r.sentiment} onChange={e => updateRow(idx, 'sentiment', e.target.value)}>
+                        <td className="ct-col-headline" title={r.headline}>{r.headline}</td>
+                        <td className="ct-col-right">{r.reach ? Number(r.reach).toLocaleString() : ''}</td>
+                        <td className="ct-col-right">{r.ave !== '' ? Number(r.ave).toFixed(2) : '—'}</td>
+                        <td className="ct-col-right">{r.prValue !== '' ? Number(r.prValue).toFixed(2) : '—'}</td>
+                        <td className="ct-col-edit">
+                          <select className="ct-select" value={r.sentiment} onChange={e => updateRow(idx, 'sentiment', e.target.value)}>
                             <option value="">—</option>
                             {SENTIMENTS.map(o => <option key={o}>{o}</option>)}
                           </select>
                         </td>
                         {(['keyMsg', 'spokes', 'image', 'cta'] as const).map(field => (
-                          <td key={field} style={{ padding: '2px 4px', background: 'rgba(255,230,0,0.04)' }}>
-                            <select className="ct-select" style={{ fontSize: 12, padding: '3px 6px' }} value={r[field]} onChange={e => updateRow(idx, field, e.target.value)}>
+                          <td key={field} className="ct-col-edit">
+                            <select className="ct-select" value={r[field]} onChange={e => updateRow(idx, field, e.target.value)}>
                               <option value="">—</option>
                               {YES_NO.map(o => <option key={o}>{o}</option>)}
                             </select>
                           </td>
                         ))}
-                        <td style={{ padding: '4px 7px', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {r.link && <a href={r.link} target="_blank" rel="noopener" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: 12 }}>↗</a>}
+                        <td className="ct-col-link">
+                          {r.link && <a href={r.link} target="_blank" rel="noopener" className="ct-table-link">↗</a>}
                         </td>
                       </tr>
                     ))}
@@ -899,7 +891,7 @@ export default function CoverageTrackerPage() {
                 </table>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 16 }}>
+              <div className="ct-submit-bar">
                 <button type="button" className="ct-btn ct-btn-secondary" onClick={() => setStep(2)}>← Back</button>
                 <button
                   type="button"
@@ -909,7 +901,7 @@ export default function CoverageTrackerPage() {
                 >
                   {setup.destMode === 'new' ? 'Create Spreadsheet & Add Rows' : 'Append to Google Sheet'}
                 </button>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                <span className="ct-row-count-info">
                   {rows.length} {rows.length === 1 ? 'row' : 'rows'} ready
                 </span>
               </div>
@@ -919,7 +911,7 @@ export default function CoverageTrackerPage() {
 
           {/* ── Step 4: Result (success / failure) ── */}
           {step === 4 && result && result.ok && (
-            <div className="ct-card" style={{ textAlign: 'center', padding: '44px 24px' }}>
+            <div className="ct-card ct-card-result">
               <div className="ct-success-circle">✓</div>
               <h2 className="ct-result-heading">
                 {rows.length === 1 ? 'Coverage Logged!' : `${rows.length} Rows Logged!`}
@@ -929,7 +921,7 @@ export default function CoverageTrackerPage() {
                   ? <>Appended to <strong>{setup.sheetTab || DEFAULT_TAB}</strong> in your existing sheet.</>
                   : <>Created <strong>{setup.newTitle || 'Coverage Tracker'}</strong> with tab <strong>{setup.newTab || DEFAULT_TAB}</strong>.</>}
               </p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <div className="ct-result-actions">
                 {result.sheetUrl && (
                   <a
                     href={result.sheetUrl}
@@ -948,11 +940,11 @@ export default function CoverageTrackerPage() {
           )}
 
           {step === 4 && result && !result.ok && (
-            <div className="ct-card" style={{ textAlign: 'center', padding: '44px 24px' }}>
+            <div className="ct-card ct-card-result">
               <div className="ct-failure-circle">✕</div>
               <h2 className="ct-result-heading">Submission Failed</h2>
               <p className="ct-result-detail">{result.error}</p>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <div className="ct-result-actions">
                 <button
                   type="button"
                   className="ct-btn ct-btn-secondary"

@@ -18,139 +18,22 @@ interface SubmitResult {
   url: string
 }
 
-// ── Shared styles ──────────────────────────────────────────────────
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontFamily: 'var(--font-heading)',
-  fontWeight: 900,
-  fontSize: 14,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: 'var(--text-muted)',
-  marginBottom: 8,
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  background: 'var(--surface)',
-  border: '2px solid var(--border)',
-  color: 'var(--text)',
-  fontSize: 15,
-  padding: '10px 14px',
-  fontFamily: 'var(--font-body)',
-  outline: 'none',
-  transition: 'border-color 0.15s',
-}
-
-const selectStyle: React.CSSProperties = {
-  ...inputStyle,
-  cursor: 'pointer',
-  appearance: 'none',
-  WebkitAppearance: 'none',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 14px center',
-  paddingRight: 40,
-}
-
-// ── Additional style constants ─────────────────────────────────────
-
-const formFieldStyle: React.CSSProperties = { marginBottom: 24 }
-
-const successCardStyle: React.CSSProperties = {
-  background:  'var(--surface)',
-  border:      '2px solid var(--border)',
-  borderLeft:  '4px solid var(--accent)',
-  padding:     '40px 36px',
-  maxWidth:    720,
-}
-
-const successHeadingStyle: React.CSSProperties = {
-  fontFamily:    'var(--font-heading)',
-  fontWeight:    900,
-  fontSize:      36,
-  textTransform: 'uppercase',
-  lineHeight:    0.95,
-  marginBottom:  16,
-}
-
-const successBodyStyle: React.CSSProperties = {
-  color:        'var(--text-muted)',
-  fontSize:     15,
-  lineHeight:   1.65,
-  marginBottom: 28,
-}
-
-const successLinkStyle: React.CSSProperties = {
-  color:          'var(--accent)',
-  fontFamily:     'var(--font-heading)',
-  fontWeight:     900,
-  textDecoration: 'none',
-}
-
-const errorBannerStyle: React.CSSProperties = {
-  background:   'rgba(239,68,68,0.08)',
-  border:       '2px solid rgba(239,68,68,0.4)',
-  borderLeft:   '4px solid rgb(239,68,68)',
-  padding:      '12px 16px',
-  marginBottom: 24,
-  fontSize:     14,
-  color:        'rgb(239,68,68)',
-}
-
-const screenshotRowStyle: React.CSSProperties = {
-  display:    'flex',
-  alignItems: 'center',
-  gap:        10,
-  padding:    '10px 14px',
-  background: 'var(--surface)',
-  border:     '2px solid var(--border)',
-}
-
-const screenshotRemoveBtnStyle: React.CSSProperties = {
-  background:  'none',
-  border:      'none',
-  color:       'var(--text-muted)',
-  cursor:      'pointer',
-  padding:     2,
-  display:     'flex',
-  alignItems:  'center',
-  flexShrink:  0,
-}
-
-function focusBorder(e: React.FocusEvent<HTMLElement>) {
-  e.currentTarget.style.borderColor = 'var(--accent)'
-}
-function blurBorder(e: React.FocusEvent<HTMLElement>) {
-  e.currentTarget.style.borderColor = 'var(--border)'
-}
-
 function FieldLabel({
   htmlFor,
   children,
   optional,
+  className,
 }: {
   htmlFor: string
   children: React.ReactNode
   optional?: boolean
+  className?: string
 }) {
   return (
-    <label htmlFor={htmlFor} style={labelStyle}>
+    <label htmlFor={htmlFor} className={`hm-label${className ? ` ${className}` : ''}`}>
       {children}
       {optional && (
-        <span
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontWeight: 400,
-            fontSize: 12,
-            letterSpacing: 0,
-            textTransform: 'none',
-            color: 'var(--text-muted)',
-            marginLeft: 8,
-          }}
-        >
-          (optional)
-        </span>
+        <span className="hm-label-optional">(optional)</span>
       )}
     </label>
   )
@@ -239,21 +122,19 @@ export default function SupportForm({
   // ── Success ──────────────────────────────────────────────────────
   if (result) {
     return (
-      <div style={successCardStyle}>
-        <p className="eyebrow" style={{ marginBottom: 12, color: 'var(--accent-label)' }}>
-          Submitted
-        </p>
-        <h2 style={successHeadingStyle}>
+      <div className="support-success-card">
+        <p className="eyebrow hm-accent mb-3">Submitted</p>
+        <h2 className="display-md hm-text mb-3">
           We&apos;ve got it.
         </h2>
-        <p style={successBodyStyle}>
+        <p className="subhead mb-8">
           Logged as{' '}
-          <a href={result.url} target="_blank" rel="noopener noreferrer" style={successLinkStyle}>
+          <a href={result.url} target="_blank" rel="noopener noreferrer" className="hm-link">
             {result.identifier}
           </a>{' '}
           in Linear and added to Triage for review.
         </p>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div className="support-success-buttons">
           <Button variant="outline" size="sm" onClick={handleReset}>
             Submit another
           </Button>
@@ -269,9 +150,9 @@ export default function SupportForm({
 
   // ── Form ─────────────────────────────────────────────────────────
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 720 }}>
+    <form onSubmit={handleSubmit} className="support-form">
       {/* Name + Tool — two columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div className="support-form-row">
         <div>
           <FieldLabel htmlFor="name">Your name</FieldLabel>
           <input
@@ -281,11 +162,10 @@ export default function SupportForm({
             onChange={e => setName(e.target.value)}
             placeholder="Enter text"
             required
+            aria-required="true"
             minLength={1}
             maxLength={100}
-            style={inputStyle}
-            onFocus={focusBorder}
-            onBlur={blurBorder}
+            className="hm-input"
           />
         </div>
         <div>
@@ -295,12 +175,8 @@ export default function SupportForm({
             value={tool}
             onChange={e => setTool(e.target.value)}
             required
-            style={{
-              ...selectStyle,
-              color: tool ? 'var(--text)' : 'var(--text-muted)',
-            }}
-            onFocus={focusBorder}
-            onBlur={blurBorder}
+            aria-required="true"
+            className={`hm-select${!tool ? ' placeholder' : ''}`}
           >
             <option value="" disabled>Select an option</option>
             {SUPPORT_TOOL_OPTIONS.map(opt => (
@@ -311,7 +187,7 @@ export default function SupportForm({
       </div>
 
       {/* What were you trying to do */}
-      <div style={formFieldStyle}>
+      <div className="support-form-field">
         <FieldLabel htmlFor="tried">What were you trying to do?</FieldLabel>
         <textarea
           id="tried"
@@ -319,17 +195,16 @@ export default function SupportForm({
           onChange={e => setTried(e.target.value)}
           placeholder="Enter text"
           required
+          aria-required="true"
           minLength={10}
           maxLength={3000}
           rows={5}
-          style={{ ...inputStyle, resize: 'vertical', minHeight: 120 }}
-          onFocus={focusBorder}
-          onBlur={blurBorder}
+          className="hm-input"
         />
       </div>
 
       {/* What happened instead */}
-      <div style={formFieldStyle}>
+      <div className="support-form-field">
         <FieldLabel htmlFor="happened">What happened instead?</FieldLabel>
         <textarea
           id="happened"
@@ -337,50 +212,34 @@ export default function SupportForm({
           onChange={e => setHappened(e.target.value)}
           placeholder="Enter text"
           required
+          aria-required="true"
           minLength={10}
           maxLength={3000}
           rows={5}
-          style={{ ...inputStyle, resize: 'vertical', minHeight: 120 }}
-          onFocus={focusBorder}
-          onBlur={blurBorder}
+          className="hm-input"
         />
       </div>
 
       {/* Screenshot — single line */}
-      <div style={{ ...formFieldStyle, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <label
-          htmlFor="screenshot"
-          style={{ ...labelStyle, marginBottom: 0, whiteSpace: 'nowrap', flexShrink: 0 }}
-        >
+      <div className="support-screenshot-row">
+        <FieldLabel htmlFor="screenshot" optional className="support-screenshot-label">
           Screenshot
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontWeight: 400,
-              fontSize: 12,
-              letterSpacing: 0,
-              textTransform: 'none',
-              color: 'var(--text-muted)',
-              marginLeft: 8,
-            }}
-          >
-            (optional)
-          </span>
-        </label>
+        </FieldLabel>
 
         {screenshot ? (
-          <div style={{ ...screenshotRowStyle, flex: 1 }}>
-            <Paperclip size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-            <span style={{ fontSize: 14, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div className="support-file-pill">
+            <Paperclip size={14} className="support-file-icon" />
+            <span className="support-file-name">
               {screenshot.name}
             </span>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
+            <span className="support-file-size">
               {(screenshot.size / 1024).toFixed(0)} KB
             </span>
             <button
               type="button"
               onClick={removeScreenshot}
-              style={screenshotRemoveBtnStyle}
+              className="support-file-remove"
+              aria-label="Remove screenshot"
             >
               <X size={14} />
             </button>
@@ -390,33 +249,12 @@ export default function SupportForm({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '9px 18px',
-                background: 'var(--surface)',
-                border: '2px solid var(--border)',
-                color: 'var(--text-muted)',
-                fontFamily: 'var(--font-body)',
-                fontSize: 14,
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'border-color 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--text)'
-                e.currentTarget.style.color = 'var(--text)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--border)'
-                e.currentTarget.style.color = 'var(--text-muted)'
-              }}
+              className="support-attach-btn"
             >
               <Paperclip size={14} />
               Add file
             </button>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            <span className="support-attach-hint">
               PNG, JPG, WebP or GIF · max 5 MB
             </span>
           </>
@@ -428,24 +266,20 @@ export default function SupportForm({
           type="file"
           accept="image/png,image/jpeg,image/webp,image/gif"
           onChange={handleFileChange}
-          style={{ display: 'none' }}
+          className="sr-only"
         />
       </div>
 
       {/* Urgency */}
-      <div style={{ marginBottom: 32 }}>
+      <div className="support-form-field-lg">
         <FieldLabel htmlFor="urgency">What&apos;s the urgency?</FieldLabel>
         <select
           id="urgency"
           value={urgency}
           onChange={e => setUrgency(e.target.value)}
           required
-          style={{
-            ...selectStyle,
-            color: urgency ? 'var(--text)' : 'var(--text-muted)',
-          }}
-          onFocus={focusBorder}
-          onBlur={blurBorder}
+          aria-required="true"
+          className={`hm-select${!urgency ? ' placeholder' : ''}`}
         >
           <option value="" disabled>Select a priority</option>
           {URGENCY_OPTIONS.map(opt => (
@@ -456,7 +290,7 @@ export default function SupportForm({
 
       {/* Error */}
       {error && (
-        <div style={errorBannerStyle}>
+        <div className="hm-error-banner" role="alert">
           {error}
         </div>
       )}

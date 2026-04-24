@@ -136,46 +136,6 @@ async function denyToolRequest(formData: FormData) {
   revalidatePath('/admin/approvals')
 }
 
-// ── Style helpers ─────────────────────────────────────────────────
-
-const rowStyle: React.CSSProperties = {
-  background:   'var(--surface)',
-  border:       '2px solid var(--border)',
-  borderLeft:   '4px solid var(--accent)',
-  padding:      '24px',
-  marginBottom: 8,
-}
-
-const metaStyle: React.CSSProperties = {
-  fontFamily:    'var(--font-heading)',
-  fontSize:      11,
-  fontWeight:    700,
-  letterSpacing: '0.3em',
-  textTransform: 'uppercase',
-  color:         'var(--text-dim)',
-}
-
-const sectionLabelStyle: React.CSSProperties = {
-  fontFamily:    'var(--font-heading)',
-  fontSize:      11,
-  fontWeight:    700,
-  letterSpacing: '0.3em',
-  textTransform: 'uppercase',
-  color:         'var(--text-dim)',
-  marginBottom:  16,
-  display:       'block',
-}
-
-const checkboxLabelStyle: React.CSSProperties = {
-  display:    'flex',
-  alignItems: 'center',
-  gap:        8,
-  fontSize:   14,
-  color:      'var(--text-muted)',
-  cursor:     'pointer',
-  fontFamily: 'var(--font-body)',
-}
-
 // ── Page ──────────────────────────────────────────────────────────
 
 export default async function ApprovalsPage() {
@@ -195,59 +155,44 @@ export default async function ApprovalsPage() {
 
   return (
     <div>
-      {/* Page header */}
-      <div style={{ marginBottom: 36 }}>
-        <h1
-          style={{
-            fontFamily:    'var(--font-heading)',
-            fontWeight:    900,
-            fontSize:      48,
-            textTransform: 'uppercase',
-            color:         'var(--text)',
-            lineHeight:    0.92,
-            letterSpacing: '-0.01em',
-          }}
-        >
-          Pending Approvals
-        </h1>
-      </div>
+      <h1 className="page-heading">Pending Approvals</h1>
 
       {/* Pending user approvals */}
-      <section style={{ marginBottom: 48 }}>
-        <span style={sectionLabelStyle}>
+      <section className="mb-12">
+        <span className="eyebrow hm-text-dim block mb-4">
           Waiting for approval ({pendingUsers.length})
         </span>
 
         {pendingUsers.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
+          <p className="body-md hm-text-muted">
             No pending users right now.
           </p>
         ) : (
           pendingUsers.map(u => (
-            <div key={u.id} style={rowStyle}>
-              <div style={{ marginBottom: 16 }}>
-                <p style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, textTransform: 'uppercase', color: 'var(--text)', marginBottom: 4 }}>
+            <div key={u.id} className="bg-[var(--surface)] border-2 border-[var(--border)] border-l-4 border-l-[var(--accent)] p-6 mb-3">
+              <div className="mb-4">
+                <p className="font-[var(--font-heading)] font-bold text-lg uppercase tracking-wide hm-text mb-1">
                   {u.email}
                 </p>
-                <p style={metaStyle}>Status: {u.user_metadata?.status ?? 'unknown'}</p>
+                <p className="eyebrow hm-text-dim">Status: {u.user_metadata?.status ?? 'unknown'}</p>
               </div>
 
               <form action={approveUser}>
                 <input type="hidden" name="userId" value={u.id} />
 
-                <p style={{ ...metaStyle, marginBottom: 10 }}>Grant access to:</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+                <p className="eyebrow hm-text-dim mb-2">Grant access to:</p>
+                <div className="flex flex-col gap-2 mb-5">
                   {[
                     { value: 'coverage-tracker', label: 'Coverage Tracker' },
                     { value: 'expenses-manager', label: 'Expenses Manager' },
                   ].map(tool => (
-                    <label key={tool.value} style={checkboxLabelStyle}>
+                    <label key={tool.value} className="flex items-center gap-2 body-md hm-text-muted cursor-pointer">
                       <input
                         type="checkbox"
                         name="tools"
                         value={tool.value}
                         defaultChecked
-                        style={{ accentColor: 'var(--accent)', width: 14, height: 14 }}
+                        className="accent-[var(--accent)] w-3.5 h-3.5"
                       />
                       {tool.label}
                     </label>
@@ -256,18 +201,7 @@ export default async function ApprovalsPage() {
 
                 <button
                   type="submit"
-                  style={{
-                    fontFamily:    'var(--font-heading)',
-                    fontWeight:    900,
-                    fontSize:      16,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.12em',
-                    background:    'var(--accent)',
-                    color:         'var(--accent-fg)',
-                    border:        'none',
-                    padding:       '10px 24px',
-                    cursor:        'pointer',
-                  }}
+                  className="btn-hm bg-[var(--accent)] text-[var(--accent-fg)] text-base px-6 py-2.5"
                 >
                   Approve User →
                 </button>
@@ -279,12 +213,12 @@ export default async function ApprovalsPage() {
 
       {/* Tool access requests */}
       <section>
-        <span style={sectionLabelStyle}>
+        <span className="eyebrow hm-text-dim block mb-4">
           Tool access requests ({toolRequests?.length ?? 0})
         </span>
 
         {!toolRequests || toolRequests.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
+          <p className="body-md hm-text-muted">
             No pending tool access requests.
           </p>
         ) : (
@@ -296,33 +230,22 @@ export default async function ApprovalsPage() {
               year:  'numeric',
             })
             return (
-              <div key={req.id} style={rowStyle}>
-                <div style={{ marginBottom: 16 }}>
-                  <p style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 18, textTransform: 'uppercase', color: 'var(--text)', marginBottom: 4 }}>
+              <div key={req.id} className="bg-[var(--surface)] border-2 border-[var(--border)] border-l-4 border-l-[var(--accent)] p-6 mb-3">
+                <div className="mb-4">
+                  <p className="font-[var(--font-heading)] font-bold text-lg uppercase tracking-wide hm-text mb-1">
                     {req.user_email}
                   </p>
-                  <p style={metaStyle}>
+                  <p className="eyebrow hm-text-dim">
                     Requesting: {toolLabel} &nbsp;·&nbsp; {createdAt}
                   </p>
                   {req.message && (
-                    <p
-                      style={{
-                        marginTop:  10,
-                        fontSize:   14,
-                        color:      'var(--text-muted)',
-                        fontFamily: 'var(--font-body)',
-                        lineHeight: 1.55,
-                        background: 'var(--surface-2)',
-                        border:     '1px solid var(--border)',
-                        padding:    '8px 12px',
-                      }}
-                    >
+                    <p className="body-md hm-text-muted mt-2.5 bg-[var(--surface-2)] border border-[var(--border)] px-3 py-2">
                       &ldquo;{req.message}&rdquo;
                     </p>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div className="flex gap-2.5 flex-wrap">
                   <form action={approveToolRequest}>
                     <input type="hidden" name="requestId" value={req.id} />
                     <input type="hidden" name="userId"    value={req.user_id} />
@@ -330,18 +253,7 @@ export default async function ApprovalsPage() {
                     <input type="hidden" name="toolSlug"  value={req.tool_slug} />
                     <button
                       type="submit"
-                      style={{
-                        fontFamily:    'var(--font-heading)',
-                        fontWeight:    900,
-                        fontSize:      14,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.12em',
-                        background:    'var(--accent)',
-                        color:         'var(--accent-fg)',
-                        border:        'none',
-                        padding:       '9px 20px',
-                        cursor:        'pointer',
-                      }}
+                      className="btn-hm bg-[var(--accent)] text-[var(--accent-fg)] text-sm px-5 py-2"
                     >
                       Approve →
                     </button>
@@ -353,18 +265,7 @@ export default async function ApprovalsPage() {
                     <input type="hidden" name="toolSlug"  value={req.tool_slug} />
                     <button
                       type="submit"
-                      style={{
-                        fontFamily:    'var(--font-heading)',
-                        fontWeight:    900,
-                        fontSize:      14,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.12em',
-                        background:    'transparent',
-                        color:         'var(--text-muted)',
-                        border:        '2px solid var(--border)',
-                        padding:       '9px 20px',
-                        cursor:        'pointer',
-                      }}
+                      className="btn-hm bg-transparent hm-text-muted border-2 border-[var(--border)] text-sm px-5 py-2"
                     >
                       Deny
                     </button>

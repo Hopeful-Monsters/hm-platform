@@ -1,20 +1,8 @@
-/**
- * ToolHeader — horizontal tab bar sitting below the global nav.
- * Each tool layout passes its name and optional tabs (sections within the tool).
- * Tabs are empty by default; add them as the tool is built out.
- *
- * Usage:
- *   <ToolHeader toolName="Expenses Manager" toolSlug="expenses-manager" />
- *   <ToolHeader toolName="Coverage Tracker" toolSlug="coverage-tracker" tabs={[
- *     { href: '/coverage-tracker', label: 'Overview' },
- *     { href: '/coverage-tracker/reports', label: 'Reports' },
- *   ]} />
- */
-
 'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 interface Tab {
   href: string
@@ -23,18 +11,9 @@ interface Tab {
 
 interface ToolHeaderProps {
   toolName: string
-  toolSlug: string
+  toolSlug?: string
   tabs?: Tab[]
-  /**
-   * Optional slot rendered in the tab/centre area — use when a tool wants
-   * something other than nav links (e.g. a step indicator for a wizard).
-   * When provided, `tabs` is ignored.
-   */
   children?: React.ReactNode
-  /**
-   * Optional slot pinned to the right edge of the header.
-   * Use for tool-level actions such as a Settings button.
-   */
   actions?: React.ReactNode
 }
 
@@ -42,74 +21,28 @@ export default function ToolHeader({ toolName, tabs = [], children, actions }: T
   const pathname = usePathname()
 
   return (
-    <div
-      style={{
-        background: 'var(--surface)',
-        borderBottom: '2px solid var(--border)',
-        display: 'flex',
-        alignItems: 'stretch',
-        height: 'var(--tool-nav-h)',
-        position: 'sticky',
-        top: 'var(--nav-h)',
-        zIndex: 30,
-      }}
-    >
-      {/* Tool name */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 20px',
-          borderRight: '2px solid var(--border)',
-          flexShrink: 0,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: 'var(--font-heading)',
-            fontWeight: 900,
-            fontSize: 16,
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em',
-            color: 'var(--accent)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {toolName}
-        </span>
+    <div className="tool-header">
+      <div className="tool-header-name">
+        {toolName}
       </div>
 
-      {/* Centre slot: custom children (e.g. step indicator) takes precedence over tabs */}
       {children ? (
-        <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+        <div className="tool-header-center">
           {children}
         </div>
       ) : tabs.length > 0 ? (
-        <nav style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
+        <nav className="tool-header-center" aria-label={`${toolName} navigation`}>
           {tabs.map(tab => {
             const isActive = tab.href === pathname
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0 16px',
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.12em',
-                  textDecoration: 'none',
-                  color: isActive ? 'var(--accent)' : 'var(--text-dim)',
-                  borderBottom: isActive
-                    ? '2px solid var(--accent)'
-                    : '2px solid transparent',
-                  marginBottom: -2, // align with parent border
-                  transition: 'color 0.15s, border-color 0.15s',
-                  whiteSpace: 'nowrap',
-                }}
+                className={cn(
+                  'tool-header-tab',
+                  isActive && 'tool-header-tab--active'
+                )}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {tab.label}
               </Link>
@@ -117,18 +50,11 @@ export default function ToolHeader({ toolName, tabs = [], children, actions }: T
           })}
         </nav>
       ) : (
-        <div style={{ flex: 1 }} />
+        <div className="tool-header-center" />
       )}
 
-      {/* Right-side actions slot (e.g. Settings button) */}
       {actions && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 16px',
-          borderLeft: '2px solid var(--border)',
-          flexShrink: 0,
-        }}>
+        <div className="tool-header-actions">
           {actions}
         </div>
       )}

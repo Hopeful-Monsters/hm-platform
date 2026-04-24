@@ -1,17 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
-export default function LoginPage() {
-  const [email, setEmail]       = useState('')
+function LoginContent() {
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const router = useRouter()
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState('')
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const resetSuccess = searchParams.get('reset') === 'success'
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,47 +44,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: 'calc(100vh - var(--nav-h))',
-        background: 'var(--bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 24px',
-      }}
-    >
-      <div className="animate-fade-up" style={{ maxWidth: 480, width: '100%' }}>
-        {/* Eyebrow */}
-        <p className="eyebrow" style={{ marginBottom: 12 }}>Welcome back</p>
+    <div className="auth-page-shell">
+      <div className="animate-fade-up auth-card">
+        <p className="eyebrow mb-3">Welcome back</p>
 
-        {/* Heading */}
-        <h1
-          className="display-lg"
-          style={{ color: 'var(--text)', marginBottom: 32 }}
-        >
-          Sign <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>In.</span>
+        <h1 className="display-lg hm-text mb-8">
+          Sign <span className="hm-accent italic">In.</span>
         </h1>
 
-        {/* Error */}
+        {resetSuccess && (
+          <div className="hm-success-banner mb-5">
+            Password updated. Sign in with your new password.
+          </div>
+        )}
+
         {error && (
-          <div
-            style={{
-              background: '#180000',
-              borderLeft: '4px solid #FF4444',
-              padding: '12px 16px',
-              marginBottom: 20,
-              fontSize: 13,
-              color: '#FF8888',
-            }}
-          >
+          <div className="hm-error-banner mb-5" role="alert">
             {error}
           </div>
         )}
 
-        {/* Email form */}
-        <form onSubmit={handleEmailLogin} style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 16 }}>
+        <form onSubmit={handleEmailLogin} className="mb-4">
+          <div className="mb-4">
             <label className="hm-label" htmlFor="email">Email</label>
             <input
               id="email"
@@ -91,11 +74,12 @@ export default function LoginPage() {
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
+              aria-required="true"
               className="hm-input"
             />
           </div>
 
-          <div style={{ marginBottom: 24 }}>
+          <div className="mb-6">
             <label className="hm-label" htmlFor="password">Password</label>
             <input
               id="password"
@@ -104,74 +88,51 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               required
+              aria-required="true"
               className="hm-input"
             />
+            <Link href="/forgot-password" className="hm-forgot-link">
+              Forgot password?
+            </Link>
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            size="lg"
-            style={{ width: '100%' }}
-          >
+          <Button type="submit" disabled={loading} size="lg" className="w-full">
             {loading ? 'Signing In…' : 'Sign In →'}
           </Button>
         </form>
 
-        {/* Divider */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'var(--text-dim)',
-            }}
-          >
-            or
-          </span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+        <div className="hm-divider mb-4">
+          <div className="hm-divider-line" />
+          <span className="hm-divider-label">or</span>
+          <div className="hm-divider-line" />
         </div>
 
-        {/* Google OAuth */}
         <Button
           type="button"
           variant="outline"
           size="lg"
           disabled={loading}
           onClick={handleGoogleLogin}
-          style={{ width: '100%', marginBottom: 28 }}
+          className="w-full mb-7"
         >
           Continue with Google
         </Button>
 
-        {/* Footer */}
-        <p
-          style={{
-            fontSize: 13,
-            color: 'var(--text-muted)',
-            textAlign: 'center',
-          }}
-        >
+        <p className="hm-text-muted text-center text-sm">
           No account?{' '}
-          <Link
-            href="/signup"
-            style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
-          >
+          <Link href="/signup" className="hm-link">
             Sign up
           </Link>
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   )
 }

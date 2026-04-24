@@ -34,7 +34,7 @@ export function QueueRow({ item, onRemove }: { item: QueueItem; onRemove: (id: n
     <div className="qrow">
       <div className="qrow-ico">
         {processing
-          ? <span className="spin" style={{ width: 16, height: 16, borderWidth: 2 }} />
+          ? <span className="spin spin-sm" />
           : isPdf ? '📄' : '🖼️'}
       </div>
       <div className="qrow-main">
