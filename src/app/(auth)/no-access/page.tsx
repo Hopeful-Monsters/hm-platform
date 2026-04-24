@@ -27,11 +27,11 @@ export default async function NoAccessPage({
   }
 
   return (
-    <div className="auth-page-shell" style={{ textAlign: 'center' }}>
-      <div className="animate-fade-up auth-card">
-        <p className="eyebrow" style={{ marginBottom: 12 }}>Hold up</p>
+    <div className="auth-page-shell">
+      <div className="animate-fade-up auth-card text-center">
+        <p className="eyebrow mb-3">Hold up</p>
 
-        <h1 className="display-lg hm-text" style={{ marginBottom: 20 }}>
+        <h1 className="display-lg hm-text mb-5">
           No<br />
           <span className="hm-pink italic">Access.</span>
         </h1>

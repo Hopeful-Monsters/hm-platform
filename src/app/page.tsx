@@ -179,7 +179,7 @@ export default async function Home() {
         <span className="watermark-hero" aria-hidden>HM</span>
         <div className="dashboard-hero-inner">
           <p className="dashboard-hero-eyebrow">Your dashboard</p>
-          <h1 className="display-lg hm-accent-fg" style={{ lineHeight: 0.9 }}>
+          <h1 className="display-lg hm-accent-fg">
             Welcome back,<br />
             {user.email?.split('@')[0]}.
           </h1>

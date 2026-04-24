@@ -560,6 +560,10 @@ textarea.hm-input {
   min-width: 44px;
   min-height: 44px;
 }
+.btn-icon--borderless {
+  border: none;
+}
+
 .btn-icon:hover {
   border-color: var(--accent);
   color: var(--accent);

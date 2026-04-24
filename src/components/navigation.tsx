@@ -109,8 +109,7 @@ export function MobileNav({ id, isOpen, onClose, userRole, userTools, isAuthenti
               <button
                 onClick={onClose}
                 aria-label="Close menu"
-                className="btn-icon"
-                style={{ border: 'none' }}
+                className="btn-icon btn-icon--borderless"
               >
                 <X size={18} aria-hidden />
               </button>
