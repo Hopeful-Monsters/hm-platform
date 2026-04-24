@@ -14,7 +14,7 @@ export async function proxy(request: NextRequest) {
 
   const csp = [
     `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https: 'unsafe-inline' 'unsafe-eval'`,
     // In dev, Tailwind v4 injects a <style> block — 'unsafe-inline' is required.
     // In prod, Next.js applies the nonce to any <style> tags it generates.
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
@@ -28,6 +28,7 @@ export async function proxy(request: NextRequest) {
     `base-uri 'self'`,
     `form-action 'self'`,
     `upgrade-insecure-requests`,
+    `require-trusted-types-for 'script'`,
   ].join('; ');
 
   const requestHeaders = new Headers(request.headers);
