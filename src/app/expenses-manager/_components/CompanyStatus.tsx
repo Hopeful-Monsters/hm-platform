@@ -28,13 +28,13 @@ export function CompanyStatus({
   if (company.status === 'checking')
     return (
       <div className="co-row loading">
-        <span className="spin" style={{ width: 12, height: 12, borderWidth: 2 }} /> Checking company in Streamtime…
+        <span className="spin spin-xs" /> Checking company in Streamtime…
       </div>
     )
   if (company.status === 'matched')
     return <div className="co-row ok">✓ Matched existing supplier</div>
   if (company.status === 'created')
-    return <div className="co-row ok">✓ Created new supplier: <strong style={{ marginLeft: 4 }}>{company.matchedName}</strong></div>
+    return <div className="co-row ok">✓ Created new supplier: <strong className="ml-1">{company.matchedName}</strong></div>
   if (company.status === 'error')
     return <div className="co-row warn">Company check failed: {company.errorMsg || 'unknown error'}</div>
   if (company.status === 'notfound')
@@ -55,7 +55,7 @@ export function CompanyStatus({
           {company.similar.map(r => (
             <div key={r.id} className="co-similar-item" onClick={() => onChoose(r.id, String(r.name))}>
               <span className="co-similar-name">{r.name}</span>
-              <span style={{ fontFamily: 'var(--font-heading)', fontSize: 11, fontWeight: 900, color: 'var(--accent-label)' }}>Use →</span>
+              <span className="co-similar-use">Use →</span>
             </div>
           ))}
         </div>

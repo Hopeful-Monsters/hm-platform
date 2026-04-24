@@ -49,7 +49,7 @@ export default function JobPicker({
 
         {error && (
           <div>
-            <div className="alert alert-error" style={{ marginBottom: 12 }}>⚠️ {error}</div>
+            <div className="alert alert-error mb-3">⚠️ {error}</div>
             {onRetry && <button className="btn btn-secondary btn-sm" onClick={onRetry}>Retry</button>}
           </div>
         )}
@@ -57,10 +57,10 @@ export default function JobPicker({
         {!error && jobs.length === 0 && (
           <div className="empty">
             <div className="empty-ico">⚠️</div>
-            <div style={{ fontWeight: 500, marginBottom: 4 }}>Could not load jobs</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Check that STREAMTIME_KEY is set</div>
+            <div className="empty-title">Could not load jobs</div>
+            <div className="empty-hint">Check that STREAMTIME_KEY is set</div>
             {onRetry && (
-              <button className="btn btn-secondary btn-sm" style={{ marginTop: 12 }} onClick={onRetry}>Retry</button>
+              <button className="btn btn-secondary btn-sm mt-3" onClick={onRetry}>Retry</button>
             )}
           </div>
         )}

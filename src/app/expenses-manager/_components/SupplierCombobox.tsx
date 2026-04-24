@@ -68,10 +68,9 @@ export function SupplierCombobox({
     <div className="supplier-wrap">
       <input
         type="text"
-        className="fc"
+        className={hasError ? 'fc has-error' : 'fc'}
         value={value}
         autoComplete="off"
-        style={hasError ? { borderColor: 'var(--error)' } : undefined}
         onChange={e => handleInput(e.target.value)}
         onFocus={() => { cancelClose(); setOpen(true) }}
         onBlur={scheduleClose}
@@ -79,7 +78,7 @@ export function SupplierCombobox({
       />
       <div className={`supplier-dropdown${open ? ' open' : ''}`}>
         {searching && (
-          <div className="supplier-opt" style={{ color: 'var(--text-muted)', fontSize: 12, fontStyle: 'italic' }}>
+          <div className="supplier-opt supplier-searching">
             Searching…
           </div>
         )}
