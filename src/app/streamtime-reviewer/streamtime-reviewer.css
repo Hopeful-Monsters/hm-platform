@@ -3,3 +3,8 @@
 [data-tool="streamtime-reviewer"] .sr-shell {
   padding: 24px;
 }
+
+/* Task 12: TimeDetailTab */
+[data-tool="streamtime-reviewer"] .sr-td--sm {
+  font-size: 12px;
+}
