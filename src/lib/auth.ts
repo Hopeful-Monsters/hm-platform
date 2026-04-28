@@ -64,3 +64,17 @@ export async function requireSettingsAccess() {
 
   return user
 }
+
+/**
+ * Verifies the current user is signed in, approved, and has the 'admin' role.
+ * Used for operations restricted to admins only (e.g. writing billable targets).
+ */
+export async function requireAdminAccess() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+  if (user.user_metadata?.status !== 'approved') throw new Error('Account not approved')
+  const role = user.user_metadata?.role as string | undefined
+  if (role !== 'admin') throw new Error('Admin role required')
+  return user
+}
