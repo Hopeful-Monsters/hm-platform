@@ -415,6 +415,9 @@
   border-radius: 2px;
   transition: width 0.3s;
 }
+[data-tool="streamtime-reviewer"] .sr-cap-bar-fill--under { background: var(--sr-red); }
+[data-tool="streamtime-reviewer"] .sr-cap-bar-fill--ok    { background: var(--sr-green); }
+[data-tool="streamtime-reviewer"] .sr-cap-bar-fill--over  { background: var(--sr-yellow); }
 
 /* ── Badges ─────────────────────────────────────────────────────────────── */
 [data-tool="streamtime-reviewer"] .sr-label-badge {
@@ -702,7 +705,19 @@
   font-size: 13px;
 }
 [data-tool="streamtime-reviewer"] .sr-history-dates { font-weight: 600; font-family: var(--font-mono, monospace); font-size: 12px; }
-[data-tool="streamtime-reviewer"] .sr-history-meta  { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono, monospace); }
+[data-tool="streamtime-reviewer"] .sr-history-meta  { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono, monospace); flex: 1; }
+[data-tool="streamtime-reviewer"] .sr-history-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+[data-tool="streamtime-reviewer"] .sr-history-delete:hover { color: var(--sr-red); background: rgba(255,95,110,0.08); }
 
 [data-tool="streamtime-reviewer"] .sr-chart-controls {
   display: flex;

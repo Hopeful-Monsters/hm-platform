@@ -1,4 +1,4 @@
-import { requireToolAccess } from '@/lib/auth'
+import { requireToolAccess, requireAdminAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -45,6 +45,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Internal error'
     const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
+    return Response.json({ error: msg }, { status })
+  }
+}
+
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireAdminAccess()
+    const { id } = await params
+    const supabase = createServiceClient()
+    await supabase.from('streamtime_weekly_user_stats').delete().eq('report_id', id)
+    const { error } = await supabase.from('streamtime_weekly_reports').delete().eq('id', id)
+    if (error) throw error
+    return Response.json({ ok: true })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Internal error'
+    const status = msg === 'Unauthorized' ? 401 : msg === 'Admin role required' ? 403 : 500
     return Response.json({ error: msg }, { status })
   }
 }

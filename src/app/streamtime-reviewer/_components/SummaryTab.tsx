@@ -12,6 +12,14 @@ function diffClass(d: number | null) {
   return 'sr-diff--neg'
 }
 
+function capBarClass(totalHours: number, capacityHours: number) {
+  if (capacityHours <= 0) return ''
+  const ratio = totalHours / capacityHours
+  if (ratio < 1)    return 'sr-cap-bar-fill--under'
+  if (ratio <= 1.1) return 'sr-cap-bar-fill--ok'
+  return 'sr-cap-bar-fill--over'
+}
+
 function billPctClass(pct: number) {
   if (pct >= 0.7) return 'sr-bill--good'
   if (pct >= 0.5) return 'sr-bill--ok'
@@ -167,7 +175,7 @@ export default function SummaryTab() {
                   <td className="sr-td sr-td--mono sr-td--right">
                     <div className="sr-cap-cell">
                       <div className="sr-cap-bar">
-                        <div className="sr-cap-bar-fill" style={{ width: `${capPct}%` }} />
+                        <div className={`sr-cap-bar-fill ${capBarClass(r.totalHours, r.capacityHours)}`} style={{ width: `${capPct}%` }} />
                       </div>
                       <span>{r.capacityHours > 0 ? fmt2(r.capacityHours) : '—'}</span>
                     </div>

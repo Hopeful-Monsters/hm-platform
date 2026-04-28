@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer,
+  Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import type { ValueType } from 'recharts/types/component/DefaultTooltipContent'
 import { useReport } from './ReportContext'
@@ -11,8 +11,10 @@ import type { SavedReportDetail } from './types'
 
 type ChartScope = 'agency' | 'Creative' | 'Execution' | 'Strategy' | 'Support'
 
-export default function HistoryTab() {
-  const { savedReports, loadSavedReports } = useReport()
+interface Props { isAdmin: boolean }
+
+export default function HistoryTab({ isAdmin }: Props) {
+  const { savedReports, loadSavedReports, deleteReport } = useReport()
   const [loading,    setLoading]    = useState(false)
   const [scope,      setScope]      = useState<ChartScope>('agency')
   const [chartType,  setChartType]  = useState<'billable' | 'hours'>('billable')
@@ -35,6 +37,16 @@ export default function HistoryTab() {
       )
     ).then(setDetails)
   }, [savedReports])
+
+  const avgTarget = useMemo(() => {
+    const stats = scope === 'agency'
+      ? details.flatMap(d => d.userStats)
+      : details.flatMap(d => d.userStats.filter(s => s.team === scope))
+    const withTargets = stats.filter(s => s.targetPct !== null)
+    if (!withTargets.length) return null
+    const avg = withTargets.reduce((s, u) => s + u.targetPct!, 0) / withTargets.length
+    return Math.round(avg * 10) / 10
+  }, [details, scope])
 
   const chartData = useMemo(() => {
     return details
@@ -82,6 +94,19 @@ export default function HistoryTab() {
                 {r.dateFrom} → {r.dateTo}
               </span>
               <span className="sr-history-meta">{r.entryCount} entries · saved {new Date(r.savedAt).toLocaleDateString('en-AU')}</span>
+              {isAdmin && (
+                <button
+                  className="sr-history-delete"
+                  aria-label={`Delete report ${r.dateFrom} to ${r.dateTo}`}
+                  onClick={() => {
+                    if (confirm(`Delete report ${r.dateFrom} → ${r.dateTo}? This cannot be undone.`)) {
+                      deleteReport(r.id)
+                    }
+                  }}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -126,6 +151,9 @@ export default function HistoryTab() {
                     formatter={(v: ValueType | undefined) => [`${v ?? ''}%`, 'Billable Rate']}
                   />
                   <Line type="monotone" dataKey="billPct" stroke="var(--accent)" strokeWidth={2} dot={{ r: 4 }} name="Billable %" />
+                  {avgTarget !== null && (
+                    <ReferenceLine y={avgTarget} stroke="var(--text-muted)" strokeDasharray="6 3" label={{ value: `Avg target ${avgTarget}%`, fill: 'var(--text-muted)', fontSize: 10, position: 'insideTopRight' }} />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </>

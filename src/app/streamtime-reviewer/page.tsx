@@ -44,7 +44,7 @@ function Inner({ isAdmin }: { isAdmin: boolean }) {
         {activeTab === 'summary'      && <SummaryTab />}
         {activeTab === 'timedetail'   && <TimeDetailTab />}
         {activeTab === 'jobbreakdown' && <JobBreakdownTab />}
-        {activeTab === 'history'      && <HistoryTab />}
+        {activeTab === 'history'      && <HistoryTab isAdmin={isAdmin} />}
       </div>
     </div>
   )

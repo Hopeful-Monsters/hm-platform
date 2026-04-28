@@ -5,12 +5,18 @@ import { useReport } from './ReportContext'
 
 function lastMondaySunday() {
   const today = new Date()
-  const day = today.getDay()
-  const mon = new Date(today)
-  mon.setDate(today.getDate() - ((day === 0 ? 7 : day) + 6))
-  const sun = new Date(mon)
-  sun.setDate(mon.getDate() + 6)
-  const fmt = (d: Date) => d.toISOString().slice(0, 10)
+  const day = today.getDay() // 0=Sun … 6=Sat
+  // Walk back to the most recent Sunday (inclusive of today when today IS Sunday)
+  const sun = new Date(today)
+  sun.setDate(today.getDate() - (day === 0 ? 0 : day))
+  const mon = new Date(sun)
+  mon.setDate(sun.getDate() - 6)
+  const fmt = (d: Date) => {
+    const y  = d.getFullYear()
+    const m  = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${dd}`
+  }
   return { from: fmt(mon), to: fmt(sun) }
 }
 

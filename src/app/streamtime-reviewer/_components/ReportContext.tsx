@@ -117,6 +117,7 @@ interface ReportContextValue {
   setActiveTab: (tab: ActiveTab) => void
   toggleExcludeLeadership: () => void
   loadSavedReports: () => Promise<void>
+  deleteReport: (id: string) => Promise<void>
 }
 
 const ReportContext = createContext<ReportContextValue | null>(null)
@@ -193,6 +194,18 @@ export function ReportProvider({ children }: { children: React.ReactNode }) {
           })),
         }),
       })
+      // Populate the targets table so Settings > Billable Targets shows all users
+      await fetch('/api/streamtime/settings/targets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targets: rows.map(r => ({
+            streamtimeUserId: String(r.userId),
+            displayName: r.fullName,
+            targetPct: r.targetPct ?? 0,
+          })),
+        }),
+      })
     } finally { setIsSaving(false) }
   }, [period, users, entries, oooPhrase])
 
@@ -200,6 +213,11 @@ export function ReportProvider({ children }: { children: React.ReactNode }) {
     const r = await fetch('/api/streamtime/reports')
     const d = await r.json()
     setSavedReports(d.reports ?? [])
+  }, [])
+
+  const deleteReport = useCallback(async (id: string) => {
+    await fetch(`/api/streamtime/reports/${id}`, { method: 'DELETE' })
+    setSavedReports(prev => prev.filter(r => r.id !== id))
   }, [])
 
   const summaryRows = useMemo(
@@ -215,7 +233,7 @@ export function ReportProvider({ children }: { children: React.ReactNode }) {
       summaryRows, jobBreakdown,
       runReport, saveReport, setActiveTab,
       toggleExcludeLeadership: useCallback(() => setExcludeLeadership(p => !p), []),
-      loadSavedReports,
+      loadSavedReports, deleteReport,
     }}>
       {children}
     </ReportContext.Provider>
