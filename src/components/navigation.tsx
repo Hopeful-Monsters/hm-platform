@@ -18,6 +18,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/expenses-manager',  label: 'Expenses',  toolSlug: 'expenses-manager' },
   { href: '/coverage-tracker',  label: 'Coverage',  toolSlug: 'coverage-tracker' },
+  { href: '/streamtime-reviewer', label: 'Time Analysis', toolSlug: 'streamtime-reviewer' },
   { href: '/support',           label: 'Support',   authOnly: true },
   { href: '/admin',             label: 'Admin',     adminOnly: true },
 ]

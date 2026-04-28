@@ -183,8 +183,9 @@ export default async function ApprovalsPage() {
                 <p className="eyebrow hm-text-dim mb-2">Grant access to:</p>
                 <div className="flex flex-col gap-2 mb-5">
                   {[
-                    { value: 'coverage-tracker', label: 'Coverage Tracker' },
-                    { value: 'expenses-manager', label: 'Expenses Manager' },
+                    { value: 'coverage-tracker',    label: 'Coverage Tracker' },
+                    { value: 'expenses-manager',    label: 'Expenses Manager' },
+                    { value: 'streamtime-reviewer', label: 'Streamtime Reviewer' },
                   ].map(tool => (
                     <label key={tool.value} className="flex items-center gap-2 body-md hm-text-muted cursor-pointer">
                       <input

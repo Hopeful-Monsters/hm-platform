@@ -2,9 +2,10 @@
 // Intentionally separate from lib/tools.ts, which only lists registered product tools.
 // Import this in both api/support/route.ts and app/support/SupportForm.tsx.
 export const SUPPORT_TOOL_OPTIONS = [
-  { value: 'expenses-manager', label: 'Expenses Manager' },
-  { value: 'coverage-tracker', label: 'Coverage Tracker' },
-  { value: 'platform',         label: 'Platform / General' },
+  { value: 'expenses-manager',    label: 'Expenses Manager' },
+  { value: 'coverage-tracker',    label: 'Coverage Tracker' },
+  { value: 'streamtime-reviewer', label: 'Streamtime Reviewer' },
+  { value: 'platform',            label: 'Platform / General' },
 ] as const
 
 export type SupportToolValue = (typeof SUPPORT_TOOL_OPTIONS)[number]['value']

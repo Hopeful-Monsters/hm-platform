@@ -24,6 +24,7 @@ type SortDir = 'asc' | 'desc'
 const TOOLS = [
   { value: 'coverage-tracker', label: 'Coverage Tracker' },
   { value: 'expenses-manager', label: 'Expenses Manager' },
+  { value: 'streamtime-reviewer', label: 'Streamtime Reviewer' },
 ]
 
 const ROLE_OPTIONS = [
