@@ -13,14 +13,6 @@ function stHeaders() {
   }
 }
 
-function extractLabels(user: Record<string, unknown>): string[] {
-  const raw = user.labels
-  if (!Array.isArray(raw)) return []
-  return raw
-    .map((l: unknown) => (typeof l === 'object' && l !== null ? (l as Record<string, unknown>).name : l))
-    .filter((n): n is string => typeof n === 'string')
-}
-
 function deriveTeam(labels: string[]): Team {
   for (const tl of TEAM_LABELS) {
     if (labels.includes(tl)) return tl
@@ -63,13 +55,41 @@ export async function GET() {
       return statusId === 1
     })
 
+    // The v2 /users endpoint does not include labels — fetch them separately.
+    // POST /labels/search with { User: [id, ...] } returns models grouped by entityId.
+    const userIds = active.map(u => Number(u.id)).filter(id => id > 0)
+    const userLabelMap = new Map<number, string[]>()
+
+    if (userIds.length > 0) {
+      try {
+        const labelsRes = await fetch(`${ST_BASE}/labels/search`, {
+          method: 'POST',
+          headers: stHeaders(),
+          body: JSON.stringify({ User: userIds }),
+        })
+        if (labelsRes.ok) {
+          const labelsData = await labelsRes.json()
+          const modelSet = (labelsData.__modelSet ?? []) as Record<string, unknown>[]
+          const models = ((modelSet[0]?.models ?? []) as Record<string, unknown>[])
+          for (const label of models) {
+            if (label.active === false) continue
+            const uid = Number(label.entityId)
+            if (!userLabelMap.has(uid)) userLabelMap.set(uid, [])
+            userLabelMap.get(uid)!.push(String(label.name))
+          }
+        }
+      } catch {
+        // Labels fetch failed; users will have empty labels and default to Support team
+      }
+    }
+
     const users: EnrichedUser[] = active.map(u => {
       const firstName = typeof u.firstName === 'string' ? u.firstName : ''
       const lastName  = typeof u.lastName  === 'string' ? u.lastName  : ''
       const displayName = typeof u.displayName === 'string' ? u.displayName : ''
       const fullName = [firstName, lastName].filter(Boolean).join(' ') || displayName || String(u.id)
-      const labels = extractLabels(u)
       const id = Number(u.id)
+      const labels = userLabelMap.get(id) ?? []
 
       return {
         id,

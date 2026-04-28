@@ -17,13 +17,13 @@ const BodySchema = z.object({
   dateTo:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 })
 
-// Fallback: filter group type 35 is the logged-time date field per the Streamtime API docs.
-const DATE_FILTER_FALLBACK = 35
+// filterGroupType 5 is the date field for search_view=8 (logged time) per the Streamtime v2 API.
+const DATE_FILTER_TYPE_ID = 5
 
 async function fetchDateFilterTypeId(): Promise<number> {
   try {
     const r = await fetch(`${ST_BASE}/filter_group_types?search_views=8`, { headers: stHeaders() })
-    if (!r.ok) return DATE_FILTER_FALLBACK
+    if (!r.ok) return DATE_FILTER_TYPE_ID
     const types = await r.json()
     const arr: Record<string, unknown>[] = Array.isArray(types) ? types : []
     const match = arr.find(
@@ -31,14 +31,12 @@ async function fetchDateFilterTypeId(): Promise<number> {
       (String(t.name ?? '').toLowerCase().includes('date') ||
        String(t.simpleName ?? '').toLowerCase().includes('date'))
     )
-    return match ? Number(match.filterGroupType) : DATE_FILTER_FALLBACK
+    return match ? Number(match.filterGroupType) : DATE_FILTER_TYPE_ID
   } catch {
-    return DATE_FILTER_FALLBACK
+    return DATE_FILTER_TYPE_ID
   }
 }
 
-// Per the Streamtime API docs, filterGroups must be nested inside filterGroupCollections —
-// having filterGroups at the top level alongside filterGroupCollections is not valid.
 function buildFilterBody(dateFrom: string, dateTo: string, filterTypeId: number, offset: number) {
   return {
     maxResults: BATCH,
@@ -64,39 +62,93 @@ function buildFilterBody(dateFrom: string, dateTo: string, filterTypeId: number,
   }
 }
 
-function normalizeEntry(e: Record<string, unknown>): NormalizedEntry {
-  const job     = (e.job ?? {}) as Record<string, unknown>
-  const company = (job.company ?? {}) as Record<string, unknown>
-  const status  = (e.loggedTimeStatus ?? {}) as Record<string, unknown>
+// Fetch unique jobs by ID in parallel — v2 does not embed job data in search results.
+async function fetchJobMap(jobIds: number[]): Promise<Map<number, Record<string, unknown>>> {
+  const map = new Map<number, Record<string, unknown>>()
+  if (jobIds.length === 0) return map
+  const results = await Promise.allSettled(
+    jobIds.map(id =>
+      fetch(`${ST_BASE}/jobs/${id}`, { headers: stHeaders() })
+        .then(r => (r.ok ? r.json() : null))
+    )
+  )
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i]
+    if (r.status === 'fulfilled' && r.value) {
+      map.set(jobIds[i], r.value as Record<string, unknown>)
+    }
+  }
+  return map
+}
 
-  // LoggedTime.jobLabels are plain strings per the API docs
-  // Job.jobLabels are JobLabel objects with a .name property
-  const entryLabelName = Array.isArray(e.jobLabels)
-    ? (e.jobLabels as unknown[]).find((l): l is string => typeof l === 'string')
-    : undefined
-  const jobLabelName = Array.isArray(job.jobLabels)
-    ? (job.jobLabels as Record<string, unknown>[]).find(l => typeof l?.name === 'string')?.name
-    : undefined
-  const labelName = entryLabelName
-    ?? jobLabelName
+// Fetch all companies via search_view=12 — no bulk-by-ID endpoint exists in v2.
+async function fetchCompanyMap(): Promise<Map<number, string>> {
+  const map = new Map<number, string>()
+  let offset = 0
+  while (true) {
+    try {
+      const r = await fetch(`${ST_BASE}/search?search_view=12`, {
+        method: 'POST',
+        headers: stHeaders(),
+        body: JSON.stringify({
+          maxResults: BATCH,
+          offset,
+          filterGroupCollection: { conditionMatchTypeId: 1, filterGroupCollections: [] },
+        }),
+      })
+      if (!r.ok) break
+      const data: unknown = await r.json()
+      const rows: Record<string, unknown>[] = Array.isArray(data) ? data : []
+      for (const row of rows) {
+        const c = (row.company ?? {}) as Record<string, unknown>
+        const id = Number(c.id)
+        if (id > 0 && typeof c.name === 'string') map.set(id, c.name)
+      }
+      if (rows.length < BATCH) break
+      offset += BATCH
+      if (offset >= 50000) break
+    } catch {
+      break
+    }
+  }
+  return map
+}
+
+// v2 search wraps logged time data under a `loggedTime` sub-object; job/company are fetched separately.
+function normalizeEntry(
+  e: Record<string, unknown>,
+  jobMap: Map<number, Record<string, unknown>>,
+  companyMap: Map<number, string>,
+): NormalizedEntry {
+  const lt        = (e.loggedTime ?? {}) as Record<string, unknown>
+  const status    = (lt.loggedTimeStatus ?? {}) as Record<string, unknown>
+  const jobId     = Number(lt.jobId ?? 0)
+  const job       = jobMap.get(jobId) ?? {}
+  const companyId = Number(job.companyId ?? 0)
+
+  // jobLabels at the search-result level are plain strings in v2
+  const jobLabelNames = Array.isArray(e.jobLabels)
+    ? (e.jobLabels as unknown[]).filter((l): l is string => typeof l === 'string')
+    : []
+  const labelName = jobLabelNames[0]
     ?? (job.isBillable === true ? 'Billable' : job.isBillable === false ? 'Non-Billable' : '—')
 
   return {
-    id:           String(e.id ?? ''),
-    userId:       Number(e.userId ?? 0),
-    date:         String(e.date ?? '').slice(0, 10),
-    minutes:      Number(e.minutes ?? 0),
-    jobId:        String(job.id ?? ''),
-    jobNumber:    String(job.number ?? '—'),
-    jobName:      String(job.name ?? '—'),
+    id:            String(lt.id ?? ''),
+    userId:        Number(lt.userId ?? 0),
+    date:          String(lt.date ?? '').slice(0, 10),
+    minutes:       Number(lt.minutes ?? 0),
+    jobId:         String(jobId || ''),
+    jobNumber:     String(job.number ?? '—'),
+    jobName:       String(job.name ?? '—'),
     jobIsBillable: typeof job.isBillable === 'boolean' ? job.isBillable : null,
-    jobLabelName: String(labelName),
-    itemName:     String(e.itemName ?? '—'),
-    clientName:   String(company.name ?? '—'),
-    notes:        String(e.notes ?? ''),
-    statusName:   String(status.name ?? '—'),
-    cost:         Number(e.cost ?? 0),
-    totalExTax:   Number(e.totalExTax ?? 0),
+    jobLabelName:  String(labelName),
+    itemName:      '—',
+    clientName:    companyMap.get(companyId) ?? '—',
+    notes:         String(lt.notes ?? ''),
+    statusName:    String(status.name ?? '—'),
+    cost:          Number(lt.totalCostExTax ?? 0),
+    totalExTax:    Number(lt.totalExTax ?? 0),
   }
 }
 
@@ -113,7 +165,7 @@ export async function POST(req: Request) {
     const { dateFrom, dateTo } = body.data
 
     const filterTypeId = await fetchDateFilterTypeId()
-    const all: NormalizedEntry[] = []
+    const rawEntries: Record<string, unknown>[] = []
     let offset = 0
 
     while (true) {
@@ -127,15 +179,29 @@ export async function POST(req: Request) {
         throw new Error(`Streamtime /search ${r.status}: ${errBody}`)
       }
       const data = await r.json()
-      const raw  = data.searchResults ?? {}
-      const results: Record<string, unknown>[] = Array.isArray(raw) ? raw : Object.values(raw)
-      all.push(...results.map(normalizeEntry))
+      // v2 search returns a top-level array, not { searchResults: [...] }
+      const results: Record<string, unknown>[] = Array.isArray(data) ? data : []
+      rawEntries.push(...results)
       if (results.length < BATCH) break
       offset += BATCH
       if (offset >= 10000) break
     }
 
-    return Response.json({ entries: all })
+    // Enrich entries with job and company data — v2 does not embed these in search results.
+    const jobIds = [...new Set(
+      rawEntries
+        .map(e => Number((e.loggedTime as Record<string, unknown>)?.jobId ?? 0))
+        .filter(id => id > 0)
+    )]
+
+    const [jobMap, companyMap] = await Promise.all([
+      fetchJobMap(jobIds),
+      fetchCompanyMap(),
+    ])
+
+    const entries = rawEntries.map(e => normalizeEntry(e, jobMap, companyMap))
+
+    return Response.json({ entries })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Internal error'
     const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
