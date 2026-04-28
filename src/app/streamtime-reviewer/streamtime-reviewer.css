@@ -1,0 +1,5 @@
+/* src/app/streamtime-reviewer/streamtime-reviewer.css */
+/* Styles added in Task 16 */
+[data-tool="streamtime-reviewer"] .sr-shell {
+  padding: 24px;
+}

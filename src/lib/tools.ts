@@ -17,6 +17,11 @@ export const TOOLS = [
     label: 'Coverage Tracker',
     description: 'Monitor earned media and coverage metrics across clients and campaigns.',
   },
+  {
+    slug: 'streamtime-reviewer',
+    label: 'Streamtime Reviewer',
+    description: 'Review weekly time entries, billable rates, and team performance from Streamtime.',
+  },
 ] as const
 
 export type ToolSlug = (typeof TOOLS)[number]['slug']
