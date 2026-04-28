@@ -7,7 +7,7 @@ const BATCH   = 1000
 
 function stHeaders() {
   return {
-    Authorization: `Bearer ${process.env.STREAMTIME_API_TOKEN}`,
+    Authorization: `Bearer ${process.env.STREAMTIME_KEY}`,
     'Content-Type': 'application/json',
   }
 }
@@ -104,8 +104,8 @@ export async function POST(req: Request) {
   try {
     await requireToolAccess('streamtime-reviewer')
 
-    if (!process.env.STREAMTIME_API_TOKEN) {
-      return Response.json({ error: 'STREAMTIME_API_TOKEN is not configured' }, { status: 500 })
+    if (!process.env.STREAMTIME_KEY) {
+      return Response.json({ error: 'STREAMTIME_KEY is not configured' }, { status: 500 })
     }
 
     const body = BodySchema.safeParse(await req.json())

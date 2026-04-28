@@ -8,7 +8,7 @@ const ORG_ID = 'default'
 
 function stHeaders() {
   return {
-    Authorization: `Bearer ${process.env.STREAMTIME_API_TOKEN}`,
+    Authorization: `Bearer ${process.env.STREAMTIME_KEY}`,
     'Content-Type': 'application/json',
   }
 }
@@ -32,8 +32,8 @@ export async function GET() {
   try {
     await requireToolAccess('streamtime-reviewer')
 
-    if (!process.env.STREAMTIME_API_TOKEN) {
-      return Response.json({ error: 'STREAMTIME_API_TOKEN is not configured' }, { status: 500 })
+    if (!process.env.STREAMTIME_KEY) {
+      return Response.json({ error: 'STREAMTIME_KEY is not configured' }, { status: 500 })
     }
 
     const r = await fetch(`${ST_BASE}/users`, { headers: stHeaders() })
