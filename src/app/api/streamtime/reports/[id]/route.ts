@@ -1,0 +1,50 @@
+import { requireToolAccess } from '@/lib/auth'
+import { createServiceClient } from '@/lib/supabase/service'
+
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    await requireToolAccess('streamtime-reviewer')
+    const { id } = await params
+    const supabase = createServiceClient()
+
+    const { data: report, error: rErr } = await supabase
+      .from('streamtime_weekly_reports')
+      .select('id, date_from, date_to, entry_count, saved_at')
+      .eq('id', id)
+      .single()
+    if (rErr || !report) return Response.json({ error: 'Not found' }, { status: 404 })
+
+    const { data: stats, error: sErr } = await supabase
+      .from('streamtime_weekly_user_stats')
+      .select('*')
+      .eq('report_id', id)
+    if (sErr) throw sErr
+
+    return Response.json({
+      id:         report.id,
+      dateFrom:   report.date_from,
+      dateTo:     report.date_to,
+      entryCount: report.entry_count,
+      savedAt:    report.saved_at,
+      userStats: (stats ?? []).map(s => ({
+        streamtimeUserId: s.streamtime_user_id,
+        displayName:      s.display_name,
+        team:             s.team,
+        isLeadership:     s.is_leadership,
+        capacityHours:    Number(s.capacity_hours),
+        billableHours:    Number(s.billable_hours),
+        nonBillableHours: Number(s.non_billable_hours),
+        oooHours:         Number(s.ooo_hours),
+        totalHours:       Number(s.total_hours),
+        workingHours:     Number(s.working_hours),
+        billablePct:      Number(s.billable_pct),
+        targetPct:        s.target_pct !== null ? Number(s.target_pct) : null,
+        diffPct:          s.diff_pct   !== null ? Number(s.diff_pct)   : null,
+      })),
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Internal error'
+    const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
+    return Response.json({ error: msg }, { status })
+  }
+}
