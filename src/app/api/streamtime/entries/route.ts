@@ -85,6 +85,10 @@ export async function POST(req: Request) {
   try {
     await requireToolAccess('streamtime-reviewer')
 
+    if (!process.env.STREAMTIME_API_TOKEN) {
+      return Response.json({ error: 'STREAMTIME_API_TOKEN is not configured' }, { status: 500 })
+    }
+
     const body = BodySchema.safeParse(await req.json())
     if (!body.success) return Response.json({ error: 'Invalid date range' }, { status: 400 })
     const { dateFrom, dateTo } = body.data
@@ -99,7 +103,10 @@ export async function POST(req: Request) {
         headers: stHeaders(),
         body: JSON.stringify(buildFilterBody(dateFrom, dateTo, filterTypeId, offset)),
       })
-      if (!r.ok) throw new Error(`Streamtime /search ${r.status}`)
+      if (!r.ok) {
+        const errBody = await r.text().catch(() => '')
+        throw new Error(`Streamtime /search ${r.status}: ${errBody}`)
+      }
       const data = await r.json()
       const raw  = data.searchResults ?? {}
       const results: Record<string, unknown>[] = Array.isArray(raw) ? raw : Object.values(raw)

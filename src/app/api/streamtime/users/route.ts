@@ -32,8 +32,15 @@ export async function GET() {
   try {
     await requireToolAccess('streamtime-reviewer')
 
+    if (!process.env.STREAMTIME_API_TOKEN) {
+      return Response.json({ error: 'STREAMTIME_API_TOKEN is not configured' }, { status: 500 })
+    }
+
     const r = await fetch(`${ST_BASE}/users`, { headers: stHeaders() })
-    if (!r.ok) throw new Error(`Streamtime /users ${r.status}`)
+    if (!r.ok) {
+      const body = await r.text().catch(() => '')
+      throw new Error(`Streamtime /users ${r.status}: ${body}`)
+    }
     const data = await r.json()
     const raw: Record<string, unknown>[] = Array.isArray(data)
       ? data
