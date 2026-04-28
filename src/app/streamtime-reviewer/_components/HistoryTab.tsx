@@ -19,8 +19,12 @@ export default function HistoryTab() {
   const [details,    setDetails]    = useState<SavedReportDetail[]>([])
 
   useEffect(() => {
-    setLoading(true)
-    loadSavedReports().finally(() => setLoading(false))
+    async function load() {
+      setLoading(true)
+      await loadSavedReports()
+      setLoading(false)
+    }
+    load()
   }, [loadSavedReports])
 
   useEffect(() => {
