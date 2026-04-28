@@ -17,38 +17,51 @@ const BodySchema = z.object({
   dateTo:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 })
 
-async function fetchDateFilterTypeId(): Promise<number | null> {
-  const r = await fetch(`${ST_BASE}/filter_group_types?search_views=8`, { headers: stHeaders() })
-  if (!r.ok) return null
-  const types = await r.json()
-  const arr: Record<string, unknown>[] = Array.isArray(types) ? types : []
-  const match = arr.find(
-    t => t.filterType === 2 && !t.deprecated &&
-    (String(t.name ?? '').toLowerCase().includes('date') ||
-     String(t.simpleName ?? '').toLowerCase().includes('date'))
-  )
-  return match ? Number(match.filterGroupType) : null
+// Fallback: filter group type 35 is the logged-time date field per the Streamtime API docs.
+const DATE_FILTER_FALLBACK = 35
+
+async function fetchDateFilterTypeId(): Promise<number> {
+  try {
+    const r = await fetch(`${ST_BASE}/filter_group_types?search_views=8`, { headers: stHeaders() })
+    if (!r.ok) return DATE_FILTER_FALLBACK
+    const types = await r.json()
+    const arr: Record<string, unknown>[] = Array.isArray(types) ? types : []
+    const match = arr.find(
+      t => Number(t.filterType) === 2 && !t.deprecated &&
+      (String(t.name ?? '').toLowerCase().includes('date') ||
+       String(t.simpleName ?? '').toLowerCase().includes('date'))
+    )
+    return match ? Number(match.filterGroupType) : DATE_FILTER_FALLBACK
+  } catch {
+    return DATE_FILTER_FALLBACK
+  }
 }
 
-function buildFilterBody(dateFrom: string, dateTo: string, filterTypeId: number | null, offset: number) {
-  const filterGroupCollection = filterTypeId
-    ? {
-        conditionMatchTypeId: 1,
-        filterGroupCollections: [],
-        filterGroups: [
-          {
-            filterGroupTypeId: filterTypeId,
-            conditionMatchTypeId: 1,
-            filters: [
-              { valueMatchTypeId: 38, value: dateFrom },
-              { valueMatchTypeId: 39, value: dateTo },
-            ],
-          },
-        ],
-      }
-    : { conditionMatchTypeId: 1, filterGroups: [], filterGroupCollections: [] }
-
-  return { maxResults: BATCH, offset, filterGroupCollection }
+// Per the Streamtime API docs, filterGroups must be nested inside filterGroupCollections —
+// having filterGroups at the top level alongside filterGroupCollections is not valid.
+function buildFilterBody(dateFrom: string, dateTo: string, filterTypeId: number, offset: number) {
+  return {
+    maxResults: BATCH,
+    offset,
+    filterGroupCollection: {
+      conditionMatchTypeId: 1,
+      filterGroupCollections: [
+        {
+          conditionMatchTypeId: 1,
+          filterGroups: [
+            {
+              filterGroupTypeId: filterTypeId,
+              conditionMatchTypeId: 1,
+              filters: [
+                { valueMatchTypeId: 38, value: dateFrom },
+                { valueMatchTypeId: 39, value: dateTo },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  }
 }
 
 function normalizeEntry(e: Record<string, unknown>): NormalizedEntry {
@@ -56,10 +69,16 @@ function normalizeEntry(e: Record<string, unknown>): NormalizedEntry {
   const company = (job.company ?? {}) as Record<string, unknown>
   const status  = (e.loggedTimeStatus ?? {}) as Record<string, unknown>
 
-  const entryLabels = Array.isArray(e.jobLabels) ? e.jobLabels : []
-  const jobLabels   = Array.isArray(job.jobLabels) ? job.jobLabels : []
-  const labelName   = (entryLabels[0] as Record<string, unknown>)?.name
-    ?? (jobLabels[0] as Record<string, unknown>)?.name
+  // LoggedTime.jobLabels are plain strings per the API docs
+  // Job.jobLabels are JobLabel objects with a .name property
+  const entryLabelName = Array.isArray(e.jobLabels)
+    ? (e.jobLabels as unknown[]).find((l): l is string => typeof l === 'string')
+    : undefined
+  const jobLabelName = Array.isArray(job.jobLabels)
+    ? (job.jobLabels as Record<string, unknown>[]).find(l => typeof l?.name === 'string')?.name
+    : undefined
+  const labelName = entryLabelName
+    ?? jobLabelName
     ?? (job.isBillable === true ? 'Billable' : job.isBillable === false ? 'Non-Billable' : '—')
 
   return {

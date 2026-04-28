@@ -56,7 +56,14 @@ export async function GET() {
       (targets ?? []).map(t => [t.streamtime_user_id, Number(t.target_pct)])
     )
 
-    const users: EnrichedUser[] = raw.map(u => {
+    // userStatus.id: 1=Active, 2=Hibernated, 3=Deleted — exclude non-active users
+    const active = raw.filter(u => {
+      const status = (u.userStatus ?? {}) as Record<string, unknown>
+      const statusId = Number(status.id ?? 1)
+      return statusId === 1
+    })
+
+    const users: EnrichedUser[] = active.map(u => {
       const firstName = typeof u.firstName === 'string' ? u.firstName : ''
       const lastName  = typeof u.lastName  === 'string' ? u.lastName  : ''
       const displayName = typeof u.displayName === 'string' ? u.displayName : ''
