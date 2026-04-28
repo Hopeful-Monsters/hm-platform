@@ -146,7 +146,7 @@ export default function HistoryTab() {
           )}
         </div>
       ) : (
-        <p className="sr-empty-hint" style={{ marginTop: 16 }}>
+        <p className="sr-empty-hint sr-empty-hint--mt">
           Save at least 2 weekly reports to see trend charts.
         </p>
       )}

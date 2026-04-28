@@ -8,3 +8,7 @@
 [data-tool="streamtime-reviewer"] .sr-td--sm {
   font-size: 12px;
 }
+
+[data-tool="streamtime-reviewer"] .sr-empty-hint--mt {
+  margin-top: 16px;
+}
