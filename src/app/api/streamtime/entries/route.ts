@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { requireToolAccess } from '@/lib/auth'
 import type { NormalizedEntry } from '@/app/streamtime-reviewer/_components/types'
 
-const ST_BASE = 'https://api.streamtime.net/v1'
+const ST_BASE = 'https://api.streamtime.net/v2'
 const BATCH   = 1000
 
 function stHeaders() {
