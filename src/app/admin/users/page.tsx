@@ -88,9 +88,11 @@ export default async function UsersPage() {
   const { data: users }          = await service.auth.admin.listUsers({ perPage: 200 })
   const { data: toolAccessData } = await service.from('tool_access').select('*')
 
-  // Map user_id → tool slugs
+  // Map user_id → tool slugs. Skip rows with a null user_id — orphaned grants
+  // shouldn't happen in practice but the column is nullable in the schema.
   const userToolsMap = new Map<string, string[]>()
   toolAccessData?.forEach(row => {
+    if (!row.user_id) return
     if (!userToolsMap.has(row.user_id)) userToolsMap.set(row.user_id, [])
     userToolsMap.get(row.user_id)!.push(row.tool_slug)
   })
