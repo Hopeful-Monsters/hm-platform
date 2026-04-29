@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import '@/app/tool.css'
-import ToolHeader from '@/components/ToolHeader'
+import { createToolLayout } from '@/components/tool/createToolLayout'
 import { WizardProvider } from './_components/WizardContext'
 import StepIndicator from './_components/StepIndicator'
+import '@/app/tool.css'
 import './expenses-manager.css'
 
 export const metadata: Metadata = {
@@ -11,21 +11,9 @@ export const metadata: Metadata = {
   robots:      { index: false, follow: false },
 }
 
-export default function ExpensesManagerLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <div data-tool="expenses-manager">
-      <WizardProvider>
-        <ToolHeader toolName="Expenses Manager" toolSlug="expenses-manager">
-          <StepIndicator />
-        </ToolHeader>
-        <div className="tool-content">
-          {children}
-        </div>
-      </WizardProvider>
-    </div>
-  )
-}
+export default createToolLayout({
+  toolSlug: 'expenses-manager',
+  toolName: 'Expenses Manager',
+  Provider: WizardProvider,
+  subNav:   <StepIndicator />,
+})
