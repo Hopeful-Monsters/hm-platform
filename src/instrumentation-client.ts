@@ -4,23 +4,23 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+const isProd = process.env.NODE_ENV === 'production';
+
 Sentry.init({
   dsn: "https://b58873ad33badf5bd020302d556aaa13@o4511220617052160.ingest.us.sentry.io/4511220734230529",
 
-  // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
+  // Sample 10% of traces in production to keep ingest manageable; full capture
+  // in development where the volume is low.
+  tracesSampleRate: isProd ? 0.1 : 1,
 
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
+  // Logs add ingest cost and aren't actionable in prod — Sentry events already
+  // capture stack + breadcrumbs.
+  enableLogs: !isProd,
 
-  // Define how likely Replay events are sampled when an error occurs.
+  // Session replay sampled lightly in prod; on-error capture stays at 100%.
+  replaysSessionSampleRate: isProd ? 0.05 : 0.1,
   replaysOnErrorSampleRate: 1.0,
 
   // Enable sending user PII (Personally Identifiable Information)

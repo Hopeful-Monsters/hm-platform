@@ -1,7 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import SettingsModal from './SettingsModal'
+import dynamic from 'next/dynamic'
+
+// Modal is large (~750 lines) and only rendered after the user clicks the
+// settings cog. Splitting it into its own chunk keeps it out of the initial
+// coverage-tracker bundle.
+const SettingsModal = dynamic(() => import('./SettingsModal'), { ssr: false })
 
 export default function SettingsButton() {
   const [open, setOpen] = useState(false)

@@ -226,15 +226,25 @@ export function ReportProvider({ children }: { children: React.ReactNode }) {
   )
   const jobBreakdown = useMemo(() => buildJobBreakdown(entries), [entries])
 
+  const toggleExcludeLeadership = useCallback(() => setExcludeLeadership(p => !p), [])
+
+  const value = useMemo<ReportContextValue>(() => ({
+    fetchStatuses, users, entries, oooPhrase, period,
+    activeTab, excludeLeadership, savedReports, isSaving,
+    summaryRows, jobBreakdown,
+    runReport, saveReport, setActiveTab,
+    toggleExcludeLeadership,
+    loadSavedReports, deleteReport,
+  }), [
+    fetchStatuses, users, entries, oooPhrase, period,
+    activeTab, excludeLeadership, savedReports, isSaving,
+    summaryRows, jobBreakdown,
+    runReport, saveReport, toggleExcludeLeadership,
+    loadSavedReports, deleteReport,
+  ])
+
   return (
-    <ReportContext.Provider value={{
-      fetchStatuses, users, entries, oooPhrase, period,
-      activeTab, excludeLeadership, savedReports, isSaving,
-      summaryRows, jobBreakdown,
-      runReport, saveReport, setActiveTab,
-      toggleExcludeLeadership: useCallback(() => setExcludeLeadership(p => !p), []),
-      loadSavedReports, deleteReport,
-    }}>
+    <ReportContext.Provider value={value}>
       {children}
     </ReportContext.Provider>
   )
