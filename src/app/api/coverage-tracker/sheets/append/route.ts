@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { rateLimits } from '@/lib/upstash/ratelimit'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getGoogleAccessToken, appendRows } from '@/lib/google/sheets'
+import { getDriveRefreshToken, clearDriveRefreshToken } from '@/lib/google/drive-tokens'
 import { createApiRoute } from '@/lib/api/createApiRoute'
 import { HttpError } from '@/lib/api/errors'
 
@@ -31,24 +32,17 @@ export const POST = createApiRoute({
   handler: async ({ user, body }) => {
     const { sheetId, sheetTab, rows, campaign } = body
 
-    const { data: tokenRow } = await createServiceClient()
-      .from('drive_tokens')
-      .select('refresh_token')
-      .eq('user_id', user!.id)
-      .maybeSingle()
-
-    if (!tokenRow?.refresh_token) {
+    const refreshToken = await getDriveRefreshToken(user!.id)
+    if (!refreshToken) {
       throw new HttpError(403, 'Google Drive not connected. Connect Drive from the Coverage Tracker.')
     }
 
     let accessToken: string
     try {
-      accessToken = await getGoogleAccessToken(tokenRow.refresh_token as string)
+      accessToken = await getGoogleAccessToken(refreshToken)
     } catch (err) {
       // Token likely revoked — clear it so the UI shows disconnected state.
-      try {
-        await createServiceClient().from('drive_tokens').delete().eq('user_id', user!.id)
-      } catch { /* non-fatal */ }
+      try { await clearDriveRefreshToken(user!.id) } catch { /* non-fatal */ }
       throw new HttpError(401, `Drive auth expired — please reconnect. (${(err as Error).message})`)
     }
 

@@ -15,7 +15,7 @@
 
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
-import { createServiceClient } from '@/lib/supabase/service'
+import { setDriveRefreshToken } from '@/lib/google/drive-tokens'
 import { getAppOrigin } from '@/lib/app-origin'
 import { cookies } from 'next/headers'
 
@@ -132,17 +132,10 @@ export async function GET(request: Request) {
     )
   }
 
-  // Store refresh token (service role only — never exposed to client JS)
-  const { error: upsertErr } = await createServiceClient()
-    .from('drive_tokens')
-    .upsert({
-      user_id:       user.id,
-      refresh_token: tokens.refresh_token,
-      updated_at:    new Date().toISOString(),
-    })
-
+  // Encrypt + store refresh token (service role only — never exposed to client JS).
+  const { error: upsertErr } = await setDriveRefreshToken(user.id, tokens.refresh_token)
   if (upsertErr) {
-    return popupResponse({ driveError: `Failed to save credentials: ${upsertErr.message}` }, safeOrigin)
+    return popupResponse({ driveError: `Failed to save credentials: ${upsertErr}` }, safeOrigin)
   }
 
   return popupResponse({ driveConnected: true }, safeOrigin)

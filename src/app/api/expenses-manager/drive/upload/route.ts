@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { requireToolAccess } from '@/lib/auth'
-import { createServiceClient } from '@/lib/supabase/service'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
+import { getDriveRefreshToken, clearDriveRefreshToken } from '@/lib/google/drive-tokens'
 import { afyFolderName, afyMonthIndex } from '@/app/expenses-manager/_utils'
 
 // Validate the non-File form fields
@@ -143,13 +143,9 @@ export async function POST(request: Request) {
   const limited = await applyRateLimit(rateLimits.api, `expenses-manager:drive-upload:${user.id}`)
   if (limited) return limited
 
-  // Refresh token from drive_tokens table (service role only — not in user_metadata / JWT)
-  const { data: tokenRow } = await createServiceClient()
-    .from('drive_tokens')
-    .select('refresh_token')
-    .eq('user_id', user.id)
-    .maybeSingle()
-  const refreshToken = tokenRow?.refresh_token as string | undefined
+  // Refresh token from drive_tokens table (service role only — not in user_metadata / JWT).
+  // Helper handles decryption transparently.
+  const refreshToken = await getDriveRefreshToken(user.id)
   if (!refreshToken) {
     return Response.json({ error: 'Google Drive not connected. Reconnect in the Expenses Manager.' }, { status: 403 })
   }
@@ -165,7 +161,7 @@ export async function POST(request: Request) {
     accessToken = await getAccessToken(refreshToken)
   } catch (err: unknown) {
     // Likely the refresh token was revoked — clear it so the UI shows "disconnected"
-    try { await createServiceClient().from('drive_tokens').delete().eq('user_id', user.id) } catch { /* non-fatal */ }
+    try { await clearDriveRefreshToken(user.id) } catch { /* non-fatal */ }
     return Response.json(
       { error: `Drive auth expired — please reconnect. (${(err as Error).message})` },
       { status: 401 },
