@@ -30,6 +30,25 @@ export async function proxy(request: NextRequest) {
     `upgrade-insecure-requests`,
   ].join('; ');
 
+  // Stricter policy shipped in report-only mode so violations surface in
+  // browser devtools / Sentry without blocking. Once the production logs
+  // show zero violations, promote these directives into the enforced CSP
+  // above (Phase 11 of refactor/platform-hardening).
+  const cspReportOnly = [
+    `default-src 'self'`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    `img-src 'self' blob: data:`,
+    `font-src 'self'`,
+    `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+    `frame-ancestors 'self'`,
+    `object-src 'none'`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `require-trusted-types-for 'script'`,
+    `trusted-types default 'allow-duplicates'`,
+  ].join('; ');
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
@@ -39,6 +58,7 @@ export async function proxy(request: NextRequest) {
   const makeNext = (cookiesToSet: { name: string; value: string; options?: object }[] = []) => {
     const res = NextResponse.next({ request: { headers: requestHeaders } });
     res.headers.set('Content-Security-Policy', csp);
+    res.headers.set('Content-Security-Policy-Report-Only', cspReportOnly);
     cookiesToSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options as Parameters<typeof res.cookies.set>[2]));
     return res;
   };

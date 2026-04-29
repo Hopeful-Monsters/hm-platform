@@ -13,6 +13,7 @@
 
 import { getCurrentUser } from '@/lib/auth'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
+import { getAppOrigin } from '@/lib/app-origin'
 import { cookies } from 'next/headers'
 
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
@@ -42,8 +43,7 @@ export async function GET(request: Request) {
     path:     '/',
   })
 
-  const origin      = new URL(request.url).origin
-  const redirectUri = `${origin}/api/drive/callback`
+  const redirectUri = `${getAppOrigin(request)}/api/drive/callback`
 
   const params = new URLSearchParams({
     client_id:     clientId,

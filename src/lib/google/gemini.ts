@@ -79,10 +79,13 @@ export async function geminiGenerateContent(
         let res: Response
         try {
           res = await fetch(
-            `${GEMINI_BASE_URL}/${model}:generateContent?key=${key}`,
+            `${GEMINI_BASE_URL}/${model}:generateContent`,
             {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': key,
+              },
               body: JSON.stringify({
                 contents: [{ parts }],
                 generationConfig,
