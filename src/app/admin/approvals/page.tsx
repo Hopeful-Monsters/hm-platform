@@ -10,7 +10,9 @@ export default async function ApprovalsPage() {
   if (!user || user.user_metadata?.role !== 'admin') redirect('/login')
 
   const service = createServiceClient()
-  const { data: users } = await service.auth.admin.listUsers()
+  // perPage=200 covers the org for the foreseeable future; if it ever
+  // exceeds that, build a paged admin UI rather than silently dropping users.
+  const { data: users } = await service.auth.admin.listUsers({ perPage: 200 })
   const pendingUsers = users.users.filter(u => u.user_metadata?.status === 'pending')
 
   const { data: toolRequests } = await service
@@ -18,6 +20,7 @@ export default async function ApprovalsPage() {
     .select('id, user_id, user_email, tool_slug, message, created_at')
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
+    .limit(100)
 
   return (
     <div>

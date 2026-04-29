@@ -85,7 +85,7 @@ export default async function UsersPage() {
   if (!user || user.user_metadata?.role !== 'admin') redirect('/login')
 
   const service = createServiceClient()
-  const { data: users }          = await service.auth.admin.listUsers()
+  const { data: users }          = await service.auth.admin.listUsers({ perPage: 200 })
   const { data: toolAccessData } = await service.from('tool_access').select('*')
 
   // Map user_id → tool slugs
