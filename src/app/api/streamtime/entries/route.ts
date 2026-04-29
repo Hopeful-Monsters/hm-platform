@@ -1,16 +1,9 @@
 import { z } from 'zod'
 import { requireToolAccess } from '@/lib/auth'
+import { ST_BASE, stHeaders } from '@/lib/streamtime/client'
 import type { NormalizedEntry } from '@/app/streamtime-reviewer/_components/types'
 
-const ST_BASE = 'https://api.streamtime.net/v2'
-const BATCH   = 1000
-
-function stHeaders() {
-  return {
-    Authorization: `Bearer ${process.env.STREAMTIME_KEY}`,
-    'Content-Type': 'application/json',
-  }
-}
+const BATCH = 1000
 
 const BodySchema = z.object({
   dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

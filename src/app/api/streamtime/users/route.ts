@@ -1,17 +1,10 @@
 import { requireToolAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
+import { ST_BASE, stHeaders } from '@/lib/streamtime/client'
 import type { EnrichedUser, Team } from '@/app/streamtime-reviewer/_components/types'
 
-const ST_BASE = 'https://api.streamtime.net/v2'
 const TEAM_LABELS = ['Creative', 'Execution', 'Strategy'] as const
 const ORG_ID = 'default'
-
-function stHeaders() {
-  return {
-    Authorization: `Bearer ${process.env.STREAMTIME_KEY}`,
-    'Content-Type': 'application/json',
-  }
-}
 
 function deriveTeam(labels: string[]): Team {
   for (const tl of TEAM_LABELS) {

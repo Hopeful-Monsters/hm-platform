@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { requireToolAccess } from '@/lib/auth'
 import { rateLimits } from '@/lib/upstash/ratelimit'
 import { STREAMTIME_PAGE_SIZE, STREAMTIME_MAX_RESULTS } from '@/lib/constants/streamtime'
+import { ST_BASE, stHeaders, parseSearchResults } from '@/lib/streamtime/client'
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 // Wraps requireToolAccess for server actions (which throw, not return Responses).
@@ -24,39 +25,11 @@ async function checkRateLimit(
   if (!success) throw new Error('Too many requests. Please try again shortly.')
 }
 
-// ── Streamtime config ─────────────────────────────────────────────────────────
+// ── Streamtime endpoint paths ─────────────────────────────────────────────────
 
-const ST_SEARCH    = 'https://api.streamtime.net/v2/search'
-const ST_COMPANIES = 'https://api.streamtime.net/v2/companies'
-const ST_EXPENSES  = 'https://api.streamtime.net/v2/logged_expenses'
-
-function stKey(): string {
-  const key = process.env.STREAMTIME_KEY
-  if (!key) throw new Error('STREAMTIME_KEY not configured')
-  return key
-}
-
-// ── Search response normalisation ────────────────────────────────────────────
-// v1 returned { searchResults: [...] } — flat objects per record.
-// v2 returns a top-level array of wrapper objects where the record sits under
-// a typed key: [{ job: {...}, company: null, ... }, ...]
-// This helper extracts the inner record so all downstream mapping stays the same.
-
-function parseSearchResults(raw: unknown): Array<Record<string, unknown>> {
-  if (Array.isArray(raw)) {
-    return (raw as Array<Record<string, unknown>>).map(wrapper => {
-      // Pick the first non-null object value as the inner record.
-      // Covers job (view 7), company (view 12), and any future view.
-      const inner = Object.values(wrapper).find(
-        v => v !== null && typeof v === 'object' && !Array.isArray(v),
-      )
-      return (inner as Record<string, unknown>) ?? wrapper
-    })
-  }
-  // Fallback: legacy { searchResults: [...] } shape
-  const obj = raw as Record<string, unknown>
-  return (obj.searchResults as Array<Record<string, unknown>>) ?? []
-}
+const ST_SEARCH    = `${ST_BASE}/search`
+const ST_COMPANIES = `${ST_BASE}/companies`
+const ST_EXPENSES  = `${ST_BASE}/logged_expenses`
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
@@ -70,7 +43,7 @@ export async function searchJobs(): Promise<{ searchResults: Array<Record<string
 
   const res = await fetch(`${ST_SEARCH}?search_view=7`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
+    headers: stHeaders(),
     body: JSON.stringify({
       wildcardSearch: '', offset: 0, maxResults: 500,
       filterGroupCollection: { conditionMatchTypeId: 1, filterGroupCollections: [] },
@@ -97,7 +70,7 @@ export async function getAllCompanies(): Promise<{ companies: Array<{ id: unknow
   while (allResults.length < STREAMTIME_MAX_RESULTS) {
     const res = await fetch(`${ST_SEARCH}?search_view=12`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
+      headers: stHeaders(),
       body: JSON.stringify({
         wildcardSearch: '', offset, maxResults: STREAMTIME_PAGE_SIZE,
         filterGroupCollection: { conditionMatchTypeId: 1, filterGroupCollections: [], filterGroups: [] },
@@ -128,7 +101,7 @@ export async function searchCompanies(query: string): Promise<{ results: Array<{
 
   const res = await fetch(`${ST_SEARCH}?search_view=12`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
+    headers: stHeaders(),
     body: JSON.stringify({
       wildcardSearch: query, offset: 0, maxResults: 10,
       filterGroupCollection: { conditionMatchTypeId: 1, filterGroupCollections: [], filterGroups: [] },
@@ -156,7 +129,7 @@ export async function createCompanyAction(name: string): Promise<{ id: unknown; 
 
   const res = await fetch(ST_COMPANIES, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
+    headers: stHeaders(),
     body: JSON.stringify({
       name: name.trim(),
       companyStatus: { id: 1 },
@@ -233,7 +206,7 @@ export async function submitExpense(loggedExpense: {
 
   const res = await fetch(ST_EXPENSES, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
+    headers: stHeaders(),
     body: JSON.stringify({ loggedExpense: { ...loggedExpense, supplierContactId: null } }),
   })
 
