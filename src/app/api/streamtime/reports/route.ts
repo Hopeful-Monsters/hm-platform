@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { requireToolAccess, requireAdminAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
+import { createApiRoute } from '@/lib/api/createApiRoute'
 
 const ORG_ID = 'default'
 
@@ -27,9 +27,9 @@ const PostBodySchema = z.object({
   userStats:  z.array(UserStatSchema),
 })
 
-export async function GET() {
-  try {
-    await requireToolAccess('streamtime-reviewer')
+export const GET = createApiRoute({
+  auth: { tool: 'streamtime-reviewer' },
+  handler: async () => {
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from('streamtime_weekly_reports')
@@ -45,27 +45,21 @@ export async function GET() {
       savedAt:    r.saved_at,
     }))
     return Response.json({ reports })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})
 
-export async function POST(req: Request) {
-  try {
-    const user = await requireAdminAccess()
-    const body = PostBodySchema.safeParse(await req.json())
-    if (!body.success) return Response.json({ error: 'Invalid payload' }, { status: 400 })
-    const { dateFrom, dateTo, entryCount, userStats } = body.data
-
+export const POST = createApiRoute({
+  auth:   'admin',
+  schema: PostBodySchema,
+  handler: async ({ user, body }) => {
+    const { dateFrom, dateTo, entryCount, userStats } = body
     const supabase = createServiceClient()
 
     const { data: report, error: reportErr } = await supabase
       .from('streamtime_weekly_reports')
       .upsert(
         { org_id: ORG_ID, date_from: dateFrom, date_to: dateTo, entry_count: entryCount,
-          saved_by: user.id, saved_at: new Date().toISOString() },
+          saved_by: user!.id, saved_at: new Date().toISOString() },
         { onConflict: 'org_id,date_from,date_to' }
       )
       .select('id')
@@ -95,9 +89,5 @@ export async function POST(req: Request) {
     if (statsErr) throw statsErr
 
     return Response.json({ id: report.id }, { status: 201 })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg === 'Admin role required' ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})

@@ -1,6 +1,7 @@
 import { z } from 'zod'
-import { requireToolAccess } from '@/lib/auth'
 import { ST_BASE, stHeaders } from '@/lib/streamtime/client'
+import { createApiRoute } from '@/lib/api/createApiRoute'
+import { HttpError } from '@/lib/api/errors'
 import type { NormalizedEntry } from '@/app/streamtime-reviewer/_components/types'
 
 const BATCH = 1000
@@ -145,17 +146,14 @@ function normalizeEntry(
   }
 }
 
-export async function POST(req: Request) {
-  try {
-    await requireToolAccess('streamtime-reviewer')
-
+export const POST = createApiRoute({
+  auth:   { tool: 'streamtime-reviewer' },
+  schema: BodySchema,
+  handler: async ({ body }) => {
     if (!process.env.STREAMTIME_KEY) {
-      return Response.json({ error: 'STREAMTIME_KEY is not configured' }, { status: 500 })
+      throw new HttpError(500, 'STREAMTIME_KEY is not configured')
     }
-
-    const body = BodySchema.safeParse(await req.json())
-    if (!body.success) return Response.json({ error: 'Invalid date range' }, { status: 400 })
-    const { dateFrom, dateTo } = body.data
+    const { dateFrom, dateTo } = body
 
     const filterTypeId = await fetchDateFilterTypeId()
     const rawEntries: Record<string, unknown>[] = []
@@ -195,9 +193,5 @@ export async function POST(req: Request) {
     const entries = rawEntries.map(e => normalizeEntry(e, jobMap, companyMap))
 
     return Response.json({ entries })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})
