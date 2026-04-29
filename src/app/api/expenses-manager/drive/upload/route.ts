@@ -172,8 +172,16 @@ export async function POST(request: Request) {
     )
   }
 
-  // Locate or create the target month folder
-  const parentId = process.env.EXPENSES_DRIVE_FOLDER_ID || null
+  // Locate or create the target month folder. EXPENSES_DRIVE_FOLDER_ID is
+  // required so uploads can never silently land in the user's Drive root —
+  // an unconfigured deploy must fail loudly rather than scatter receipts.
+  const parentId = process.env.EXPENSES_DRIVE_FOLDER_ID
+  if (!parentId) {
+    return Response.json(
+      { error: 'EXPENSES_DRIVE_FOLDER_ID is not configured on the server' },
+      { status: 500 },
+    )
+  }
   let folderId: string | null = null
   if (dateStr) {
     try {

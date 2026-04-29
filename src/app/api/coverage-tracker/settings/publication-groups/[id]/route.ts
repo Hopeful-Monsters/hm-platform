@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { createServiceClient } from '@/lib/supabase/service'
 import { createApiRoute } from '@/lib/api/createApiRoute'
 import { HttpError } from '@/lib/api/errors'
+import { rateLimits } from '@/lib/upstash/ratelimit'
 
 type Params = { id: string }
 
@@ -31,8 +32,12 @@ async function ensureGroupExists(id: string) {
 }
 
 export const PATCH = createApiRoute<z.infer<typeof PatchGroupSchema>, Params>({
-  auth:   'settings',
-  schema: PatchGroupSchema,
+  auth:      'settings',
+  schema:    PatchGroupSchema,
+  rateLimit: {
+    limiter: rateLimits.api,
+    key:     user => `coverage-tracker:settings-write:${user.id}`,
+  },
   handler: async ({ body, params }) => {
     const { addMembers = [], removeIds = [] } = body
 
@@ -91,6 +96,10 @@ export const PATCH = createApiRoute<z.infer<typeof PatchGroupSchema>, Params>({
 
 export const DELETE = createApiRoute<undefined, Params>({
   auth: 'settings',
+  rateLimit: {
+    limiter: rateLimits.api,
+    key:     user => `coverage-tracker:settings-write:${user.id}`,
+  },
   handler: async ({ params }) => {
     await ensureGroupExists(params.id)
 

@@ -7,10 +7,19 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
 
-  // Validate next param to prevent open redirect. Must be a relative path
-  // starting with / but not // (which browsers normalise to an external host).
+  // Validate next param to prevent open redirect. Resolve against the origin
+  // and require the result to live on this host — blocks raw external URLs,
+  // protocol-relative paths (//evil), and percent-encoded slashes (/%2f%2f).
   const rawNext = searchParams.get('next') ?? '/';
-  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
+  let next = '/';
+  try {
+    const resolved = new URL(rawNext, origin);
+    if (resolved.origin === origin) {
+      next = `${resolved.pathname}${resolved.search}${resolved.hash}`;
+    }
+  } catch {
+    // Invalid URL → stick with default
+  }
 
   if (code) {
     const supabase = await createClient();
