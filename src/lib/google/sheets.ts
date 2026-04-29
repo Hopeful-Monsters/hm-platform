@@ -8,6 +8,8 @@
  * so no email-sharing setup is required for existing spreadsheets.
  */
 
+import { DEFAULT_COVERAGE_TAB_NAME } from '@/lib/constants/coverage-tracker'
+
 // Coverage Tracker column headers (columns B–Q in the sheet)
 export const COVERAGE_HEADERS = [
   'DATE', 'CAMPAIGN', 'PUBLICATION', 'COUNTRY',
@@ -102,7 +104,7 @@ export async function createSpreadsheet(
   const body = {
     properties: { title: title || 'Coverage Tracker' },
     sheets: [{
-      properties: { title: tabName || '2026 Coverage Tracker' },
+      properties: { title: tabName || DEFAULT_COVERAGE_TAB_NAME },
       data: [{
         startRow:    0,
         startColumn: 1, // Column B — column A intentionally left empty

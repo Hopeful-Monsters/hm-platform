@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { rateLimits, applyRateLimit } from '@/lib/upstash/ratelimit'
 import { SUPPORT_TOOL_OPTIONS, SUPPORT_TOOL_LABELS, type SupportToolValue } from '@/lib/support'
+import { MAX_UPLOAD_BYTES } from '@/lib/constants/file-limits'
 
 const LINEAR_API_URL = 'https://api.linear.app/graphql'
 
@@ -112,7 +113,6 @@ async function attachFileToIssue(issueId: string, url: string, title: string, ap
 
 // ── Screenshot upload ──────────────────────────────────────────────
 const SCREENSHOT_BUCKET = 'support-attachments'
-const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 // Signed URL valid for 90 days — long enough for any support resolution cycle
 const SIGNED_URL_EXPIRY_SECONDS = 90 * 24 * 60 * 60
@@ -130,7 +130,7 @@ async function uploadScreenshot(
   userId: string
 ): Promise<string | null> {
   if (!ALLOWED_MIME.includes(file.type)) return null
-  if (file.size > MAX_FILE_BYTES) return null
+  if (file.size > MAX_UPLOAD_BYTES) return null
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const ext  = MIME_TO_EXT[file.type] ?? 'png'

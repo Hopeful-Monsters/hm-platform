@@ -3,6 +3,7 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { requireToolAccess } from '@/lib/auth'
 import { rateLimits } from '@/lib/upstash/ratelimit'
+import { STREAMTIME_PAGE_SIZE, STREAMTIME_MAX_RESULTS } from '@/lib/constants/streamtime'
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 // Wraps requireToolAccess for server actions (which throw, not return Responses).
@@ -90,17 +91,15 @@ export async function getAllCompanies(): Promise<{ companies: Array<{ id: unknow
   const user = await requireUser()
   await checkRateLimit(rateLimits.api, `expenses-manager:companies-all:${user.id}`)
 
-  const PAGE_SIZE   = 200
-  const MAX_RESULTS = 2000
   let offset = 0
   let allResults: Array<{ id: unknown; name: unknown }> = []
 
-  while (allResults.length < MAX_RESULTS) {
+  while (allResults.length < STREAMTIME_MAX_RESULTS) {
     const res = await fetch(`${ST_SEARCH}?search_view=12`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${stKey()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        wildcardSearch: '', offset, maxResults: PAGE_SIZE,
+        wildcardSearch: '', offset, maxResults: STREAMTIME_PAGE_SIZE,
         filterGroupCollection: { conditionMatchTypeId: 1, filterGroupCollections: [], filterGroups: [] },
       }),
     })
@@ -112,8 +111,8 @@ export async function getAllCompanies(): Promise<{ companies: Array<{ id: unknow
     })).filter(r => r.id && r.name)
 
     allResults = allResults.concat(page)
-    if (page.length < PAGE_SIZE) break
-    offset += PAGE_SIZE
+    if (page.length < STREAMTIME_PAGE_SIZE) break
+    offset += STREAMTIME_PAGE_SIZE
   }
 
   return { companies: allResults }

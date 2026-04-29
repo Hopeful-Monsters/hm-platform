@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useWizard } from './_components/WizardContext'
 import { cn } from '@/lib/utils'
 import type { FieldRule, PublicationGroup } from './_components/SettingsModal'
+import { DEFAULT_COVERAGE_TAB_NAME } from '@/lib/constants/coverage-tracker'
+import { DRIVE_AUTH_POPUP } from '@/lib/constants/popup'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -61,7 +63,6 @@ const MEDIA_FORMATS = ['ONLINE', 'PRINT', 'TV', 'RADIO', 'SOCIAL MEDIA', 'PODCAS
 const YES_NO        = ['YES', 'NO']
 const SENTIMENTS    = ['POSITIVE', 'NEGATIVE']
 
-const DEFAULT_TAB   = '2026 Coverage Tracker'
 
 /** Initial/reset value for SetupState */
 const EMPTY_SETUP: SetupState = {
@@ -74,9 +75,9 @@ const EMPTY_SETUP: SetupState = {
   ctaOps:        [],
   destMode:      'existing',
   sheetUrl:      '',
-  sheetTab:      DEFAULT_TAB,
+  sheetTab:      DEFAULT_COVERAGE_TAB_NAME,
   newTitle:      '',
-  newTab:        DEFAULT_TAB,
+  newTab:        DEFAULT_COVERAGE_TAB_NAME,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -318,7 +319,7 @@ export default function CoverageTrackerPage() {
   }, [])
 
   const connectDrive = useCallback(() => {
-    const popup = window.open('/api/drive/auth', 'drive-auth', 'width=520,height=660,left=200,top=100')
+    const popup = window.open('/api/drive/auth', 'drive-auth', DRIVE_AUTH_POPUP)
     if (!popup) { alert('Popup blocked — allow popups for this site and try again.'); return }
     setDriveStatus('connecting')
     let done = false
@@ -529,7 +530,7 @@ export default function CoverageTrackerPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sheetId:  m[1],
-            sheetTab: setup.sheetTab || DEFAULT_TAB,
+            sheetTab: setup.sheetTab || DEFAULT_COVERAGE_TAB_NAME,
             rows:     rowArrays,
             ...setupPayload,
           }),
@@ -546,7 +547,7 @@ export default function CoverageTrackerPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sheetTitle: setup.newTitle || 'Coverage Tracker',
-            sheetTab:   setup.newTab   || DEFAULT_TAB,
+            sheetTab:   setup.newTab   || DEFAULT_COVERAGE_TAB_NAME,
             rows:       rowArrays,
             ...setupPayload,
           }),
@@ -576,8 +577,8 @@ export default function CoverageTrackerPage() {
 
   // ── Destination summary (used in confirmation modal copy) ─────
   const destSummary = setup.destMode === 'existing'
-    ? `"${setup.sheetTab || DEFAULT_TAB}" tab of the existing sheet`
-    : `tab "${setup.newTab || DEFAULT_TAB}" in new sheet "${setup.newTitle || 'Coverage Tracker'}"`
+    ? `"${setup.sheetTab || DEFAULT_COVERAGE_TAB_NAME}" tab of the existing sheet`
+    : `tab "${setup.newTab || DEFAULT_COVERAGE_TAB_NAME}" in new sheet "${setup.newTitle || 'Coverage Tracker'}"`
 
   // ─────────────────────────────────────────────────────────────
   // Render
@@ -918,8 +919,8 @@ export default function CoverageTrackerPage() {
               </h2>
               <p className="ct-result-detail">
                 {setup.destMode === 'existing'
-                  ? <>Appended to <strong>{setup.sheetTab || DEFAULT_TAB}</strong> in your existing sheet.</>
-                  : <>Created <strong>{setup.newTitle || 'Coverage Tracker'}</strong> with tab <strong>{setup.newTab || DEFAULT_TAB}</strong>.</>}
+                  ? <>Appended to <strong>{setup.sheetTab || DEFAULT_COVERAGE_TAB_NAME}</strong> in your existing sheet.</>
+                  : <>Created <strong>{setup.newTitle || 'Coverage Tracker'}</strong> with tab <strong>{setup.newTab || DEFAULT_COVERAGE_TAB_NAME}</strong>.</>}
               </p>
               <div className="ct-result-actions">
                 {result.sheetUrl && (
