@@ -46,6 +46,18 @@ export function fmtSize(b: number): string {
 // ── Streamtime data normalisation ─────────────────────────────────
 
 export function normaliseJob(r: Record<string, unknown>): Job {
+  const pick = (...vals: unknown[]) => {
+    for (const v of vals) {
+      const s = typeof v === 'string' ? v.trim() : v
+      if (s !== null && s !== undefined && s !== '') return s
+    }
+    return ''
+  }
+  const jobStatusObj =
+    r.jobStatus !== null && typeof r.jobStatus === 'object'
+      ? (r.jobStatus as Record<string, unknown>).name
+      : r.jobStatus
+  const statusRaw = pick(jobStatusObj, r.status, r['Job Status'])
   return {
     id:     String(r.id ?? r.jobId ?? r['Job ID'] ?? r['ID']),
     name:   String(r.name ?? r.jobName ?? r['Job Name'] ?? r['Name'] ?? ''),
@@ -57,6 +69,7 @@ export function normaliseJob(r: Record<string, unknown>): Job {
         : r.company
       ) ?? r.companyName ?? r['Company'] ?? r['Client'] ?? ''
     ),
+    status: String(statusRaw),
   }
 }
 

@@ -168,6 +168,12 @@ body {
   border-color: var(--accent);
 }
 
+/* Border-color change is the focus indicator; suppress the global outline to avoid double-ring. */
+.hm-input:focus-visible,
+.hm-select:focus-visible {
+  outline: none;
+}
+
 .hm-input::placeholder {
   color: var(--text-dim);
   font-weight: 400;
@@ -383,13 +389,16 @@ textarea.hm-input {
 }
 
 /* Forgot password link — right-aligned, dim until hover */
+.hm-forgot-link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
 .hm-forgot-link {
-  display: block;
-  text-align: right;
+  display: inline-block;
   font-size: 12px;
   color: var(--text-dim);
   text-decoration: none;
-  margin-top: 6px;
 }
 .hm-forgot-link:hover {
   color: var(--accent);
@@ -497,7 +506,7 @@ textarea.hm-input {
   font-weight: 900;
   font-size: 17px;
   letter-spacing: 0.2em;
-  color: var(--accent);
+  color: var(--text);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -567,6 +576,26 @@ textarea.hm-input {
 .btn-icon:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* Mobile-only hamburger trigger — hidden at sm and up */
+.site-header-mobile-only {
+  display: flex;
+}
+@media (min-width: 640px) {
+  .site-header-mobile-only {
+    display: none !important;
+  }
+}
+
+/* Desktop-only nav block — hidden below sm */
+.site-header-desktop-only {
+  display: none;
+}
+@media (min-width: 640px) {
+  .site-header-desktop-only {
+    display: flex;
+  }
 }
 
 /* ══ SIGN-OUT BUTTON ═════════════════════════════════════════════ */
@@ -1015,6 +1044,7 @@ textarea.hm-input {
 .support-page {
   padding: 48px 32px;
   max-width: 720px;
+  margin: 0 auto;
 }
 
 .support-divider {

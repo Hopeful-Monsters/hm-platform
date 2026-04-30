@@ -48,7 +48,7 @@ export function DesktopNav({ userRole, userTools, isAuthenticated }: NavProps) {
   const items = filterItems(navItems, userRole, userTools, isAuthenticated)
 
   return (
-    <nav className="hidden md:flex items-center gap-0">
+    <nav className="site-header-desktop-only items-center gap-0">
       {items.map(item => {
         const isActive = item.href === '/'
           ? pathname === '/'

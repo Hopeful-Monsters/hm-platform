@@ -4,6 +4,7 @@ export interface Job {
   num: string | null
   full: string | null
   client: string
+  status: string
 }
 
 export interface Extracted {

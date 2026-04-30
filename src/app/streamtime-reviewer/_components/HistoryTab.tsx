@@ -136,7 +136,7 @@ export default function HistoryTab({ isAdmin }: Props) {
         </div>
       </div>
 
-      {chartData.length >= 2 ? (
+      {chartData.length >= 1 ? (
         <div className="sr-chart-wrap">
           {chartType === 'billable' ? (
             <>
@@ -179,7 +179,7 @@ export default function HistoryTab({ isAdmin }: Props) {
         </div>
       ) : (
         <p className="sr-empty-hint sr-empty-hint--mt">
-          Save at least 2 weekly reports to see trend charts.
+          Save a report to see trend charts.
         </p>
       )}
     </div>

@@ -80,9 +80,11 @@ function LoginContent() {
             aria-required="true"
             className="hm-input"
           />
-          <Link href="/forgot-password" className="hm-forgot-link">
-            Forgot password?
-          </Link>
+          <div className="hm-forgot-link-row">
+            <Link href="/forgot-password" className="hm-forgot-link">
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         <Button type="submit" disabled={loading} size="lg" className="w-full">

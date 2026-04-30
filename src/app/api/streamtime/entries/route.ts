@@ -108,6 +108,10 @@ async function fetchCompanyMap(): Promise<Map<number, string>> {
   return map
 }
 
+// Reject empty/whitespace strings and non-string types; return undefined to continue fallback chain.
+const pickStr = (v: unknown): string | undefined =>
+  typeof v === 'string' && v.trim() !== '' ? v : undefined
+
 // v2 search wraps logged time data under a `loggedTime` sub-object; job/company are fetched separately.
 function normalizeEntry(
   e: Record<string, unknown>,
@@ -137,7 +141,10 @@ function normalizeEntry(
     jobName:       String(job.name ?? '—'),
     jobIsBillable: typeof job.isBillable === 'boolean' ? job.isBillable : null,
     jobLabelName:  String(labelName),
-    itemName:      '—',
+    // LoggedTimeSearchResult wrapper exposes the loggable item as `jobItem` at the top level.
+    itemName:
+      pickStr((e.jobItem as Record<string, unknown> | undefined)?.name) ??
+      '—',
     clientName:    companyMap.get(companyId) ?? '—',
     notes:         String(lt.notes ?? ''),
     statusName:    String(status.name ?? '—'),
@@ -160,7 +167,7 @@ export const POST = createApiRoute({
     let offset = 0
 
     while (true) {
-      const r = await fetch(`${ST_BASE}/search?search_view=8&include_statistics=false`, {
+      const r = await fetch(`${ST_BASE}/search?search_view=8&include_statistics=false&additional_data=jobItem`, {
         method: 'POST',
         headers: stHeaders(),
         body: JSON.stringify(buildFilterBody(dateFrom, dateTo, filterTypeId, offset)),
@@ -178,9 +185,19 @@ export const POST = createApiRoute({
       if (offset >= 10000) break
     }
 
+    // Drop entries that are scheduled-only (not yet logged). v2 marks these
+    // via loggedTime.isScheduled = true OR loggedTimeStatus.name = 'Scheduled'.
+    const loggedOnly = rawEntries.filter(e => {
+      const lt = (e.loggedTime ?? {}) as Record<string, unknown>
+      const status = (lt.loggedTimeStatus ?? {}) as Record<string, unknown>
+      if (lt.isScheduled === true) return false
+      if (typeof status.name === 'string' && status.name.toLowerCase() === 'scheduled') return false
+      return true
+    })
+
     // Enrich entries with job and company data — v2 does not embed these in search results.
     const jobIds = [...new Set(
-      rawEntries
+      loggedOnly
         .map(e => Number((e.loggedTime as Record<string, unknown>)?.jobId ?? 0))
         .filter(id => id > 0)
     )]
@@ -190,7 +207,7 @@ export const POST = createApiRoute({
       fetchCompanyMap(),
     ])
 
-    const entries = rawEntries.map(e => normalizeEntry(e, jobMap, companyMap))
+    const entries = loggedOnly.map(e => normalizeEntry(e, jobMap, companyMap))
 
     return Response.json({ entries })
   },
