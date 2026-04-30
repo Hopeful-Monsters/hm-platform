@@ -300,7 +300,7 @@
   min-width: 160px;
   max-width: 220px;
 }
-[data-tool="streamtime-reviewer"] .sr-select:focus { border-color: var(--accent); }
+[data-tool="streamtime-reviewer"] .sr-select:focus { border-color: var(--sr-accent); }
 
 [data-tool="streamtime-reviewer"] .sr-chips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
 
