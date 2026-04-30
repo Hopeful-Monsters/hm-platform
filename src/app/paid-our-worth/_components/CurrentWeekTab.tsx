@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { listRevenueByMonth, listNotesByMonth } from '../_actions'
+import { useEffect, useMemo, useState, useTransition } from 'react'
+import { listRevenueByMonth, listNotesByMonth, saveSnapshot } from '../_actions'
 import { workingDaysInMonth, workingDaysToCutoff, firstOfMonth } from '../_lib/holidays'
 import type { JobTotal } from '../_lib/aggregateJobs'
 import type { NoteColumn, NoteRecord, RevenueEntry } from '../_types'
 import NoteCell from './NoteCell'
+import { useReport } from './ReportContext'
 
 interface JobTotalsResponse {
   jobTotals:   JobTotal[]
@@ -27,7 +28,10 @@ function fmtDate(iso: string): string {
 }
 
 export default function CurrentWeekTab() {
+  const { isAdmin } = useReport()
   const [cutoff, setCutoff]           = useState<string>(todayIso())
+  const [savingSnap, startSaveSnap]   = useTransition()
+  const [snapMsg, setSnapMsg]         = useState<string | null>(null)
   const [revenue, setRevenue]         = useState<RevenueEntry[]>([])
   const [jobTotals, setJobTotals]     = useState<JobTotal[]>([])
   const [reportTotal, setReportTotal] = useState<number>(0)
@@ -113,6 +117,26 @@ export default function CurrentWeekTab() {
       }))
   }, [jobTotals])
 
+  function commitSnapshot() {
+    startSaveSnap(async () => {
+      try {
+        await saveSnapshot({
+          periodMonth,
+          cutoffDate:         cutoff,
+          workingDaysInMonth: workingDaysMonth,
+          daysWorked,
+          reportTotal,
+          billable:    billableRows,
+          nonBillable: nonBillableRows,
+        })
+        setSnapMsg('Snapshot saved.')
+        window.setTimeout(() => setSnapMsg(null), 3000)
+      } catch (e) {
+        setSnapMsg(`Save failed: ${(e as Error).message}`)
+      }
+    })
+  }
+
   const totalBillable    = billableRows.reduce((s, r) => s + r.currentTime, 0)
   const totalRevenue     = billableRows.reduce((s, r) => s + r.revenue, 0)
   const totalTimeLeft    = billableRows.reduce((s, r) => s + r.timeLeft, 0)
@@ -149,15 +173,28 @@ export default function CurrentWeekTab() {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="pow-btn pow-btn--primary"
-          onClick={refetch}
-          disabled={loading}
-        >
-          {loading ? 'Fetching…' : 'Refetch Streamtime'}
-        </button>
+        <div className="pow-current-actions">
+          <button
+            type="button"
+            className="pow-btn"
+            onClick={refetch}
+            disabled={loading}
+          >
+            {loading ? 'Fetching…' : 'Refetch Streamtime'}
+          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className="pow-btn pow-btn--primary"
+              onClick={commitSnapshot}
+              disabled={loading || savingSnap || revenue.length === 0}
+            >
+              {savingSnap ? 'Saving…' : 'Save snapshot'}
+            </button>
+          )}
+        </div>
       </div>
+      {snapMsg && <div className="pow-banner pow-banner--ok" role="status">{snapMsg}</div>}
 
       {error && <div className="pow-banner pow-banner--err" role="alert">{error}</div>}
 

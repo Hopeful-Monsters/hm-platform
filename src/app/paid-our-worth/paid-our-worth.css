@@ -331,3 +331,79 @@
 [data-tool="paid-our-worth"] .pow-note--err {
   border-color: var(--pow-red);
 }
+
+[data-tool="paid-our-worth"] .pow-current-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── History tab ────────────────────────────────────────────────────────── */
+[data-tool="paid-our-worth"] .pow-history {
+  padding: 24px 32px 48px;
+}
+
+[data-tool="paid-our-worth"] .pow-history-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  [data-tool="paid-our-worth"] .pow-history-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+[data-tool="paid-our-worth"] .pow-history-list { min-width: 0; }
+
+[data-tool="paid-our-worth"] .pow-history-items {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-tool="paid-our-worth"] .pow-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+[data-tool="paid-our-worth"] .pow-history-item:hover { background: var(--border); }
+[data-tool="paid-our-worth"] .pow-history-item:focus-visible {
+  outline: 2px solid var(--pow-accent);
+  outline-offset: 2px;
+}
+[data-tool="paid-our-worth"] .pow-history-item.is-active {
+  border-color: var(--pow-accent);
+  background: var(--bg-elevated, transparent);
+}
+
+[data-tool="paid-our-worth"] .pow-history-item-date {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+[data-tool="paid-our-worth"] .pow-history-item-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-tool="paid-our-worth"] .pow-history-detail-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
