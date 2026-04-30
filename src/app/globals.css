@@ -389,13 +389,16 @@ textarea.hm-input {
 }
 
 /* Forgot password link — right-aligned, dim until hover */
+.hm-forgot-link-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
 .hm-forgot-link {
-  display: block;
-  text-align: right;
+  display: inline-block;
   font-size: 12px;
   color: var(--text-dim);
   text-decoration: none;
-  margin-top: 6px;
 }
 .hm-forgot-link:hover {
   color: var(--accent);
