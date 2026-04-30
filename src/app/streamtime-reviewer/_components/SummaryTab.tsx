@@ -2,9 +2,9 @@
 
 import { useMemo } from 'react'
 import { useReport } from './ReportContext'
+import { fmt2 } from './format'
 import type { UserSummaryRow } from './types'
 
-function fmt2(n: number) { return n.toFixed(2) }
 function fmtPct(n: number) { return (n * 100).toFixed(1) + '%' }
 function diffClass(d: number | null) {
   if (d === null) return 'sr-diff--neutral'

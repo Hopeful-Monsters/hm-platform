@@ -2,6 +2,15 @@
   --sr-accent:    var(--color-accent, #4fffb0);
   --sr-warn:      var(--color-warn,   #ffb86c);
   --sr-danger:    var(--color-danger, #ff5f6e);
+  /* Light-mode defaults — WCAG AA on white surfaces. */
+  --sr-green:     #0d8a4a;
+  --sr-yellow:    #b8651a;
+  --sr-red:       #c93340;
+  --sr-blue:      #1f5dba;
+  --sr-purple:    #6e35b8;
+}
+
+.dark [data-tool="streamtime-reviewer"] {
   --sr-green:     #4fffb0;
   --sr-yellow:    #ffb86c;
   --sr-red:       #ff5f6e;
@@ -467,8 +476,8 @@
   border-radius: 50%;
   background: currentColor;
 }
-[data-tool="streamtime-reviewer"] .sr-label-badge--bill    { background: rgba(79,255,176,0.12);  color: #4fffb0; }
-[data-tool="streamtime-reviewer"] .sr-label-badge--nonbill { background: rgba(255,184,108,0.12); color: #ffb86c; }
+[data-tool="streamtime-reviewer"] .sr-label-badge--bill    { background: rgba(79,255,176,0.12);  color: var(--sr-green); }
+[data-tool="streamtime-reviewer"] .sr-label-badge--nonbill { background: rgba(255,184,108,0.12); color: var(--sr-yellow); }
 [data-tool="streamtime-reviewer"] .sr-label-badge--unknown { background: rgba(122,131,168,0.12); color: #7a83a8; }
 
 [data-tool="streamtime-reviewer"] .sr-status-badge {

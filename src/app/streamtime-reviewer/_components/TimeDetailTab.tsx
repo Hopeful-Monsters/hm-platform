@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useReport } from './ReportContext'
+import { fmt2, fmtDateShort } from './format'
 
 const PAGE_SIZE = 50
 
@@ -113,14 +114,12 @@ export default function TimeDetailTab() {
             <tr>
               <th className="sr-th">JOB #</th>
               <th className="sr-th">JOB NAME</th>
-              <th className="sr-th">LABEL</th>
               <th className="sr-th">ITEM</th>
               <th className="sr-th">CLIENT</th>
               <th className="sr-th">TEAM MEMBER</th>
               <th className="sr-th">DESCRIPTION</th>
               <th className="sr-th">DATE</th>
               <th className="sr-th sr-th--right">HRS</th>
-              <th className="sr-th">STATUS</th>
             </tr>
           </thead>
           <tbody>
@@ -128,22 +127,14 @@ export default function TimeDetailTab() {
               <tr key={e.id} className="sr-tr">
                 <td className="sr-td sr-td--id">{e.jobNumber}</td>
                 <td className="sr-td sr-td--name sr-td--truncate" title={e.jobName}>{e.jobName}</td>
-                <td className="sr-td">
-                  <span className={`sr-label-badge ${e.jobIsBillable === true ? 'sr-label-badge--bill' : 'sr-label-badge--nonbill'}`}>
-                    {e.jobLabelName}
-                  </span>
-                </td>
                 <td className="sr-td">{e.itemName}</td>
                 <td className="sr-td">{e.clientName}</td>
                 <td className="sr-td sr-td--name sr-td--sm">
                   {userMap.get(e.userId) ?? String(e.userId)}
                 </td>
                 <td className="sr-td sr-td--truncate sr-td--muted" title={e.notes}>{e.notes || '—'}</td>
-                <td className="sr-td sr-td--mono">{e.date}</td>
-                <td className="sr-td sr-td--mono sr-td--right">{(e.minutes / 60).toFixed(2)}</td>
-                <td className="sr-td">
-                  <span className="sr-status-badge">{e.statusName}</span>
-                </td>
+                <td className="sr-td sr-td--mono">{fmtDateShort(e.date)}</td>
+                <td className="sr-td sr-td--mono sr-td--right">{fmt2(e.minutes / 60)}</td>
               </tr>
             ))}
           </tbody>

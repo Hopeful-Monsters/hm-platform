@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useReport } from './ReportContext'
+import { fmt2, fmtMoney } from './format'
 
 const PAGE_SIZE = 50
 
@@ -90,20 +91,20 @@ export default function JobBreakdownTab() {
                     {j.jobIsBillable === true ? 'Billable' : j.jobIsBillable === false ? 'Non-Billable' : '—'}
                   </span>
                 </td>
-                <td className="sr-td sr-td--mono sr-td--right">{j.totalHours.toFixed(2)}</td>
-                <td className="sr-td sr-td--mono sr-td--right sr-td--green">{j.billableHours.toFixed(2)}</td>
-                <td className="sr-td sr-td--mono sr-td--right sr-td--warn">{j.nonBillableHours.toFixed(2)}</td>
-                <td className="sr-td sr-td--mono sr-td--right sr-td--muted">${Math.round(j.cost)}</td>
-                <td className="sr-td sr-td--mono sr-td--right sr-td--muted">${Math.round(j.sell)}</td>
+                <td className="sr-td sr-td--mono sr-td--right">{fmt2(j.totalHours)}</td>
+                <td className="sr-td sr-td--mono sr-td--right sr-td--green">{fmt2(j.billableHours)}</td>
+                <td className="sr-td sr-td--mono sr-td--right sr-td--warn">{fmt2(j.nonBillableHours)}</td>
+                <td className="sr-td sr-td--mono sr-td--right sr-td--muted">{fmtMoney(j.cost)}</td>
+                <td className="sr-td sr-td--mono sr-td--right sr-td--muted">{fmtMoney(j.sell)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className="sr-totals-row">
               <td className="sr-td" colSpan={4}>TOTAL</td>
-              <td className="sr-td sr-td--mono sr-td--right">{viewTotal.toFixed(2)}</td>
-              <td className="sr-td sr-td--mono sr-td--right sr-td--green">{viewTotalBill.toFixed(2)}</td>
-              <td className="sr-td sr-td--mono sr-td--right sr-td--warn">{viewTotalNB.toFixed(2)}</td>
+              <td className="sr-td sr-td--mono sr-td--right">{fmt2(viewTotal)}</td>
+              <td className="sr-td sr-td--mono sr-td--right sr-td--green">{fmt2(viewTotalBill)}</td>
+              <td className="sr-td sr-td--mono sr-td--right sr-td--warn">{fmt2(viewTotalNB)}</td>
               <td className="sr-td" colSpan={2} />
             </tr>
           </tfoot>
