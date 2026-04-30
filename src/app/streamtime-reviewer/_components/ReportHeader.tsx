@@ -66,6 +66,10 @@ export default function ReportHeader({ isAdmin }: Props) {
               className="sr-date-input"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
+              onClick={e => {
+                const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void }
+                try { el.showPicker?.() } catch {}
+              }}
             />
           </div>
           <span className="sr-date-sep" aria-hidden="true">→</span>
@@ -77,6 +81,10 @@ export default function ReportHeader({ isAdmin }: Props) {
               className="sr-date-input"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
+              onClick={e => {
+                const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void }
+                try { el.showPicker?.() } catch {}
+              }}
             />
           </div>
 
