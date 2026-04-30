@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { listRevenueByMonth } from '../_actions'
+import { listRevenueByMonth, listNotesByMonth } from '../_actions'
 import { workingDaysInMonth, workingDaysToCutoff, firstOfMonth } from '../_lib/holidays'
 import type { JobTotal } from '../_lib/aggregateJobs'
-import type { RevenueEntry } from '../_types'
+import type { NoteColumn, NoteRecord, RevenueEntry } from '../_types'
+import NoteCell from './NoteCell'
 
 interface JobTotalsResponse {
   jobTotals:   JobTotal[]
@@ -30,6 +31,7 @@ export default function CurrentWeekTab() {
   const [revenue, setRevenue]         = useState<RevenueEntry[]>([])
   const [jobTotals, setJobTotals]     = useState<JobTotal[]>([])
   const [reportTotal, setReportTotal] = useState<number>(0)
+  const [notes, setNotes]             = useState<NoteRecord[]>([])
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState<string | null>(null)
 
@@ -43,7 +45,7 @@ export default function CurrentWeekTab() {
     setLoading(true)
     setError(null)
     try {
-      const [{ entries }, totalsRes] = await Promise.all([
+      const [{ entries }, totalsRes, { notes: noteRows }] = await Promise.all([
         listRevenueByMonth(periodMonth),
         fetch('/api/paid-our-worth/job-totals', {
           method:  'POST',
@@ -53,10 +55,12 @@ export default function CurrentWeekTab() {
           if (!r.ok) throw new Error(`Streamtime fetch failed (${r.status})`)
           return r.json() as Promise<JobTotalsResponse>
         }),
+        listNotesByMonth(periodMonth),
       ])
       setRevenue(entries)
       setJobTotals(totalsRes.jobTotals)
       setReportTotal(totalsRes.reportTotal)
+      setNotes(noteRows)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -74,6 +78,13 @@ export default function CurrentWeekTab() {
     for (const t of jobTotals) m.set(t.jobId, t)
     return m
   }, [jobTotals])
+
+  const notesByKey = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const n of notes) m.set(`${n.jobId}::${n.columnKey}`, n.body)
+    return m
+  }, [notes])
+  const noteFor = (jobId: string, col: NoteColumn): string => notesByKey.get(`${jobId}::${col}`) ?? ''
 
   const billableRows = useMemo(() => {
     return revenue.map(r => {
@@ -165,6 +176,8 @@ export default function CurrentWeekTab() {
             <th scope="col" className="pow-num">Current Time ($)</th>
             <th scope="col" className="pow-num">Revenue ($)</th>
             <th scope="col" className="pow-num">Time Left</th>
+            <th scope="col">Marti — for response</th>
+            <th scope="col">Response</th>
           </tr>
         </thead>
         <tbody>
@@ -175,6 +188,24 @@ export default function CurrentWeekTab() {
               <td className="pow-num">{fmtCurrency(r.currentTime)}</td>
               <td className="pow-num">{fmtCurrency(r.revenue)}</td>
               <td className={`pow-num ${r.timeLeft < 0 ? 'pow-neg' : ''}`}>{fmtCurrency(r.timeLeft)}</td>
+              <td>
+                <NoteCell
+                  periodMonth={periodMonth}
+                  jobId={r.jobId}
+                  columnKey="marti_response"
+                  initial={noteFor(r.jobId, 'marti_response')}
+                  ariaLabel={`Marti note for ${r.jobId}`}
+                />
+              </td>
+              <td>
+                <NoteCell
+                  periodMonth={periodMonth}
+                  jobId={r.jobId}
+                  columnKey="response"
+                  initial={noteFor(r.jobId, 'response')}
+                  ariaLabel={`Response for ${r.jobId}`}
+                />
+              </td>
             </tr>
           ))}
           <tr className="pow-table-total">
@@ -182,6 +213,7 @@ export default function CurrentWeekTab() {
             <td className="pow-num">{fmtCurrency(totalBillable)}</td>
             <td className="pow-num">{fmtCurrency(totalRevenue)}</td>
             <td className={`pow-num ${totalTimeLeft < 0 ? 'pow-neg' : ''}`}>{fmtCurrency(totalTimeLeft)}</td>
+            <td colSpan={2}></td>
           </tr>
         </tbody>
       </table>
@@ -194,6 +226,7 @@ export default function CurrentWeekTab() {
             <th scope="col">Job Name</th>
             <th scope="col" className="pow-num">Current Time ($)</th>
             <th scope="col" className="pow-num">% of total</th>
+            <th scope="col">Notes</th>
           </tr>
         </thead>
         <tbody>
@@ -203,12 +236,22 @@ export default function CurrentWeekTab() {
               <td>{r.jobName}</td>
               <td className="pow-num">{fmtCurrency(r.currentTime)}</td>
               <td className="pow-num">{(r.pctOfTotal * 100).toFixed(1)}%</td>
+              <td>
+                <NoteCell
+                  periodMonth={periodMonth}
+                  jobId={r.jobId}
+                  columnKey="response"
+                  initial={noteFor(r.jobId, 'response')}
+                  ariaLabel={`Note for ${r.jobId}`}
+                />
+              </td>
             </tr>
           ))}
           <tr className="pow-table-total">
             <td colSpan={2}>Total Non-Billable</td>
             <td className="pow-num">{fmtCurrency(totalNonBillable)}</td>
             <td className="pow-num"></td>
+            <td></td>
           </tr>
         </tbody>
       </table>

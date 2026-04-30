@@ -318,3 +318,16 @@
 
 [data-tool="paid-our-worth"] .pow-totals-variance.is-good strong { color: var(--pow-green); }
 [data-tool="paid-our-worth"] .pow-totals-variance.is-bad  strong { color: var(--pow-red); }
+
+/* ── Notes (textarea cells) ─────────────────────────────────────────────── */
+[data-tool="paid-our-worth"] .pow-note {
+  resize: vertical;
+  min-height: 28px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+[data-tool="paid-our-worth"] .pow-note--err {
+  border-color: var(--pow-red);
+}

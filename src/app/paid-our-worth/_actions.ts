@@ -4,7 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { requireAdminAccess, requireToolAccess } from '@/lib/auth'
 import { rateLimits } from '@/lib/upstash/ratelimit'
 import { parseRevenueCsv, type ParsedRevenueRow } from './_lib/parseRevenueCsv'
-import type { RevenueEntry } from './_types'
+import type { NoteColumn, NoteRecord, RevenueEntry } from './_types'
 
 const ORG_ID = 'default'
 
@@ -117,6 +117,85 @@ export async function updateRevenueRow(
     .from('paid_our_worth_revenue')
     .update(update)
     .eq('id', id)
+  if (error) throw error
+}
+
+// ── Notes ─────────────────────────────────────────────────────────────────────
+
+const VALID_NOTE_COLUMNS: NoteColumn[] = ['marti_response', 'response']
+
+/** List all notes for a given month, across every job. Any approved tool user. */
+export async function listNotesByMonth(periodMonth: string): Promise<{ notes: NoteRecord[] }> {
+  const user = await requireToolAccess('paid-our-worth')
+  await checkRateLimit(rateLimits.api, `paid-our-worth:notes-list:${user.id}`)
+
+  const month = isoFirstOfMonth(periodMonth)
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('paid_our_worth_note')
+    .select('job_id, column_key, body, updated_at')
+    .eq('org_id', ORG_ID)
+    .eq('period_month', month)
+  if (error) throw error
+
+  const notes: NoteRecord[] = (data ?? [])
+    .filter(r => VALID_NOTE_COLUMNS.includes(r.column_key as NoteColumn))
+    .map(r => ({
+      jobId:     r.job_id,
+      columnKey: r.column_key as NoteColumn,
+      body:      r.body,
+      updatedAt: r.updated_at ?? '',
+    }))
+
+  return { notes }
+}
+
+/**
+ * Upsert a single note. Empty `body` deletes the row (no need to keep a
+ * blank record around). Any approved tool user can edit.
+ */
+export async function upsertNote(
+  periodMonth: string,
+  jobId: string,
+  columnKey: NoteColumn,
+  body: string,
+): Promise<void> {
+  const user = await requireToolAccess('paid-our-worth')
+  await checkRateLimit(rateLimits.api, `paid-our-worth:note-upsert:${user.id}`)
+
+  if (!VALID_NOTE_COLUMNS.includes(columnKey)) throw new Error(`Invalid column_key: ${columnKey}`)
+  if (!jobId) throw new Error('jobId is required')
+
+  const month = isoFirstOfMonth(periodMonth)
+  const supabase = createServiceClient()
+  const trimmed = body.trim()
+
+  if (trimmed === '') {
+    const { error } = await supabase
+      .from('paid_our_worth_note')
+      .delete()
+      .eq('org_id', ORG_ID)
+      .eq('period_month', month)
+      .eq('job_id', jobId)
+      .eq('column_key', columnKey)
+    if (error) throw error
+    return
+  }
+
+  const { error } = await supabase
+    .from('paid_our_worth_note')
+    .upsert(
+      {
+        org_id:       ORG_ID,
+        period_month: month,
+        job_id:       jobId,
+        column_key:   columnKey,
+        body:         trimmed,
+        author_id:    user.id,
+        updated_at:   new Date().toISOString(),
+      },
+      { onConflict: 'org_id,period_month,job_id,column_key' },
+    )
   if (error) throw error
 }
 
