@@ -9,6 +9,8 @@ export default function TimeDetailTab() {
   const { entries, users } = useReport()
   const [search,  setSearch]  = useState('')
   const [filter,  setFilter]  = useState<'All' | 'Billable' | 'Non-Billable'>('All')
+  const [client,  setClient]  = useState('')
+  const [member,  setMember]  = useState('')
   const [page,    setPage]    = useState(1)
 
   const userMap = useMemo(
@@ -16,11 +18,28 @@ export default function TimeDetailTab() {
     [users]
   )
 
+  const clientOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const e of entries) if (e.clientName) set.add(e.clientName)
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [entries])
+
+  const memberOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const e of entries) {
+      const name = userMap.get(e.userId)
+      if (name) set.add(name)
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [entries, userMap])
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return entries.filter(e => {
       if (filter === 'Billable'     && e.jobIsBillable !== true)  return false
       if (filter === 'Non-Billable' && e.jobIsBillable !== false) return false
+      if (client && e.clientName !== client) return false
+      if (member && (userMap.get(e.userId) ?? '') !== member) return false
       if (!q) return true
       return (
         (userMap.get(e.userId) ?? '').toLowerCase().includes(q) ||
@@ -31,7 +50,7 @@ export default function TimeDetailTab() {
         e.itemName.toLowerCase().includes(q)
       )
     })
-  }, [entries, filter, search, userMap])
+  }, [entries, filter, client, member, search, userMap])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const slice      = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -40,6 +59,8 @@ export default function TimeDetailTab() {
 
   function handleFilter(f: typeof filter) { setFilter(f); setPage(1) }
   function handleSearch(v: string)        { setSearch(v); setPage(1) }
+  function handleClient(v: string)        { setClient(v); setPage(1) }
+  function handleMember(v: string)        { setMember(v); setPage(1) }
 
   if (!entries.length) {
     return <div className="sr-empty"><p>Set a date range and run the report.</p></div>
@@ -50,11 +71,29 @@ export default function TimeDetailTab() {
       <div className="sr-controls">
         <input
           className="sr-search"
-          placeholder="Search team member, job, client, description…"
+          placeholder="Search description, item, notes…"
           value={search}
           onChange={e => handleSearch(e.target.value)}
           aria-label="Search time entries"
         />
+        <select
+          className="sr-select"
+          value={client}
+          onChange={e => handleClient(e.target.value)}
+          aria-label="Filter by client"
+        >
+          <option value="">All clients</option>
+          {clientOptions.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <select
+          className="sr-select"
+          value={member}
+          onChange={e => handleMember(e.target.value)}
+          aria-label="Filter by team member"
+        >
+          <option value="">All team members</option>
+          {memberOptions.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
         <div className="sr-chips">
           {(['All', 'Billable', 'Non-Billable'] as const).map(f => (
             <button
