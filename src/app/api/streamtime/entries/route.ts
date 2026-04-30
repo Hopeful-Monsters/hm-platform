@@ -142,10 +142,16 @@ function normalizeEntry(
     jobIsBillable: typeof job.isBillable === 'boolean' ? job.isBillable : null,
     jobLabelName:  String(labelName),
     itemName:
+      pickStr((e.loggedTimeItem as Record<string, unknown> | undefined)?.name) ??
+      pickStr((e.activity as Record<string, unknown> | undefined)?.name) ??
+      pickStr((e.item as Record<string, unknown> | undefined)?.name) ??
+      pickStr(e.loggedTimeItemName) ??
       pickStr(lt.label) ??
+      pickStr((lt.loggedTimeItem as Record<string, unknown> | undefined)?.name) ??
       pickStr((lt.activity as Record<string, unknown> | undefined)?.name) ??
       pickStr((lt.item as Record<string, unknown> | undefined)?.name) ??
       pickStr(lt.itemName) ??
+      pickStr(lt.loggedTimeItemName) ??
       '—',
     clientName:    companyMap.get(companyId) ?? '—',
     notes:         String(lt.notes ?? ''),
