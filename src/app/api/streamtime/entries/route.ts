@@ -167,7 +167,7 @@ export const POST = createApiRoute({
     let offset = 0
 
     while (true) {
-      const r = await fetch(`${ST_BASE}/search?search_view=8&include_statistics=false`, {
+      const r = await fetch(`${ST_BASE}/search?search_view=8&include_statistics=false&additional_data=jobItem`, {
         method: 'POST',
         headers: stHeaders(),
         body: JSON.stringify(buildFilterBody(dateFrom, dateTo, filterTypeId, offset)),
