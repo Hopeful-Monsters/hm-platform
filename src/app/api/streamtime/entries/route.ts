@@ -141,17 +141,9 @@ function normalizeEntry(
     jobName:       String(job.name ?? '—'),
     jobIsBillable: typeof job.isBillable === 'boolean' ? job.isBillable : null,
     jobLabelName:  String(labelName),
+    // LoggedTimeSearchResult wrapper exposes the loggable item as `jobItem` at the top level.
     itemName:
-      pickStr((e.loggedTimeItem as Record<string, unknown> | undefined)?.name) ??
-      pickStr((e.activity as Record<string, unknown> | undefined)?.name) ??
-      pickStr((e.item as Record<string, unknown> | undefined)?.name) ??
-      pickStr(e.loggedTimeItemName) ??
-      pickStr(lt.label) ??
-      pickStr((lt.loggedTimeItem as Record<string, unknown> | undefined)?.name) ??
-      pickStr((lt.activity as Record<string, unknown> | undefined)?.name) ??
-      pickStr((lt.item as Record<string, unknown> | undefined)?.name) ??
-      pickStr(lt.itemName) ??
-      pickStr(lt.loggedTimeItemName) ??
+      pickStr((e.jobItem as Record<string, unknown> | undefined)?.name) ??
       '—',
     clientName:    companyMap.get(companyId) ?? '—',
     notes:         String(lt.notes ?? ''),
