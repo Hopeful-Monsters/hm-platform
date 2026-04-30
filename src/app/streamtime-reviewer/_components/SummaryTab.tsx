@@ -78,8 +78,8 @@ export default function SummaryTab() {
   const totalBill    = summaryRows.reduce((s, r) => s + r.billableHours, 0)
   const totalNB      = summaryRows.reduce((s, r) => s + r.nonBillableHours, 0)
   const totalOoo     = summaryRows.reduce((s, r) => s + r.oooHours, 0)
-  const totalHrs     = summaryRows.reduce((s, r) => s + r.totalHours, 0)
-  const totalWorking = summaryRows.reduce((s, r) => s + r.workingHours, 0)
+  const totalLogged  = summaryRows.reduce((s, r) => s + r.workingHours, 0)
+  const totalWorking = totalLogged
   const avgBill      = totalWorking > 0 ? totalBill / totalWorking : 0
   const totalCap     = summaryRows.reduce((s, r) => s + r.capacityHours, 0)
 
@@ -98,8 +98,8 @@ export default function SummaryTab() {
       {/* Stats strip */}
       <div className="sr-stats-strip">
         <div className="sr-stat">
-          <div className="sr-stat-label">Total Hours</div>
-          <div className="sr-stat-value">{fmt2(totalHrs)}</div>
+          <div className="sr-stat-label">Logged Hours</div>
+          <div className="sr-stat-value">{fmt2(totalLogged)}</div>
           <div className="sr-stat-sub">{summaryRows.length} team members</div>
         </div>
         <div className="sr-stat">
@@ -115,13 +115,13 @@ export default function SummaryTab() {
         <div className="sr-stat">
           <div className="sr-stat-label">Out of Office</div>
           <div className="sr-stat-value">{fmt2(totalOoo)}</div>
-          <div className="sr-stat-sub">excluded from working hrs</div>
+          <div className="sr-stat-sub">excluded from logged hrs</div>
         </div>
         <div className="sr-stat">
           <div className="sr-stat-label">Team Capacity</div>
           <div className="sr-stat-value">{totalCap > 0 ? fmt2(totalCap) : '—'}</div>
           <div className="sr-stat-sub">
-            {totalCap > 0 ? Math.round(totalHrs / totalCap * 100) + '% utilisation' : 'No schedule data'}
+            {totalCap > 0 ? Math.round(totalLogged / totalCap * 100) + '% utilisation' : 'No schedule data'}
           </div>
         </div>
       </div>
