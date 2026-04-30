@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useReport } from './ReportContext'
+import FetchStatus from './FetchStatus'
 
 function lastMondaySunday() {
   const today = new Date()
@@ -55,54 +56,57 @@ export default function ReportHeader({ isAdmin }: Props) {
 
   return (
     <div className="sr-report-header">
-      <div className="sr-header-controls">
-        <div className="sr-date-group">
-          <label className="sr-date-label" htmlFor="date-from">FROM</label>
-          <input
-            id="date-from"
-            type="date"
-            className="sr-date-input"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-          />
-        </div>
-        <span className="sr-date-sep" aria-hidden="true">→</span>
-        <div className="sr-date-group">
-          <label className="sr-date-label" htmlFor="date-to">TO</label>
-          <input
-            id="date-to"
-            type="date"
-            className="sr-date-input"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
-          />
-        </div>
+      <div className="sr-header-row">
+        <div className="sr-header-actions">
+          <div className="sr-date-group">
+            <label className="sr-date-label" htmlFor="date-from">FROM</label>
+            <input
+              id="date-from"
+              type="date"
+              className="sr-date-input"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+            />
+          </div>
+          <span className="sr-date-sep" aria-hidden="true">→</span>
+          <div className="sr-date-group">
+            <label className="sr-date-label" htmlFor="date-to">TO</label>
+            <input
+              id="date-to"
+              type="date"
+              className="sr-date-input"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+            />
+          </div>
 
-        <button
-          className="sr-run-btn"
-          onClick={handleRun}
-          disabled={running || !dateFrom || !dateTo}
-        >
-          {running ? 'Running…' : 'Run Report'}
-        </button>
-
-        {isAdmin && hasData && (
           <button
-            className="sr-save-btn"
-            onClick={handleSave}
-            disabled={isSaving}
+            className="sr-run-btn"
+            onClick={handleRun}
+            disabled={running || !dateFrom || !dateTo}
           >
-            {isSaving ? 'Saving…' : 'Save Report'}
+            {running ? 'Running…' : 'Run Report'}
           </button>
-        )}
 
-        {saveMsg === 'saved' && <span className="sr-save-msg sr-save-msg--ok">Saved ✓</span>}
-        {saveMsg === 'error' && <span className="sr-save-msg sr-save-msg--err">Save failed</span>}
+          {isAdmin && hasData && (
+            <button
+              className="sr-save-btn"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving…' : 'Save Report'}
+            </button>
+          )}
+
+          {saveMsg === 'saved' && <span className="sr-save-msg sr-save-msg--ok">Saved ✓</span>}
+          {saveMsg === 'error' && <span className="sr-save-msg sr-save-msg--err">Save failed</span>}
+        </div>
+
+        <div className="sr-header-meta">
+          {period && <span className="sr-period-tag">{fmtPeriod(period)}</span>}
+          <FetchStatus />
+        </div>
       </div>
-
-      {period && (
-        <p className="sr-period-tag">{fmtPeriod(period)}</p>
-      )}
     </div>
   )
 }

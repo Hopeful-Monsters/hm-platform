@@ -18,16 +18,31 @@
 [data-tool="streamtime-reviewer"] .sr-report-header {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 20px 32px 12px;
+  padding: 16px 32px 12px;
   border-bottom: 1px solid var(--border);
 }
 
-[data-tool="streamtime-reviewer"] .sr-header-controls {
+[data-tool="streamtime-reviewer"] .sr-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+[data-tool="streamtime-reviewer"] .sr-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+[data-tool="streamtime-reviewer"] .sr-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 [data-tool="streamtime-reviewer"] .sr-date-group {
@@ -124,8 +139,8 @@
 [data-tool="streamtime-reviewer"] .sr-fetch-status {
   display: flex;
   gap: 6px;
-  padding: 8px 32px;
   flex-wrap: wrap;
+  padding: 0;
 }
 
 [data-tool="streamtime-reviewer"] .sr-pill {

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ReportProvider, useReport } from './_components/ReportContext'
 import ReportHeader from './_components/ReportHeader'
-import FetchStatus  from './_components/FetchStatus'
 import SummaryTab      from './_components/SummaryTab'
 import TimeDetailTab   from './_components/TimeDetailTab'
 import JobBreakdownTab from './_components/JobBreakdownTab'
@@ -23,7 +22,6 @@ function Inner({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="sr-shell">
       <ReportHeader isAdmin={isAdmin} />
-      <FetchStatus />
 
       <div className="sr-tabs" role="tablist">
         {tabs.map(t => (
