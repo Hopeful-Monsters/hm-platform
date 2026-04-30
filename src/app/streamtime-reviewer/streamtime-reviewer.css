@@ -694,7 +694,14 @@
   font-family: var(--font-mono, monospace);
   font-size: 10px;
 }
-[data-tool="streamtime-reviewer"] .sr-history-items { display: flex; flex-direction: column; gap: 6px; }
+[data-tool="streamtime-reviewer"] .sr-history-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
 [data-tool="streamtime-reviewer"] .sr-history-item {
   display: flex;
   justify-content: space-between;
