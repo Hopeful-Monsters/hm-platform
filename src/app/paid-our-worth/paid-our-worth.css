@@ -60,3 +60,179 @@
   padding: 32px;
   color: var(--text-muted);
 }
+
+/* ── Revenue Config tab ─────────────────────────────────────────────────── */
+[data-tool="paid-our-worth"] .pow-config {
+  padding: 24px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+[data-tool="paid-our-worth"] .pow-config-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+[data-tool="paid-our-worth"] .pow-config-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+[data-tool="paid-our-worth"] .pow-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-tool="paid-our-worth"] .pow-field-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+[data-tool="paid-our-worth"] .pow-input {
+  background: var(--bg-elevated, var(--bg));
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+
+[data-tool="paid-our-worth"] .pow-input:focus-visible {
+  outline: 2px solid var(--pow-accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+[data-tool="paid-our-worth"] .pow-input--ghost {
+  background: transparent;
+  border-color: transparent;
+  padding: 4px 6px;
+  width: 100%;
+}
+
+[data-tool="paid-our-worth"] .pow-input--ghost:hover { border-color: var(--border); }
+
+[data-tool="paid-our-worth"] .pow-input--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-tool="paid-our-worth"] .pow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s, border-color 0.15s;
+}
+[data-tool="paid-our-worth"] .pow-btn:hover:not(:disabled) { background: var(--border); }
+[data-tool="paid-our-worth"] .pow-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+[data-tool="paid-our-worth"] .pow-btn:focus-visible {
+  outline: 2px solid var(--pow-accent);
+  outline-offset: 2px;
+}
+[data-tool="paid-our-worth"] .pow-btn--primary {
+  background: var(--pow-accent);
+  color: var(--bg);
+  border-color: var(--pow-accent);
+}
+[data-tool="paid-our-worth"] .pow-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+[data-tool="paid-our-worth"] .pow-btn--ghost {
+  border-color: transparent;
+}
+[data-tool="paid-our-worth"] .pow-btn--danger {
+  color: var(--pow-red);
+}
+
+[data-tool="paid-our-worth"] .pow-banner {
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+}
+[data-tool="paid-our-worth"] .pow-banner--ok  { border-color: var(--pow-green); color: var(--pow-green); }
+[data-tool="paid-our-worth"] .pow-banner--err { border-color: var(--pow-red);   color: var(--pow-red); }
+[data-tool="paid-our-worth"] .pow-banner ul { margin: 6px 0 0 18px; padding: 0; }
+
+[data-tool="paid-our-worth"] .pow-preview {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  background: var(--bg-elevated, var(--bg));
+}
+[data-tool="paid-our-worth"] .pow-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+[data-tool="paid-our-worth"] .pow-help {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+[data-tool="paid-our-worth"] .pow-help summary { cursor: pointer; }
+[data-tool="paid-our-worth"] .pow-help pre {
+  background: var(--bg-elevated, var(--bg));
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 6px;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
+[data-tool="paid-our-worth"] .pow-section-title {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 12px 0 0;
+}
+
+[data-tool="paid-our-worth"] .pow-muted { color: var(--text-muted); font-weight: 400; }
+
+[data-tool="paid-our-worth"] .pow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+[data-tool="paid-our-worth"] .pow-table th,
+[data-tool="paid-our-worth"] .pow-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+[data-tool="paid-our-worth"] .pow-table th {
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+[data-tool="paid-our-worth"] .pow-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

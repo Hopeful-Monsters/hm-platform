@@ -468,6 +468,167 @@ export type Database = {
         }
         Relationships: []
       }
+      paid_our_worth_revenue: {
+        Row: {
+          id: string
+          org_id: string
+          period_month: string
+          job_id: string
+          job_name: string
+          revenue_amount: number
+          display_order: number
+          created_at: string | null
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          org_id?: string
+          period_month: string
+          job_id: string
+          job_name: string
+          revenue_amount?: number
+          display_order?: number
+          created_at?: string | null
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          period_month?: string
+          job_id?: string
+          job_name?: string
+          revenue_amount?: number
+          display_order?: number
+          created_at?: string | null
+          created_by?: string | null
+        }
+        Relationships: []
+      }
+      paid_our_worth_snapshot: {
+        Row: {
+          id: string
+          org_id: string
+          period_month: string
+          cutoff_date: string
+          working_days_in_month: number
+          days_worked: number
+          total_billable_time: number
+          total_non_billable_time: number
+          total_revenue: number
+          report_total: number
+          variance: number
+          created_at: string | null
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          org_id?: string
+          period_month: string
+          cutoff_date: string
+          working_days_in_month: number
+          days_worked: number
+          total_billable_time?: number
+          total_non_billable_time?: number
+          total_revenue?: number
+          report_total?: number
+          variance?: number
+          created_at?: string | null
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          period_month?: string
+          cutoff_date?: string
+          working_days_in_month?: number
+          days_worked?: number
+          total_billable_time?: number
+          total_non_billable_time?: number
+          total_revenue?: number
+          report_total?: number
+          variance?: number
+          created_at?: string | null
+          created_by?: string | null
+        }
+        Relationships: []
+      }
+      paid_our_worth_snapshot_row: {
+        Row: {
+          id: string
+          snapshot_id: string
+          job_id: string
+          job_name: string
+          is_billable: boolean
+          current_time_amount: number
+          revenue_amount: number | null
+          time_left: number | null
+          pct_of_total: number | null
+          display_order: number
+        }
+        Insert: {
+          id?: string
+          snapshot_id: string
+          job_id: string
+          job_name: string
+          is_billable: boolean
+          current_time_amount?: number
+          revenue_amount?: number | null
+          time_left?: number | null
+          pct_of_total?: number | null
+          display_order?: number
+        }
+        Update: {
+          id?: string
+          snapshot_id?: string
+          job_id?: string
+          job_name?: string
+          is_billable?: boolean
+          current_time_amount?: number
+          revenue_amount?: number | null
+          time_left?: number | null
+          pct_of_total?: number | null
+          display_order?: number
+        }
+        Relationships: [{
+          foreignKeyName: 'paid_our_worth_snapshot_row_snapshot_id_fkey'
+          columns: ['snapshot_id']
+          referencedRelation: 'paid_our_worth_snapshot'
+          referencedColumns: ['id']
+        }]
+      }
+      paid_our_worth_note: {
+        Row: {
+          id: string
+          org_id: string
+          period_month: string
+          job_id: string
+          column_key: string
+          body: string
+          author_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          org_id?: string
+          period_month: string
+          job_id: string
+          column_key: string
+          body?: string
+          author_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          period_month?: string
+          job_id?: string
+          column_key?: string
+          body?: string
+          author_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
