@@ -53,6 +53,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark', nonce }: ThemeP
       <ThemeContext.Provider value={{ theme, setTheme }}>
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `(function(){var t=localStorage.getItem('hm-theme')||'${safeDefault}';document.documentElement.classList.add(t)})()`,
           }}
