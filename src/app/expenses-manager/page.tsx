@@ -19,7 +19,11 @@ export default async function ExpensesManagerPage() {
     jobs = (data.searchResults || [])
       .map(normaliseJob)
       .filter(j => j.id && j.name)
-    if (!jobs.length) error = 'No jobs returned. Check STREAMTIME_KEY is set.'
+      .filter(j => {
+        const s = j.status.toLowerCase()
+        return s === 'active' || s === 'paused'
+      })
+    if (!jobs.length) error = 'No active or paused jobs returned. Check STREAMTIME_KEY is set.'
   } catch (err: unknown) {
     error = (err as Error).message
   }
