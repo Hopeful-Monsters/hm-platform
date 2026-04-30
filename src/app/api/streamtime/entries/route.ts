@@ -187,9 +187,19 @@ export const POST = createApiRoute({
       if (offset >= 10000) break
     }
 
+    // Drop entries that are scheduled-only (not yet logged). v2 marks these
+    // via loggedTime.isScheduled = true OR loggedTimeStatus.name = 'Scheduled'.
+    const loggedOnly = rawEntries.filter(e => {
+      const lt = (e.loggedTime ?? {}) as Record<string, unknown>
+      const status = (lt.loggedTimeStatus ?? {}) as Record<string, unknown>
+      if (lt.isScheduled === true) return false
+      if (typeof status.name === 'string' && status.name.toLowerCase() === 'scheduled') return false
+      return true
+    })
+
     // Enrich entries with job and company data — v2 does not embed these in search results.
     const jobIds = [...new Set(
-      rawEntries
+      loggedOnly
         .map(e => Number((e.loggedTime as Record<string, unknown>)?.jobId ?? 0))
         .filter(id => id > 0)
     )]
@@ -199,7 +209,7 @@ export const POST = createApiRoute({
       fetchCompanyMap(),
     ])
 
-    const entries = rawEntries.map(e => normalizeEntry(e, jobMap, companyMap))
+    const entries = loggedOnly.map(e => normalizeEntry(e, jobMap, companyMap))
 
     return Response.json({ entries })
   },
