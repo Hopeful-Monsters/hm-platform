@@ -1024,6 +1024,7 @@ textarea.hm-input {
 .support-page {
   padding: 48px 32px;
   max-width: 720px;
+  margin: 0 auto;
 }
 
 .support-divider {
