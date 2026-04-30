@@ -578,6 +578,26 @@ textarea.hm-input {
   color: var(--accent);
 }
 
+/* Mobile-only hamburger trigger — hidden at sm and up */
+.site-header-mobile-only {
+  display: flex;
+}
+@media (min-width: 640px) {
+  .site-header-mobile-only {
+    display: none !important;
+  }
+}
+
+/* Desktop-only nav block — hidden below sm */
+.site-header-desktop-only {
+  display: none;
+}
+@media (min-width: 640px) {
+  .site-header-desktop-only {
+    display: flex;
+  }
+}
+
 /* ══ SIGN-OUT BUTTON ═════════════════════════════════════════════ */
 
 .btn-sign-out {
