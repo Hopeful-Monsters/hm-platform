@@ -41,6 +41,12 @@
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
+  "trustedDependencies": [
+    "@sentry/cli",
+    "fsevents",
+    "sharp",
+    "unrs-resolver"
+  ],
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
