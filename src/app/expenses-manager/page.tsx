@@ -19,6 +19,7 @@ export default async function ExpensesManagerPage() {
     jobs = (data.searchResults || [])
       .map(normaliseJob)
       .filter(j => j.id && j.name)
+      .filter(j => !/\[TEMPLATE\]/i.test(j.name))
       .filter(j => {
         const s = j.status.toLowerCase()
         return s === 'in play' || s === 'paused'
