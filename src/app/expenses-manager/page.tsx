@@ -21,9 +21,9 @@ export default async function ExpensesManagerPage() {
       .filter(j => j.id && j.name)
       .filter(j => {
         const s = j.status.toLowerCase()
-        return s === 'active' || s === 'paused'
+        return s === 'in play' || s === 'paused'
       })
-    if (!jobs.length) error = 'No active or paused jobs returned. Check STREAMTIME_KEY is set.'
+    if (!jobs.length) error = 'No In Play or Paused jobs returned. Check STREAMTIME_KEY is set.'
   } catch (err: unknown) {
     error = (err as Error).message
   }
