@@ -79,8 +79,7 @@ export default function SummaryTab() {
   const totalNB      = summaryRows.reduce((s, r) => s + r.nonBillableHours, 0)
   const totalOoo     = summaryRows.reduce((s, r) => s + r.oooHours, 0)
   const totalLogged  = summaryRows.reduce((s, r) => s + r.workingHours, 0)
-  const totalWorking = totalLogged
-  const avgBill      = totalWorking > 0 ? totalBill / totalWorking : 0
+  const avgBill      = totalLogged > 0 ? totalBill / totalLogged : 0
   const totalCap     = summaryRows.reduce((s, r) => s + r.capacityHours, 0)
 
   const hasLeadership = summaryRows.some(r => r.isLeadership)
