@@ -1,23 +1,25 @@
-import { requireToolAccess, requireAdminAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
+import { createApiRoute } from '@/lib/api/createApiRoute'
+import { HttpError } from '@/lib/api/errors'
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    await requireToolAccess('streamtime-reviewer')
-    const { id } = await params
+type Params = { id: string }
+
+export const GET = createApiRoute<undefined, Params>({
+  auth: { tool: 'streamtime-reviewer' },
+  handler: async ({ params }) => {
     const supabase = createServiceClient()
 
     const { data: report, error: rErr } = await supabase
       .from('streamtime_weekly_reports')
       .select('id, date_from, date_to, entry_count, saved_at')
-      .eq('id', id)
+      .eq('id', params.id)
       .single()
-    if (rErr || !report) return Response.json({ error: 'Not found' }, { status: 404 })
+    if (rErr || !report) throw new HttpError(404, 'Not found')
 
     const { data: stats, error: sErr } = await supabase
       .from('streamtime_weekly_user_stats')
       .select('*')
-      .eq('report_id', id)
+      .eq('report_id', params.id)
     if (sErr) throw sErr
 
     return Response.json({
@@ -42,25 +44,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         diffPct:          s.diff_pct   !== null ? Number(s.diff_pct)   : null,
       })),
     })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    await requireAdminAccess()
-    const { id } = await params
+export const DELETE = createApiRoute<undefined, Params>({
+  auth: 'admin',
+  handler: async ({ params }) => {
     const supabase = createServiceClient()
-    await supabase.from('streamtime_weekly_user_stats').delete().eq('report_id', id)
-    const { error } = await supabase.from('streamtime_weekly_reports').delete().eq('id', id)
+    await supabase.from('streamtime_weekly_user_stats').delete().eq('report_id', params.id)
+    const { error } = await supabase.from('streamtime_weekly_reports').delete().eq('id', params.id)
     if (error) throw error
     return Response.json({ ok: true })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg === 'Admin role required' ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})

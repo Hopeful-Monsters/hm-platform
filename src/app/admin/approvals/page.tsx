@@ -1,142 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
-import { Resend } from 'resend'
-import { revalidatePath } from 'next/cache'
-import { TOOL_LABEL, TOOL_SLUGS, type ToolSlug } from '@/lib/tools'
-
-// ── Server Actions ────────────────────────────────────────────────
-
-async function approveUser(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return
-
-  const userId        = formData.get('userId') as string
-  // Validate slugs against the canonical list — rejects any forged values
-  const selectedTools = (formData.getAll('tools') as string[]).filter(slug => TOOL_SLUGS.includes(slug))
-
-  const service = createServiceClient()
-
-  await service.auth.admin.updateUserById(userId, {
-    user_metadata: { status: 'approved' },
-  })
-
-  if (selectedTools.length > 0) {
-    await service.from('tool_access').insert(
-      selectedTools.map(toolSlug => ({ user_id: userId, tool_slug: toolSlug, plan: 'basic' }))
-    )
-  }
-
-  const { data: userData } = await service.auth.admin.getUserById(userId)
-  if (userData.user?.email) {
-    const resend = new Resend(process.env.RESEND_API_KEY!)
-    await resend.emails.send({
-      from:    'noreply@hopefulmonsters.com.au',
-      to:      userData.user.email,
-      subject: 'Account Approved — Hopeful Monsters',
-      text:    `Your account has been approved. You now have access to: ${selectedTools.join(', ')}. Sign in at app.hopefulmonsters.com.au`,
-    })
-  }
-
-  revalidatePath('/admin/approvals')
-}
-
-async function approveToolRequest(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return
-
-  const requestId = formData.get('requestId') as string
-  const userId    = formData.get('userId') as string
-  const userEmail = formData.get('userEmail') as string
-  const toolSlug  = formData.get('toolSlug') as string
-
-  if (!TOOL_SLUGS.includes(toolSlug)) return
-
-  const service = createServiceClient()
-
-  const { error: accessError } = await service
-    .from('tool_access')
-    .insert({ user_id: userId, tool_slug: toolSlug, plan: 'basic' })
-
-  if (accessError) {
-    console.error('approveToolRequest: failed to grant tool access:', accessError.message)
-    return
-  }
-
-  const { error: updateError } = await service
-    .from('tool_access_requests')
-    .update({ status: 'approved' })
-    .eq('id', requestId)
-
-  if (updateError) {
-    console.error('approveToolRequest: failed to update request status:', updateError.message)
-  }
-
-  if (userEmail) {
-    try {
-      const toolLabel = TOOL_LABEL[toolSlug as ToolSlug] ?? toolSlug
-      const resend    = new Resend(process.env.RESEND_API_KEY!)
-      await resend.emails.send({
-        from:    'noreply@hopefulmonsters.com.au',
-        to:      userEmail,
-        subject: `Access Granted — ${toolLabel}`,
-        text:    `Your request for access to ${toolLabel} has been approved.\n\nSign in at app.hopefulmonsters.com.au to get started.`,
-      })
-    } catch (err) {
-      console.error('approveToolRequest: notification email failed (non-fatal):', err)
-    }
-  }
-
-  revalidatePath('/admin/approvals')
-}
-
-async function denyToolRequest(formData: FormData) {
-  'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== 'admin') return
-
-  const requestId = formData.get('requestId') as string
-  const userEmail = formData.get('userEmail') as string
-  const toolSlug  = formData.get('toolSlug') as string
-
-  if (!TOOL_SLUGS.includes(toolSlug)) return
-
-  const service   = createServiceClient()
-  const toolLabel = TOOL_LABEL[toolSlug as ToolSlug] ?? toolSlug
-
-  const { error: updateError } = await service
-    .from('tool_access_requests')
-    .update({ status: 'denied' })
-    .eq('id', requestId)
-
-  if (updateError) {
-    console.error('denyToolRequest: failed to update request status:', updateError.message)
-    return
-  }
-
-  if (userEmail) {
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY!)
-      await resend.emails.send({
-        from:    'noreply@hopefulmonsters.com.au',
-        to:      userEmail,
-        subject: `Access Request Update — ${toolLabel}`,
-        text:    `Your request for access to ${toolLabel} has not been approved at this time.\n\nIf you think this is a mistake, reply to this email.`,
-      })
-    } catch (err) {
-      console.error('denyToolRequest: notification email failed (non-fatal):', err)
-    }
-  }
-
-  revalidatePath('/admin/approvals')
-}
-
-// ── Page ──────────────────────────────────────────────────────────
+import { TOOLS, TOOL_LABEL, type ToolSlug } from '@/lib/tools'
+import { approveUser, approveToolRequest, denyToolRequest } from './_actions'
 
 export default async function ApprovalsPage() {
   const supabase = await createClient()
@@ -144,7 +10,9 @@ export default async function ApprovalsPage() {
   if (!user || user.user_metadata?.role !== 'admin') redirect('/login')
 
   const service = createServiceClient()
-  const { data: users } = await service.auth.admin.listUsers()
+  // perPage=200 covers the org for the foreseeable future; if it ever
+  // exceeds that, build a paged admin UI rather than silently dropping users.
+  const { data: users } = await service.auth.admin.listUsers({ perPage: 200 })
   const pendingUsers = users.users.filter(u => u.user_metadata?.status === 'pending')
 
   const { data: toolRequests } = await service
@@ -152,6 +20,7 @@ export default async function ApprovalsPage() {
     .select('id, user_id, user_email, tool_slug, message, created_at')
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
+    .limit(100)
 
   return (
     <div>
@@ -182,16 +51,12 @@ export default async function ApprovalsPage() {
 
                 <p className="eyebrow hm-text-dim mb-2">Grant access to:</p>
                 <div className="flex flex-col gap-2 mb-5">
-                  {[
-                    { value: 'coverage-tracker',    label: 'Coverage Tracker' },
-                    { value: 'expenses-manager',    label: 'Expenses Manager' },
-                    { value: 'streamtime-reviewer', label: 'Streamtime Reviewer' },
-                  ].map(tool => (
-                    <label key={tool.value} className="flex items-center gap-2 body-md hm-text-muted cursor-pointer">
+                  {TOOLS.map(tool => (
+                    <label key={tool.slug} className="flex items-center gap-2 body-md hm-text-muted cursor-pointer">
                       <input
                         type="checkbox"
                         name="tools"
-                        value={tool.value}
+                        value={tool.slug}
                         defaultChecked
                         className="accent-[var(--accent)] w-3.5 h-3.5"
                       />

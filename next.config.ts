@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },
+  experimental: {
+    // Tree-shake barrel imports from these packages to keep client bundles
+    // lean. lucide-react in particular ships hundreds of icons; without
+    // this flag the named imports still pull the full module graph.
+    optimizePackageImports: ['lucide-react', '@sentry/nextjs', 'framer-motion'],
+  },
 };
 
 export default withSentryConfig(nextConfig, {

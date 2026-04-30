@@ -4,311 +4,23 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useWizard } from './_components/WizardContext'
 import { cn } from '@/lib/utils'
 import type { FieldRule, PublicationGroup } from './_components/SettingsModal'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-type CoverageRow = {
-  date:        string
-  campaign:    string  // set from Setup.campaign at submit time
-  publication: string
-  country:     string
-  mediaType:   string
-  mediaFormat: string
-  headline:    string
-  reach:       string
-  ave:         string
-  prValue:     string
-  sentiment:   string
-  keyMsg:      string
-  spokes:      string
-  image:       string
-  cta:         string
-  link:        string
-}
-
-type DestMode  = 'existing' | 'new'
-type Operator  = 'AND' | 'OR'
-type Status    = { type: 'info' | 'success' | 'error'; message: string } | null
-type Result    = { ok: true; sheetUrl?: string } | { ok: false; error: string }
-
-type SetupState = {
-  campaign:       string
-  // Key messages — per-item operators: ops[i] is the operator BETWEEN item i and item i+1
-  keyMessages:    string[]
-  keyMsgOps:      Operator[]   // length === keyMessages.length - 1
-  // Spokespersons — same per-item operator pattern
-  spokespersons:  string[]
-  spokesOps:      Operator[]   // length === spokespersons.length - 1
-  // CTAs — same per-item operator pattern
-  ctas:           string[]
-  ctaOps:         Operator[]   // length === ctas.length - 1
-  // Destination
-  destMode:       DestMode
-  sheetUrl:       string
-  sheetTab:       string
-  newTitle:       string
-  newTab:         string
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
-
-const MEDIA_TYPES   = ['Metro', 'Regional', 'National', 'Lifestyle', 'Sports', 'Marketing Trade']
-const MEDIA_FORMATS = ['ONLINE', 'PRINT', 'TV', 'RADIO', 'SOCIAL MEDIA', 'PODCAST']
-const YES_NO        = ['YES', 'NO']
-const SENTIMENTS    = ['POSITIVE', 'NEGATIVE']
-
-const DEFAULT_TAB   = '2026 Coverage Tracker'
-
-/** Initial/reset value for SetupState */
-const EMPTY_SETUP: SetupState = {
-  campaign:      '',
-  keyMessages:   [''],
-  keyMsgOps:     [],
-  spokespersons: [''],
-  spokesOps:     [],
-  ctas:          [''],
-  ctaOps:        [],
-  destMode:      'existing',
-  sheetUrl:      '',
-  sheetTab:      DEFAULT_TAB,
-  newTitle:      '',
-  newTab:        DEFAULT_TAB,
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Rule evaluator
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Applies org-level field rules to a single CoverageRow.
- * Rules execute in sort_order ascending (array order). Last write wins when
- * multiple rules target the same field.
- *
- * Only enabled rules run.
- *
- * Supported operators:
- *   eq  — if_field value exactly equals if_value (case-sensitive)
- *   neq — if_field value does not equal if_value
- *   in  — if_field value is in the group's member list (publication groups only)
- */
-function applyRules(
-  row:    CoverageRow,
-  rules:  FieldRule[],
-  groups: PublicationGroup[],
-): CoverageRow {
-  let r = { ...row }
-
-  for (const rule of rules) {
-    if (!rule.enabled) continue
-
-    const fieldVal = r[rule.if_field as keyof CoverageRow] ?? ''
-    let matches = false
-
-    if (rule.if_operator === 'eq') {
-      matches = fieldVal === rule.if_value
-    } else if (rule.if_operator === 'neq') {
-      matches = fieldVal !== rule.if_value
-    } else if (rule.if_operator === 'in' && rule.if_group_id) {
-      const group = groups.find(g => g.id === rule.if_group_id)
-      matches = !!group?.members.some(m => m.value === fieldVal)
-    }
-
-    if (matches) {
-      r = { ...r, [rule.then_field]: rule.then_value }
-    }
-  }
-
-  return r
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CSV parsing & field mapping
-// ─────────────────────────────────────────────────────────────────────────────
-
-function parseCSV(text: string): Record<string, string>[] {
-  const lines   = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim())
-  if (lines.length < 2) throw new Error('File has fewer than 2 lines')
-  const headers = lines[0].split('\t').map(h => h.replace(/^['"]+|['"]+$/g, '').trim())
-  return lines.slice(1)
-    .map(line => {
-      const vals = line.split('\t')
-      return headers.reduce<Record<string, string>>((obj, h, i) => {
-        obj[h] = (vals[i] ?? '').replace(/^['"]+|['"]+$/g, '').trim()
-        return obj
-      }, {})
-    })
-    .filter(r => r['Title'] || r['Source Name'])
-}
-
-function fmtDate(d: string): string {
-  const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/)
-  return m ? `${m[3]}.${m[2]}.${m[1]}` : d
-}
-
-function deriveFormat(sourceType: string): string {
-  const s = (sourceType ?? '').toLowerCase()
-  if (s.includes('print'))                            return 'PRINT'
-  if (s.includes('online'))                           return 'ONLINE'
-  if (s.includes('broadcast') || s.includes('tv'))    return 'TV'
-  if (s.includes('radio')     || s.includes('audio')) return 'RADIO'
-  if (s.includes('social'))                           return 'SOCIAL MEDIA'
-  if (s.includes('podcast'))                          return 'PODCAST'
-  return 'ONLINE'
-}
-
-function fmtSentiment(s: string): string {
-  const lower = (s ?? '').toLowerCase()
-  // Neutral is treated as Positive — only POSITIVE / NEGATIVE exist in the tracker
-  if (lower === 'positive' || lower === 'neutral') return 'POSITIVE'
-  if (lower === 'negative')                        return 'NEGATIVE'
-  return s ? s.toUpperCase() : ''
-}
-
-function parseAVE(v: string): string {
-  if (!v || v === 'NaN') return ''
-  const n = parseFloat(v.replace(/,/g, ''))
-  return isNaN(n) ? '' : String(n)
-}
-
-function mapRow(r: Record<string, string>): CoverageRow {
-  const ave    = parseAVE(r['AVE'] ?? '')
-  const aveNum = ave !== '' ? parseFloat(ave) : 0
-  return {
-    date:        fmtDate(r['Date'] ?? ''),
-    campaign:    '',
-    publication: r['Source Name']  ?? '',
-    country:     r['Country']      ?? '',
-    mediaType:   '',
-    mediaFormat: deriveFormat(r['Source Type'] ?? ''),
-    headline:    r['Title']        ?? '',
-    reach:       r['Reach']        ?? '',
-    ave,
-    prValue:     aveNum > 0 ? String((aveNum * 3).toFixed(2)) : '',
-    sentiment:   fmtSentiment(r['Sentiment'] ?? ''),
-    keyMsg:      '',
-    spokes:      '',
-    image:       '',
-    cta:         '',
-    link:        r['URL']          ?? '',
-  }
-}
-
-function rowToArray(r: CoverageRow): (string | number)[] {
-  return [
-    r.date, r.campaign, r.publication, r.country,
-    r.mediaType, r.mediaFormat, r.headline,
-    r.reach   !== '' ? (Number(r.reach)   || r.reach)   : '',
-    r.ave     !== '' ? (Number(r.ave)     || r.ave)     : '',
-    r.prValue !== '' ? (Number(r.prValue) || 0)         : 0,
-    r.sentiment, r.keyMsg, r.spokes, r.image, r.cta, r.link,
-  ]
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RepeatingField — shared component for Key Messages, Spokespersons, CTAs
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Renders a list of text inputs where:
- *   - Items can be added/removed
- *   - A per-item AND/OR toggle appears BETWEEN adjacent items (ops[i] sits
- *     between items[i] and items[i+1]), only visible when there are ≥2 items
- *   - The "Add" button appears once the last item has content
- */
-function RepeatingField({
-  label, items, ops, placeholder,
-  onUpdate, onAdd, onRemove, onSetOp,
-}: {
-  label:       string
-  items:       string[]
-  ops:         Operator[]
-  placeholder: string
-  onUpdate:    (idx: number, value: string) => void
-  onAdd:       () => void
-  onRemove:    (idx: number) => void
-  onSetOp:     (idx: number, op: Operator) => void
-}) {
-  return (
-    <div className="ct-field-wrap">
-      <label className="ct-label">{label}</label>
-      <div className="ct-field-group">
-        {items.map((item, i) => (
-          <div key={i}>
-            {/* AND/OR toggle ABOVE this item (between items[i-1] and items[i]) */}
-            {i > 0 && (
-              <div className="ct-op-toggle mb-[6px]">
-                {(['AND', 'OR'] as Operator[]).map(op => (
-                  <button
-                    key={op}
-                    type="button"
-                    className={`ct-btn ct-btn-toggle${ops[i - 1] === op ? ' is-active' : ''}`}
-                    onClick={() => onSetOp(i - 1, op)}
-                  >
-                    {op}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="ct-field-row">
-              <input
-                type="text"
-                className="ct-input"
-                value={item}
-                onChange={e => onUpdate(i, e.target.value)}
-                placeholder={`${placeholder} ${i + 1}`}
-              />
-              {items.length > 1 && (
-                <button
-                  type="button"
-                  className="ct-remove-btn"
-                  onClick={() => onRemove(i)}
-                  aria-label={`Remove ${label} ${i + 1}`}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      {items[items.length - 1].trim() !== '' && (
-        <button type="button" className="ct-btn ct-btn-add mt-2" onClick={onAdd}>
-          + Add another {label.replace(/\(s\)$/, '').replace(/\(.*\)$/, '').trim().toLowerCase()}
-        </button>
-      )}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// StatusBanner
-// ─────────────────────────────────────────────────────────────────────────────
-
-function StatusBanner({ status }: { status: Status }) {
-  if (!status) return null
-  return (
-    <div
-      className={`ct-banner ${status.type}`}
-      // Message may include a safe anchor tag for sheet links
-      dangerouslySetInnerHTML={{ __html: status.message }}
-    />
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main page component
-// ─────────────────────────────────────────────────────────────────────────────
+import { DEFAULT_COVERAGE_TAB_NAME } from '@/lib/constants/coverage-tracker'
+import { DRIVE_AUTH_POPUP } from '@/lib/constants/popup'
+import {
+  type CoverageRow, type DestMode, type Operator, type Status, type Result,
+  type SetupState, EMPTY_SETUP,
+  MEDIA_TYPES, MEDIA_FORMATS, YES_NO, SENTIMENTS,
+} from '@/lib/coverage-tracker/types'
+import { parseCSV, mapRow, rowToArray } from '@/lib/coverage-tracker/csv-parsing'
+import { applyRules } from '@/lib/coverage-tracker/rule-engine'
+import RepeatingField from './_components/RepeatingField'
+import StatusBanner from './_components/StatusBanner'
 
 export default function CoverageTrackerPage() {
   const { step, setStep } = useWizard()
 
   // ── Drive connection ──────────────────────────────────────────
   const [driveStatus, setDriveStatus] = useState<'unknown' | 'connected' | 'disconnected' | 'connecting'>('unknown')
-
 
   useEffect(() => {
     fetch('/api/drive/status')
@@ -318,7 +30,7 @@ export default function CoverageTrackerPage() {
   }, [])
 
   const connectDrive = useCallback(() => {
-    const popup = window.open('/api/drive/auth', 'drive-auth', 'width=520,height=660,left=200,top=100')
+    const popup = window.open('/api/drive/auth', 'drive-auth', DRIVE_AUTH_POPUP)
     if (!popup) { alert('Popup blocked — allow popups for this site and try again.'); return }
     setDriveStatus('connecting')
     let done = false
@@ -345,9 +57,8 @@ export default function CoverageTrackerPage() {
   }, [])
 
   // ── Rules + publication groups (org-level settings) ──────────
-  // Stored in refs so that processFile and the Format onChange handler always
-  // read the latest values regardless of when they were defined — avoids the
-  // stale-closure problem that would occur if they captured state directly.
+  // Stored in refs so processFile and the Format onChange handler always read
+  // the latest values regardless of when they fire — avoids stale closures.
   const rulesRef  = useRef<FieldRule[]>([])
   const groupsRef = useRef<PublicationGroup[]>([])
 
@@ -370,10 +81,9 @@ export default function CoverageTrackerPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [result,      setResult]      = useState<Result | null>(null)
 
-  // Setup + destination combined state
   const [setup, setSetup] = useState<SetupState>(EMPTY_SETUP)
 
-  // Esc closes the confirmation modal. Guard with `submitting` so an in-flight
+  // Esc closes the confirmation modal. Guarded by `submitting` so an in-flight
   // submit can't be dismissed by a stray keypress.
   useEffect(() => {
     if (!showConfirm) return
@@ -401,9 +111,8 @@ export default function CoverageTrackerPage() {
       try {
         const parsed = parseCSV(e.target!.result as string)
         if (!parsed.length) throw new Error('No data rows found — check the file is a valid Meltwater export')
-        // Store mapped rows without applying rules yet — rules run when the user
-        // advances from Setup to Review, so changes made in Settings always apply
-        // to the current data without needing a re-upload.
+        // Store mapped rows without applying rules yet — rules run on Setup→Review
+        // so changes made in Settings always apply to current data.
         setRows(parsed.map(r => mapRow(r)))
         setStep(2)
         setStatus(null)
@@ -419,11 +128,7 @@ export default function CoverageTrackerPage() {
     setRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
   }
 
-  /**
-   * Batch apply helper.
-   *   mode='all'    — overwrite every row
-   *   mode='blanks' — only fill cells that are currently empty
-   */
+  /** mode='all' overwrites every row; mode='blanks' only fills empty cells. */
   function applyBatch(mode: 'all' | 'blanks') {
     const updates: Partial<CoverageRow> = {
       ...(bMediaType && { mediaType: bMediaType }),
@@ -442,18 +147,11 @@ export default function CoverageTrackerPage() {
     }))
   }
 
-  // ── Setup helpers — generic repeating-field factory ──────────
   /**
-   * Returns CRUD helpers for a repeating field that has per-item AND/OR
-   * operators between adjacent entries.
-   *
-   *   items  = the string array (e.g. keyMessages)
-   *   ops    = operator array of length items.length - 1
-   *            ops[i] is the operator BETWEEN items[i] and items[i+1]
-   *
-   * When an item is added, a default 'AND' operator is appended to ops.
-   * When an item is removed at index i, ops[i-1] (or ops[i]) is also removed
-   * so the lengths stay in sync.
+   * CRUD helpers for a repeating field with per-item AND/OR operators between
+   * adjacent entries. ops[i] sits between items[i] and items[i+1]. Adding an
+   * item appends a default 'AND'; removing item i drops ops[max(0, i-1)] so
+   * the lengths stay in sync.
    */
   function makeRepeatingHelpers<K extends 'keyMessages' | 'spokespersons' | 'ctas'>(
     itemsKey: K,
@@ -473,14 +171,11 @@ export default function CoverageTrackerPage() {
       removeItem(idx: number) {
         setSetup(s => {
           const items = (s[itemsKey] as string[]).filter((_, i) => i !== idx)
-          // Remove the operator that was between this item and its neighbour.
-          // If removing first item, remove ops[0]; otherwise remove ops[idx-1].
           const ops   = (s[opsKey] as Operator[]).filter((_, i) => i !== Math.max(0, idx - 1))
           return { ...s, [itemsKey]: items, [opsKey]: ops }
         })
       },
       setOp(idx: number, op: Operator) {
-        // idx = position in ops array (between items[idx] and items[idx+1])
         setSetup(s => ({
           ...s,
           [opsKey]: (s[opsKey] as Operator[]).map((o, i) => i === idx ? op : o),
@@ -499,24 +194,21 @@ export default function CoverageTrackerPage() {
     setSubmitting(true)
     setStatus(null)
 
-    // Stamp every row with the campaign from Setup before sending
     const stampedRows = rows.map(r => ({ ...r, campaign: setup.campaign }))
     const rowArrays   = stampedRows.map(rowToArray)
 
-    // Clean setup arrays; per-item operators passed for downstream Gemini use
     const cleanKeyMessages   = setup.keyMessages.map(m => m.trim()).filter(Boolean)
     const cleanSpokespersons = setup.spokespersons.map(s => s.trim()).filter(Boolean)
     const cleanCtas          = setup.ctas.map(c => c.trim()).filter(Boolean)
 
-    // Shared payload fragment
     const setupPayload = {
-      campaign:              setup.campaign   || undefined,
-      keyMessages:           cleanKeyMessages,
-      keyMessageOperators:   setup.keyMsgOps,   // per-item operators between adjacent entries
-      spokespersons:         cleanSpokespersons,
-      spokesOperators:       setup.spokesOps,
-      ctas:                  cleanCtas,
-      ctaOperators:          setup.ctaOps,
+      campaign:            setup.campaign   || undefined,
+      keyMessages:         cleanKeyMessages,
+      keyMessageOperators: setup.keyMsgOps,
+      spokespersons:       cleanSpokespersons,
+      spokesOperators:     setup.spokesOps,
+      ctas:                cleanCtas,
+      ctaOperators:        setup.ctaOps,
     }
 
     try {
@@ -529,7 +221,7 @@ export default function CoverageTrackerPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sheetId:  m[1],
-            sheetTab: setup.sheetTab || DEFAULT_TAB,
+            sheetTab: setup.sheetTab || DEFAULT_COVERAGE_TAB_NAME,
             rows:     rowArrays,
             ...setupPayload,
           }),
@@ -546,7 +238,7 @@ export default function CoverageTrackerPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sheetTitle: setup.newTitle || 'Coverage Tracker',
-            sheetTab:   setup.newTab   || DEFAULT_TAB,
+            sheetTab:   setup.newTab   || DEFAULT_COVERAGE_TAB_NAME,
             rows:       rowArrays,
             ...setupPayload,
           }),
@@ -574,14 +266,9 @@ export default function CoverageTrackerPage() {
     setStep(1)
   }
 
-  // ── Destination summary (used in confirmation modal copy) ─────
   const destSummary = setup.destMode === 'existing'
-    ? `"${setup.sheetTab || DEFAULT_TAB}" tab of the existing sheet`
-    : `tab "${setup.newTab || DEFAULT_TAB}" in new sheet "${setup.newTitle || 'Coverage Tracker'}"`
-
-  // ─────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────
+    ? `"${setup.sheetTab || DEFAULT_COVERAGE_TAB_NAME}" tab of the existing sheet`
+    : `tab "${setup.newTab || DEFAULT_COVERAGE_TAB_NAME}" in new sheet "${setup.newTitle || 'Coverage Tracker'}"`
 
   return (
     <div className="ct-main">
@@ -635,7 +322,6 @@ export default function CoverageTrackerPage() {
             <div className="ct-card">
               <p className="ct-card-title">Campaign Setup</p>
 
-              {/* Campaign */}
               <div className="ct-field-wrap">
                 <label className="ct-label">Campaign</label>
                 <input
@@ -647,7 +333,6 @@ export default function CoverageTrackerPage() {
                 />
               </div>
 
-              {/* Key messages — repeating + per-item AND/OR */}
               <RepeatingField
                 label="Key Message(s)"
                 items={setup.keyMessages}
@@ -659,7 +344,6 @@ export default function CoverageTrackerPage() {
                 onSetOp={keyMsgHelpers.setOp}
               />
 
-              {/* Spokespersons — repeating + per-item AND/OR */}
               <RepeatingField
                 label="Spokesperson(s)"
                 items={setup.spokespersons}
@@ -671,7 +355,6 @@ export default function CoverageTrackerPage() {
                 onSetOp={spokesHelpers.setOp}
               />
 
-              {/* CTAs — repeating + per-item AND/OR */}
               <RepeatingField
                 label="CTA(s)"
                 items={setup.ctas}
@@ -683,7 +366,6 @@ export default function CoverageTrackerPage() {
                 onSetOp={ctaHelpers.setOp}
               />
 
-              {/* ── Destination ── */}
               <div className="ct-dest-section">
                 <p className="ct-card-title ct-card-title--no-margin mb-4">Destination</p>
 
@@ -753,9 +435,7 @@ export default function CoverageTrackerPage() {
                   type="button"
                   className="ct-btn ct-btn-primary"
                   onClick={() => {
-                    // Apply org rules now, using the latest fetched values from
-                    // refs. This runs on every Setup→Review transition so rules
-                    // added or changed in Settings always apply to current data.
+                    // Apply org rules now, using the latest fetched values from refs.
                     setRows(prev => prev.map(r => applyRules(r, rulesRef.current, groupsRef.current)))
                     setStep(3)
                   }}
@@ -780,7 +460,6 @@ export default function CoverageTrackerPage() {
                 </span>
               </div>
 
-              {/* Batch defaults panel */}
               <div className="ct-batch-panel">
                 <p className="ct-batch-title">
                   Batch defaults — set values below, then apply to all rows or only the blanks
@@ -808,7 +487,6 @@ export default function CoverageTrackerPage() {
                 </div>
               </div>
 
-              {/* Preview table — Campaign column removed (now set once in Setup) */}
               <div className="ct-review-table-wrap">
                 <table className="ct-review-table">
                   <thead>
@@ -855,7 +533,6 @@ export default function CoverageTrackerPage() {
                             onChange={e => {
                               // Update format first, then re-run rules on the updated row
                               // so format-dependent rules (e.g. TV → image=YES) fire immediately.
-                              // Read from refs to avoid stale closure values.
                               const updated = { ...r, mediaFormat: e.target.value }
                               const ruled   = applyRules(updated, rulesRef.current, groupsRef.current)
                               setRows(prev => prev.map((row, i) => i === idx ? ruled : row))
@@ -918,8 +595,8 @@ export default function CoverageTrackerPage() {
               </h2>
               <p className="ct-result-detail">
                 {setup.destMode === 'existing'
-                  ? <>Appended to <strong>{setup.sheetTab || DEFAULT_TAB}</strong> in your existing sheet.</>
-                  : <>Created <strong>{setup.newTitle || 'Coverage Tracker'}</strong> with tab <strong>{setup.newTab || DEFAULT_TAB}</strong>.</>}
+                  ? <>Appended to <strong>{setup.sheetTab || DEFAULT_COVERAGE_TAB_NAME}</strong> in your existing sheet.</>
+                  : <>Created <strong>{setup.newTitle || 'Coverage Tracker'}</strong> with tab <strong>{setup.newTab || DEFAULT_COVERAGE_TAB_NAME}</strong>.</>}
               </p>
               <div className="ct-result-actions">
                 {result.sheetUrl && (

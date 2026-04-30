@@ -15,7 +15,8 @@
 
 import { z } from 'zod'
 import { getCurrentUser } from '@/lib/auth'
-import { createServiceClient } from '@/lib/supabase/service'
+import { setDriveRefreshToken } from '@/lib/google/drive-tokens'
+import { getAppOrigin } from '@/lib/app-origin'
 import { cookies } from 'next/headers'
 
 const CallbackQuerySchema = z.object({
@@ -95,8 +96,9 @@ export async function GET(request: Request) {
     return popupResponse({ driveError: 'Google OAuth not configured on the server' }, safeOrigin)
   }
 
-  // Exchange authorization code for tokens
-  const redirectUri = `${safeOrigin}/api/drive/callback`
+  // Exchange authorization code for tokens — must match the redirect_uri used
+  // in /api/drive/auth and the value registered in Google Cloud Console.
+  const redirectUri = `${getAppOrigin(request)}/api/drive/callback`
   const tokenRes    = await fetch('https://oauth2.googleapis.com/token', {
     method:  'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -130,17 +132,10 @@ export async function GET(request: Request) {
     )
   }
 
-  // Store refresh token (service role only — never exposed to client JS)
-  const { error: upsertErr } = await createServiceClient()
-    .from('drive_tokens')
-    .upsert({
-      user_id:       user.id,
-      refresh_token: tokens.refresh_token,
-      updated_at:    new Date().toISOString(),
-    })
-
+  // Encrypt + store refresh token (service role only — never exposed to client JS).
+  const { error: upsertErr } = await setDriveRefreshToken(user.id, tokens.refresh_token)
   if (upsertErr) {
-    return popupResponse({ driveError: `Failed to save credentials: ${upsertErr.message}` }, safeOrigin)
+    return popupResponse({ driveError: `Failed to save credentials: ${upsertErr}` }, safeOrigin)
   }
 
   return popupResponse({ driveConnected: true }, safeOrigin)

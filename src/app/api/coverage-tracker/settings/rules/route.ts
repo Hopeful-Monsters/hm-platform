@@ -14,8 +14,9 @@
  */
 
 import { z } from 'zod'
-import { requireToolAccess, requireSettingsAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
+import { createApiRoute } from '@/lib/api/createApiRoute'
+import { HttpError } from '@/lib/api/errors'
 
 const ORG_ID = 'default'
 
@@ -47,89 +48,80 @@ const PutBodySchema = z.object({
 
 // ── GET ──────────────────────────────────────────────────────────────────────
 
-export async function GET() {
-  // Any approved user can read rules (they need them to understand the UI behaviour)
-  const user = await requireToolAccess('coverage-tracker').catch(() => null)
-  if (!user) return Response.json({ error: 'Forbidden' }, { status: 403 })
+export const GET = createApiRoute({
+  // Any approved user with tool access can read rules (they need them to
+  // understand the UI behaviour).
+  auth: { tool: 'coverage-tracker' },
+  handler: async () => {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from('coverage_tracker_rules')
+      .select('id, sort_order, enabled, rule_type, if_field, if_operator, if_value, if_group_id, then_field, then_value, note, created_at')
+      .eq('org_id', ORG_ID)
+      .order('sort_order', { ascending: true })
 
-  const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from('coverage_tracker_rules')
-    .select('id, sort_order, enabled, rule_type, if_field, if_operator, if_value, if_group_id, then_field, then_value, note, created_at')
-    .eq('org_id', ORG_ID)
-    .order('sort_order', { ascending: true })
-
-  if (error) {
-    console.error('[settings/rules] GET failed:', error.message)
-    return Response.json({ error: 'Failed to load rules' }, { status: 500 })
-  }
-
-  return Response.json({ rules: data ?? [] })
-}
+    if (error) {
+      console.error('[settings/rules] GET failed:', error.message)
+      throw new HttpError(500, 'Failed to load rules')
+    }
+    return Response.json({ rules: data ?? [] })
+  },
+})
 
 // ── PUT ──────────────────────────────────────────────────────────────────────
 
-export async function PUT(request: Request) {
-  // Only admin/editor can write settings
-  const user = await requireSettingsAccess().catch(() => null)
-  if (!user) return Response.json({ error: 'Forbidden' }, { status: 403 })
+export const PUT = createApiRoute({
+  auth:   'settings', // admin or editor only
+  schema: PutBodySchema,
+  handler: async ({ user, body }) => {
+    const { rules } = body
+    const supabase  = createServiceClient()
 
-  const raw    = await request.json().catch(() => null)
-  const parsed = PutBodySchema.safeParse(raw)
-  if (!parsed.success) {
-    return Response.json(
-      { error: parsed.error.issues[0]?.message ?? 'Invalid request body' },
-      { status: 400 }
-    )
-  }
-
-  const { rules } = parsed.data
-  const supabase  = createServiceClient()
-
-  // Strategy: delete all existing rules for this org, then insert the new set.
-  // Simple and race-condition-free given single-org, low-traffic settings writes.
-  // For high-concurrency multi-org deployments, switch to individual upserts keyed on id.
-  const { error: delError } = await supabase
-    .from('coverage_tracker_rules')
-    .delete()
-    .eq('org_id', ORG_ID)
-
-  if (delError) {
-    console.error('[settings/rules] DELETE failed:', delError.message)
-    return Response.json({ error: 'Failed to update rules' }, { status: 500 })
-  }
-
-  if (rules.length > 0) {
-    const rows = rules.map((r, idx) => ({
-      org_id:      ORG_ID,
-      sort_order:  r.sort_order ?? idx,
-      enabled:     r.enabled ?? true,
-      rule_type:   r.rule_type,
-      if_field:    r.if_field,
-      if_operator: r.if_operator,
-      if_value:    r.if_value    ?? null,
-      if_group_id: r.if_group_id ?? null,
-      then_field:  r.then_field,
-      then_value:  r.then_value,
-      note:        r.note        ?? null,
-      created_by:  user.id,
-    }))
-
-    const { error: insertError } = await supabase
+    // Strategy: delete all existing rules for this org, then insert the new set.
+    // Simple and race-condition-free given single-org, low-traffic settings writes.
+    // For high-concurrency multi-org deployments, switch to individual upserts keyed on id.
+    const { error: delError } = await supabase
       .from('coverage_tracker_rules')
-      .insert(rows)
+      .delete()
+      .eq('org_id', ORG_ID)
 
-    if (insertError) {
-      console.error('[settings/rules] INSERT failed:', insertError.message)
-      return Response.json({ error: 'Failed to save rules' }, { status: 500 })
+    if (delError) {
+      console.error('[settings/rules] DELETE failed:', delError.message)
+      throw new HttpError(500, 'Failed to update rules')
     }
-  }
 
-  // Update the settings timestamp so consumers can cache-bust
-  await supabase
-    .from('coverage_tracker_settings')
-    .update({ updated_at: new Date().toISOString(), updated_by: user.id })
-    .eq('org_id', ORG_ID)
+    if (rules.length > 0) {
+      const rows = rules.map((r, idx) => ({
+        org_id:      ORG_ID,
+        sort_order:  r.sort_order ?? idx,
+        enabled:     r.enabled ?? true,
+        rule_type:   r.rule_type,
+        if_field:    r.if_field,
+        if_operator: r.if_operator,
+        if_value:    r.if_value    ?? null,
+        if_group_id: r.if_group_id ?? null,
+        then_field:  r.then_field,
+        then_value:  r.then_value,
+        note:        r.note        ?? null,
+        created_by:  user!.id,
+      }))
 
-  return Response.json({ success: true })
-}
+      const { error: insertError } = await supabase
+        .from('coverage_tracker_rules')
+        .insert(rows)
+
+      if (insertError) {
+        console.error('[settings/rules] INSERT failed:', insertError.message)
+        throw new HttpError(500, 'Failed to save rules')
+      }
+    }
+
+    // Update the settings timestamp so consumers can cache-bust
+    await supabase
+      .from('coverage_tracker_settings')
+      .update({ updated_at: new Date().toISOString(), updated_by: user!.id })
+      .eq('org_id', ORG_ID)
+
+    return Response.json({ success: true })
+  },
+})

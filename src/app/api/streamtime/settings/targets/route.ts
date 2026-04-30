@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { requireToolAccess, requireAdminAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
+import { createApiRoute } from '@/lib/api/createApiRoute'
 
 const ORG_ID = 'default'
 
@@ -14,9 +14,9 @@ const PutBodySchema = z.object({
   targets: z.array(TargetSchema),
 })
 
-export async function GET() {
-  try {
-    await requireToolAccess('streamtime-reviewer')
+export const GET = createApiRoute({
+  auth: { tool: 'streamtime-reviewer' },
+  handler: async () => {
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from('streamtime_user_targets')
@@ -29,27 +29,21 @@ export async function GET() {
       targetPct:        Number(t.target_pct),
     }))
     return Response.json({ targets })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})
 
-export async function PUT(req: Request) {
-  try {
-    const user = await requireAdminAccess()
-    const body = PutBodySchema.safeParse(await req.json())
-    if (!body.success) return Response.json({ error: 'Invalid payload' }, { status: 400 })
-
+export const PUT = createApiRoute({
+  auth:   'admin',
+  schema: PutBodySchema,
+  handler: async ({ user, body }) => {
     const supabase = createServiceClient()
-    const rows = body.data.targets.map(t => ({
+    const rows = body.targets.map(t => ({
       org_id:             ORG_ID,
       streamtime_user_id: t.streamtimeUserId,
       display_name:       t.displayName,
       target_pct:         t.targetPct,
       updated_at:         new Date().toISOString(),
-      updated_by:         user.id,
+      updated_by:         user!.id,
     }))
 
     const { error } = await supabase
@@ -58,9 +52,5 @@ export async function PUT(req: Request) {
     if (error) throw error
 
     return Response.json({ ok: true })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg === 'Admin role required' ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})

@@ -1,17 +1,11 @@
-import { requireToolAccess } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/service'
+import { ST_BASE, stHeaders } from '@/lib/streamtime/client'
+import { createApiRoute } from '@/lib/api/createApiRoute'
+import { HttpError } from '@/lib/api/errors'
 import type { EnrichedUser, Team } from '@/app/streamtime-reviewer/_components/types'
 
-const ST_BASE = 'https://api.streamtime.net/v2'
 const TEAM_LABELS = ['Creative', 'Execution', 'Strategy'] as const
 const ORG_ID = 'default'
-
-function stHeaders() {
-  return {
-    Authorization: `Bearer ${process.env.STREAMTIME_KEY}`,
-    'Content-Type': 'application/json',
-  }
-}
 
 function deriveTeam(labels: string[]): Team {
   for (const tl of TEAM_LABELS) {
@@ -20,12 +14,11 @@ function deriveTeam(labels: string[]): Team {
   return 'Support'
 }
 
-export async function GET() {
-  try {
-    await requireToolAccess('streamtime-reviewer')
-
+export const GET = createApiRoute({
+  auth: { tool: 'streamtime-reviewer' },
+  handler: async () => {
     if (!process.env.STREAMTIME_KEY) {
-      return Response.json({ error: 'STREAMTIME_KEY is not configured' }, { status: 500 })
+      throw new HttpError(500, 'STREAMTIME_KEY is not configured')
     }
 
     const r = await fetch(`${ST_BASE}/users`, { headers: stHeaders() })
@@ -109,9 +102,5 @@ export async function GET() {
     })
 
     return Response.json({ users })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Internal error'
-    const status = msg === 'Unauthorized' ? 401 : msg.startsWith('No access') ? 403 : 500
-    return Response.json({ error: msg }, { status })
-  }
-}
+  },
+})

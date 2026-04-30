@@ -10,6 +10,8 @@ import {
   getDriveStatus,
 } from '../_actions'
 import { useAppStore, companiesCacheIsValid } from '@/store/app-store'
+import { MAX_UPLOAD_BYTES } from '@/lib/constants/file-limits'
+import { DRIVE_AUTH_POPUP } from '@/lib/constants/popup'
 
 // ── Hook ──────────────────────────────────────────────────────────
 
@@ -108,7 +110,7 @@ export function useExpenses(selectedJob: Job) {
   function addFiles(files: FileList) {
     const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
     Array.from(files).forEach(file => {
-      if (file.size > 5 * 1024 * 1024) { alert(`${file.name}: too large (max 5 MB).`); return }
+      if (file.size > MAX_UPLOAD_BYTES) { alert(`${file.name}: too large (max 5 MB).`); return }
       if (!ALLOWED.includes(file.type))  { alert(`${file.name}: unsupported type.`); return }
       const id = nextId.current++
       const item: QueueItem = {
@@ -271,11 +273,7 @@ export function useExpenses(selectedJob: Job) {
   // Uploads go to /api/expenses-manager/drive/upload (route handler, handles 5 MB files).
 
   function authDrive() {
-    const popup = window.open(
-      '/api/drive/auth',
-      'drive-auth',
-      'width=520,height=660,left=200,top=100',
-    )
+    const popup = window.open('/api/drive/auth', 'drive-auth', DRIVE_AUTH_POPUP)
     if (!popup) {
       alert('Popup blocked. Allow popups for this site in your browser and try again.')
       return

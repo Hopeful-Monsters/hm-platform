@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useMemo, useState, ReactNode } from 'react'
 
 export type WizardStep = 1 | 2 | 3 | 4
 
@@ -13,8 +13,9 @@ const WizardContext = createContext<WizardContextValue | null>(null)
 
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState<WizardStep>(1)
+  const value = useMemo(() => ({ step, setStep }), [step])
   return (
-    <WizardContext.Provider value={{ step, setStep }}>
+    <WizardContext.Provider value={value}>
       {children}
     </WizardContext.Provider>
   )
