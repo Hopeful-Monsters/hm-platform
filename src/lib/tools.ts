@@ -22,6 +22,11 @@ export const TOOLS = [
     label: 'Streamtime Reviewer',
     description: 'Review weekly time entries, billable rates, and team performance from Streamtime.',
   },
+  {
+    slug: 'paid-our-worth',
+    label: 'Paid Our Worth',
+    description: 'Weekly billable time vs revenue tracker per client job.',
+  },
 ] as const
 
 export type ToolSlug = (typeof TOOLS)[number]['slug']

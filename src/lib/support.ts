@@ -5,6 +5,7 @@ export const SUPPORT_TOOL_OPTIONS = [
   { value: 'expenses-manager',    label: 'Expenses Manager' },
   { value: 'coverage-tracker',    label: 'Coverage Tracker' },
   { value: 'streamtime-reviewer', label: 'Streamtime Reviewer' },
+  { value: 'paid-our-worth',      label: 'Paid Our Worth' },
   { value: 'platform',            label: 'Platform / General' },
 ] as const
 
