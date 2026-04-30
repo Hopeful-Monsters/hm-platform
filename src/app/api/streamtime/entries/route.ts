@@ -137,7 +137,13 @@ function normalizeEntry(
     jobName:       String(job.name ?? '—'),
     jobIsBillable: typeof job.isBillable === 'boolean' ? job.isBillable : null,
     jobLabelName:  String(labelName),
-    itemName:      '—',
+    itemName:      String(
+      (lt.label as string | undefined) ??
+      ((lt.activity as Record<string, unknown> | undefined)?.name as string | undefined) ??
+      ((lt.item as Record<string, unknown> | undefined)?.name as string | undefined) ??
+      lt.itemName ??
+      '—'
+    ),
     clientName:    companyMap.get(companyId) ?? '—',
     notes:         String(lt.notes ?? ''),
     statusName:    String(status.name ?? '—'),
