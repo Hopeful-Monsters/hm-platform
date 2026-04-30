@@ -75,18 +75,18 @@
 [data-tool="streamtime-reviewer"] .sr-run-btn {
   height: 36px;
   padding: 0 20px;
-  background: var(--sr-accent);
-  color: #000;
+  background: var(--accent);
+  color: var(--accent-fg);
   border: none;
   border-radius: 7px;
   font-family: var(--font-heading);
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: opacity 0.15s, transform 0.1s;
   white-space: nowrap;
 }
-[data-tool="streamtime-reviewer"] .sr-run-btn:hover:not(:disabled) { background: #80ffc8; }
+[data-tool="streamtime-reviewer"] .sr-run-btn:hover:not(:disabled) { opacity: 0.85; }
 [data-tool="streamtime-reviewer"] .sr-run-btn:active  { transform: scale(0.98); }
 [data-tool="streamtime-reviewer"] .sr-run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
