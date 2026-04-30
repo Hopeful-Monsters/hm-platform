@@ -168,6 +168,7 @@ body {
   border-color: var(--accent);
 }
 
+/* Border-color change is the focus indicator; suppress the global outline to avoid double-ring. */
 .hm-input:focus-visible,
 .hm-select:focus-visible {
   outline: none;
