@@ -108,6 +108,10 @@ async function fetchCompanyMap(): Promise<Map<number, string>> {
   return map
 }
 
+// Reject empty/whitespace strings and non-string types; return undefined to continue fallback chain.
+const pickStr = (v: unknown): string | undefined =>
+  typeof v === 'string' && v.trim() !== '' ? v : undefined
+
 // v2 search wraps logged time data under a `loggedTime` sub-object; job/company are fetched separately.
 function normalizeEntry(
   e: Record<string, unknown>,
@@ -137,13 +141,12 @@ function normalizeEntry(
     jobName:       String(job.name ?? '—'),
     jobIsBillable: typeof job.isBillable === 'boolean' ? job.isBillable : null,
     jobLabelName:  String(labelName),
-    itemName:      String(
-      (lt.label as string | undefined) ??
-      ((lt.activity as Record<string, unknown> | undefined)?.name as string | undefined) ??
-      ((lt.item as Record<string, unknown> | undefined)?.name as string | undefined) ??
-      lt.itemName ??
-      '—'
-    ),
+    itemName:
+      pickStr(lt.label) ??
+      pickStr((lt.activity as Record<string, unknown> | undefined)?.name) ??
+      pickStr((lt.item as Record<string, unknown> | undefined)?.name) ??
+      pickStr(lt.itemName) ??
+      '—',
     clientName:    companyMap.get(companyId) ?? '—',
     notes:         String(lt.notes ?? ''),
     statusName:    String(status.name ?? '—'),
