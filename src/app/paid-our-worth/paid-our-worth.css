@@ -236,3 +236,85 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+[data-tool="paid-our-worth"] .pow-table-total {
+  font-weight: 700;
+  background: var(--bg-elevated, transparent);
+}
+
+[data-tool="paid-our-worth"] .pow-neg { color: var(--pow-red); }
+
+/* ── Current Week tab ───────────────────────────────────────────────────── */
+[data-tool="paid-our-worth"] .pow-current {
+  padding: 24px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+[data-tool="paid-our-worth"] .pow-current-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+[data-tool="paid-our-worth"] .pow-current-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+[data-tool="paid-our-worth"] .pow-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-tool="paid-our-worth"] .pow-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+[data-tool="paid-our-worth"] .pow-stat-value {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-tool="paid-our-worth"] .pow-totals-grid {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 520px;
+  margin-left: auto;
+}
+
+[data-tool="paid-our-worth"] .pow-totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 4px 0;
+}
+
+[data-tool="paid-our-worth"] .pow-totals-row strong {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-tool="paid-our-worth"] .pow-totals-variance {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+[data-tool="paid-our-worth"] .pow-totals-variance.is-good strong { color: var(--pow-green); }
+[data-tool="paid-our-worth"] .pow-totals-variance.is-bad  strong { color: var(--pow-red); }
