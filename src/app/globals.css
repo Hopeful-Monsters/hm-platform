@@ -168,6 +168,11 @@ body {
   border-color: var(--accent);
 }
 
+.hm-input:focus-visible,
+.hm-select:focus-visible {
+  outline: none;
+}
+
 .hm-input::placeholder {
   color: var(--text-dim);
   font-weight: 400;
