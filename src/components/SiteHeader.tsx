@@ -56,7 +56,7 @@ export default function SiteHeader() {
           <ThemeToggle />
 
           {user ? (
-            <div className="hidden md:flex">
+            <div className="hidden sm:flex">
               <SignOutButton />
             </div>
           ) : (
@@ -71,7 +71,7 @@ export default function SiteHeader() {
           )}
 
           <button
-            className="btn-icon flex md:hidden"
+            className="btn-icon flex sm:hidden"
             onClick={() => setMobileOpen(o => !o)}
             aria-label="Open menu"
             aria-expanded={mobileOpen}
