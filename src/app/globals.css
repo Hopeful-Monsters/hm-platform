@@ -497,7 +497,7 @@ textarea.hm-input {
   font-weight: 900;
   font-size: 17px;
   letter-spacing: 0.2em;
-  color: var(--accent);
+  color: var(--text);
   text-decoration: none;
   display: flex;
   align-items: center;
