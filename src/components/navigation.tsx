@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
   { href: '/expenses-manager',  label: 'Expenses',  toolSlug: 'expenses-manager' },
   { href: '/coverage-tracker',  label: 'Coverage',  toolSlug: 'coverage-tracker' },
   { href: '/streamtime-reviewer', label: 'Time Analysis', toolSlug: 'streamtime-reviewer' },
+  { href: '/paid-our-worth',    label: 'Paid Our Worth', toolSlug: 'paid-our-worth' },
   { href: '/support',           label: 'Support',   authOnly: true },
   { href: '/admin',             label: 'Admin',     adminOnly: true },
 ]

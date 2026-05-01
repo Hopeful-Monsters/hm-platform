@@ -45,6 +45,23 @@ export default function CurrentWeekTab() {
   const workingDaysMonth = useMemo(() => workingDaysInMonth(cutoff), [cutoff])
   const daysWorked       = useMemo(() => workingDaysToCutoff(cutoff), [cutoff])
 
+  const [hasFetched, setHasFetched] = useState(false)
+
+  /** Refresh local data only — does NOT hit Streamtime. */
+  async function refreshLocal(month: string) {
+    try {
+      const [{ entries }, { notes: noteRows }] = await Promise.all([
+        listRevenueByMonth(month),
+        listNotesByMonth(month),
+      ])
+      setRevenue(entries)
+      setNotes(noteRows)
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  /** Hit Streamtime + reload local data. Only via explicit user action. */
   async function refetch() {
     setLoading(true)
     setError(null)
@@ -65,6 +82,7 @@ export default function CurrentWeekTab() {
       setJobTotals(totalsRes.jobTotals)
       setReportTotal(totalsRes.reportTotal)
       setNotes(noteRows)
+      setHasFetched(true)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -72,10 +90,14 @@ export default function CurrentWeekTab() {
     }
   }
 
+  // Load revenue + notes when the period changes. Does NOT hit Streamtime —
+  // the user must click Refetch to pull live time data.
   useEffect(() => {
-    void refetch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cutoff])
+    void refreshLocal(periodMonth)
+    setJobTotals([])
+    setReportTotal(0)
+    setHasFetched(false)
+  }, [periodMonth])
 
   const totalsByJob = useMemo(() => {
     const m = new Map<string, JobTotal>()
@@ -147,16 +169,21 @@ export default function CurrentWeekTab() {
   return (
     <div className="pow-current">
       <div className="pow-current-head">
-        <label className="pow-field">
-          <span className="pow-field-label">Time up to</span>
+        <div className="pow-date-group">
+          <label className="pow-date-label" htmlFor="pow-cutoff">TIME UP TO</label>
           <input
+            id="pow-cutoff"
             type="date"
+            className="pow-date-input"
             value={cutoff}
             max={todayIso()}
             onChange={e => setCutoff(e.target.value)}
-            className="pow-input"
+            onClick={e => {
+              const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void }
+              try { el.showPicker?.() } catch {}
+            }}
           />
-        </label>
+        </div>
 
         <div className="pow-current-stats">
           <div className="pow-stat">
@@ -168,7 +195,7 @@ export default function CurrentWeekTab() {
             <span className="pow-stat-value">{daysWorked}</span>
           </div>
           <div className="pow-stat">
-            <span className="pow-stat-label">Time up to</span>
+            <span className="pow-stat-label">Cutoff</span>
             <span className="pow-stat-value">{fmtDate(cutoff)}</span>
           </div>
         </div>
@@ -176,18 +203,19 @@ export default function CurrentWeekTab() {
         <div className="pow-current-actions">
           <button
             type="button"
-            className="pow-btn"
+            className="pow-btn pow-btn--primary"
             onClick={refetch}
             disabled={loading}
           >
-            {loading ? 'Fetching…' : 'Refetch Streamtime'}
+            {loading ? 'Fetching…' : hasFetched ? 'Refetch Streamtime' : 'Run report'}
           </button>
           {isAdmin && (
             <button
               type="button"
-              className="pow-btn pow-btn--primary"
+              className="pow-btn"
               onClick={commitSnapshot}
-              disabled={loading || savingSnap || revenue.length === 0}
+              disabled={loading || savingSnap || revenue.length === 0 || !hasFetched}
+              title={!hasFetched ? 'Run the report first' : undefined}
             >
               {savingSnap ? 'Saving…' : 'Save snapshot'}
             </button>
@@ -293,26 +321,38 @@ export default function CurrentWeekTab() {
         </tbody>
       </table>
 
-      <div className="pow-totals-grid">
-        <div className="pow-totals-row">
-          <span>Total (Billable + Non-Billable)</span>
-          <strong>{fmtCurrency(grandTotal)}</strong>
-        </div>
-        <div className="pow-totals-row">
-          <span>Streamtime report total</span>
-          <strong>{fmtCurrency(reportTotal)}</strong>
-        </div>
-        <div className={`pow-totals-row pow-totals-variance ${Math.abs(variance) > 0.01 ? 'is-bad' : 'is-good'}`}>
-          <span>Variance</span>
-          <strong>{fmtCurrency(variance)}</strong>
-        </div>
-      </div>
-      {Math.abs(variance) > 0.01 && (
-        <p className="pow-muted">
-          Variance is non-zero — Streamtime has time logged against jobs not displayed here.
-          Likely a billable job missing from the revenue list, or a job with neither billable status nor revenue entry.
-        </p>
-      )}
+      <section className="pow-summary" aria-label="Reconciliation summary">
+        <dl className="pow-summary-grid">
+          <div className="pow-summary-cell">
+            <dt>Billable</dt>
+            <dd>{fmtCurrency(totalBillable)}</dd>
+          </div>
+          <div className="pow-summary-cell">
+            <dt>Non-billable</dt>
+            <dd>{fmtCurrency(totalNonBillable)}</dd>
+          </div>
+          <div className="pow-summary-cell pow-summary-cell--strong">
+            <dt>Total</dt>
+            <dd>{fmtCurrency(grandTotal)}</dd>
+          </div>
+          <div className="pow-summary-cell">
+            <dt>Streamtime report total</dt>
+            <dd>{fmtCurrency(reportTotal)}</dd>
+          </div>
+          <div className={`pow-summary-cell pow-summary-cell--variance ${Math.abs(variance) > 0.01 ? 'is-bad' : 'is-good'}`}>
+            <dt>Variance</dt>
+            <dd>{fmtCurrency(variance)}</dd>
+          </div>
+        </dl>
+        {hasFetched && Math.abs(variance) > 0.01 && (
+          <div className="pow-notice pow-notice--warn" role="note">
+            <strong>Variance detected.</strong> Streamtime has{' '}
+            <span className="pow-num-inline">{fmtCurrency(Math.abs(variance))}</span>{' '}
+            of time logged against jobs not displayed here. A billable job is likely missing
+            from the revenue list, or a job has neither a billable flag nor a revenue entry.
+          </div>
+        )}
+      </section>
     </div>
   )
 }

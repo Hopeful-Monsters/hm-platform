@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { listSnapshots, getSnapshot } from '../_actions'
+import { useEffect, useState, useTransition } from 'react'
+import { listSnapshots, getSnapshot, deleteSnapshot } from '../_actions'
 import type { SavedSnapshot, SavedSnapshotDetail } from '../_types'
 import NoteCell from './NoteCell'
+import { useReport } from './ReportContext'
 
 function fmtCurrency(n: number): string {
   return n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 2 })
@@ -16,11 +17,13 @@ function fmtDate(iso: string): string {
 }
 
 export default function HistoryTab() {
+  const { isAdmin } = useReport()
   const [snapshots, setSnapshots]   = useState<SavedSnapshot[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail]         = useState<SavedSnapshotDetail | null>(null)
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState<string | null>(null)
+  const [, startDelete]             = useTransition()
 
   useEffect(() => {
     let cancelled = false
@@ -55,6 +58,22 @@ export default function HistoryTab() {
     return () => { cancelled = true }
   }, [selectedId])
 
+  function handleDelete(id: string) {
+    if (!confirm('Delete this snapshot? Saved notes for the month are kept.')) return
+    startDelete(async () => {
+      try {
+        await deleteSnapshot(id)
+        setSnapshots(prev => prev.filter(s => s.id !== id))
+        if (selectedId === id) {
+          setSelectedId(null)
+          setDetail(null)
+        }
+      } catch (e) {
+        setError((e as Error).message)
+      }
+    })
+  }
+
   return (
     <div className="pow-history">
       <div className="pow-history-grid">
@@ -66,7 +85,7 @@ export default function HistoryTab() {
           ) : (
             <ul className="pow-history-items">
               {snapshots.map(s => (
-                <li key={s.id}>
+                <li key={s.id} className="pow-history-row">
                   <button
                     type="button"
                     className={`pow-history-item ${selectedId === s.id ? 'is-active' : ''}`}
@@ -78,6 +97,16 @@ export default function HistoryTab() {
                       <span className={Math.abs(s.variance) > 0.01 ? 'pow-neg' : ''}>{fmtCurrency(s.variance)}</span>
                     </span>
                   </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      className="pow-btn pow-btn--ghost pow-btn--danger pow-history-delete"
+                      onClick={() => handleDelete(s.id)}
+                      aria-label={`Delete snapshot ${fmtDate(s.cutoffDate)}`}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -210,20 +239,30 @@ function SnapshotDetail({ detail }: { detail: SavedSnapshotDetail }) {
         </tbody>
       </table>
 
-      <div className="pow-totals-grid">
-        <div className="pow-totals-row">
-          <span>Total (Billable + Non-Billable)</span>
-          <strong>{fmtCurrency(grandTotal)}</strong>
-        </div>
-        <div className="pow-totals-row">
-          <span>Streamtime report total</span>
-          <strong>{fmtCurrency(detail.reportTotal)}</strong>
-        </div>
-        <div className={`pow-totals-row pow-totals-variance ${Math.abs(detail.variance) > 0.01 ? 'is-bad' : 'is-good'}`}>
-          <span>Variance</span>
-          <strong>{fmtCurrency(detail.variance)}</strong>
-        </div>
-      </div>
+      <section className="pow-summary" aria-label="Reconciliation summary">
+        <dl className="pow-summary-grid">
+          <div className="pow-summary-cell">
+            <dt>Billable</dt>
+            <dd>{fmtCurrency(totalBillable)}</dd>
+          </div>
+          <div className="pow-summary-cell">
+            <dt>Non-billable</dt>
+            <dd>{fmtCurrency(totalNonBillable)}</dd>
+          </div>
+          <div className="pow-summary-cell pow-summary-cell--strong">
+            <dt>Total</dt>
+            <dd>{fmtCurrency(grandTotal)}</dd>
+          </div>
+          <div className="pow-summary-cell">
+            <dt>Streamtime report total</dt>
+            <dd>{fmtCurrency(detail.reportTotal)}</dd>
+          </div>
+          <div className={`pow-summary-cell pow-summary-cell--variance ${Math.abs(detail.variance) > 0.01 ? 'is-bad' : 'is-good'}`}>
+            <dt>Variance</dt>
+            <dd>{fmtCurrency(detail.variance)}</dd>
+          </div>
+        </dl>
+      </section>
     </div>
   )
 }

@@ -114,20 +114,39 @@ export default function RevenueConfigTab() {
     })
   }
 
+  const [dragOver, setDragOver] = useState(false)
+
+  function onDrop(ev: React.DragEvent<HTMLLabelElement>) {
+    ev.preventDefault()
+    setDragOver(false)
+    const file = ev.dataTransfer?.files?.[0]
+    if (file) handleFile(file)
+  }
+
   return (
     <div className="pow-config">
       <div className="pow-config-head">
-        <label className="pow-field">
-          <span className="pow-field-label">Period</span>
+        <div className="pow-date-group">
+          <label className="pow-date-label" htmlFor="pow-period">PERIOD</label>
           <input
+            id="pow-period"
             type="month"
+            className="pow-date-input"
             value={periodMonth}
             onChange={e => setPeriodMonth(e.target.value)}
-            className="pow-input"
+            onClick={e => {
+              const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void }
+              try { el.showPicker?.() } catch {}
+            }}
           />
-        </label>
+        </div>
 
-        <div className="pow-config-actions">
+        <label
+          className={`pow-drop ${dragOver ? 'is-over' : ''}`}
+          onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+        >
           <input
             ref={fileRef}
             type="file"
@@ -136,10 +155,15 @@ export default function RevenueConfigTab() {
               const f = e.target.files?.[0]
               if (f) handleFile(f)
             }}
-            className="pow-input"
+            className="pow-drop-input"
             aria-label="Upload revenue CSV"
           />
-        </div>
+          <span className="pow-drop-icon" aria-hidden>↑</span>
+          <span className="pow-drop-text">
+            <strong>Drop CSV here</strong> or click to browse
+          </span>
+          <span className="pow-drop-hint">Header row: Job No, Job Name, Revenue</span>
+        </label>
       </div>
 
       {banner && (

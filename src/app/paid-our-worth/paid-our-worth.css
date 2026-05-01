@@ -289,35 +289,197 @@
   font-variant-numeric: tabular-nums;
 }
 
-[data-tool="paid-our-worth"] .pow-totals-grid {
-  margin-top: 12px;
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
+
+/* ── Date picker (sr-style group + theme-dynamic native picker) ─────────── */
+[data-tool="paid-our-worth"] .pow-date-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-elevated, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  height: 36px;
+}
+
+[data-tool="paid-our-worth"] .pow-date-group:focus-within {
+  border-color: var(--pow-accent);
+  outline: 2px solid var(--pow-accent);
+  outline-offset: 1px;
+}
+
+[data-tool="paid-our-worth"] .pow-date-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding: 0 10px;
+  border-right: 1px solid var(--border);
+  background: var(--border);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+[data-tool="paid-our-worth"] .pow-date-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  padding: 0 12px;
+  height: 100%;
+  cursor: pointer;
+  /* Adapts native calendar / clear icons to the active theme. */
+  color-scheme: light;
+}
+
+.dark [data-tool="paid-our-worth"] .pow-date-input {
+  color-scheme: dark;
+}
+
+/* ── Drop zone (CSV upload) ─────────────────────────────────────────────── */
+[data-tool="paid-our-worth"] .pow-drop {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-width: 520px;
-  margin-left: auto;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 280px;
+  min-height: 96px;
+  padding: 14px 20px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated, var(--bg));
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-[data-tool="paid-our-worth"] .pow-totals-row {
+[data-tool="paid-our-worth"] .pow-drop:hover,
+[data-tool="paid-our-worth"] .pow-drop.is-over {
+  border-color: var(--pow-accent);
+  background: color-mix(in srgb, var(--pow-accent) 8%, transparent);
+}
+
+[data-tool="paid-our-worth"] .pow-drop-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+[data-tool="paid-our-worth"] .pow-drop-icon {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--pow-accent);
+}
+
+[data-tool="paid-our-worth"] .pow-drop-text {
+  font-size: 13px;
+  color: var(--text);
+}
+
+[data-tool="paid-our-worth"] .pow-drop-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Summary card (Current Week reconciliation) ─────────────────────────── */
+[data-tool="paid-our-worth"] .pow-summary {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated, var(--bg));
   display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  padding: 4px 0;
+  flex-direction: column;
+  gap: 12px;
 }
 
-[data-tool="paid-our-worth"] .pow-totals-row strong {
+[data-tool="paid-our-worth"] .pow-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  [data-tool="paid-our-worth"] .pow-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+[data-tool="paid-our-worth"] .pow-summary-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+[data-tool="paid-our-worth"] .pow-summary-cell dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+[data-tool="paid-our-worth"] .pow-summary-cell dd {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-[data-tool="paid-our-worth"] .pow-totals-variance {
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
+[data-tool="paid-our-worth"] .pow-summary-cell--strong {
+  border-color: var(--pow-accent);
+}
+[data-tool="paid-our-worth"] .pow-summary-cell--variance.is-good dd { color: var(--pow-green); }
+[data-tool="paid-our-worth"] .pow-summary-cell--variance.is-bad  dd { color: var(--pow-red); }
+
+/* ── Notice (variance warning) ──────────────────────────────────────────── */
+[data-tool="paid-our-worth"] .pow-notice {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-[data-tool="paid-our-worth"] .pow-totals-variance.is-good strong { color: var(--pow-green); }
-[data-tool="paid-our-worth"] .pow-totals-variance.is-bad  strong { color: var(--pow-red); }
+[data-tool="paid-our-worth"] .pow-notice--warn {
+  background: color-mix(in srgb, var(--pow-yellow) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pow-yellow) 40%, transparent);
+  color: var(--text);
+}
+
+[data-tool="paid-our-worth"] .pow-num-inline {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* ── History row delete button ──────────────────────────────────────────── */
+[data-tool="paid-our-worth"] .pow-history-row {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+[data-tool="paid-our-worth"] .pow-history-row .pow-history-item { flex: 1; }
+[data-tool="paid-our-worth"] .pow-history-delete {
+  font-size: 11px;
+  padding: 4px 8px;
+  align-self: stretch;
+}
 
 /* ── Notes (textarea cells) ─────────────────────────────────────────────── */
 [data-tool="paid-our-worth"] .pow-note {

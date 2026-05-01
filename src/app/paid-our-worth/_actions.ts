@@ -428,6 +428,19 @@ export async function getSnapshot(id: string): Promise<{ snapshot: SavedSnapshot
   return { snapshot }
 }
 
+/** Delete a saved snapshot (and its rows via cascade). Admin-only. */
+export async function deleteSnapshot(id: string): Promise<void> {
+  const user = await requireAdminAccess()
+  await checkRateLimit(rateLimits.api, `paid-our-worth:snapshot-delete:${user.id}`)
+
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('paid_our_worth_snapshot')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
 /** Delete a single revenue row. Admin-only. */
 export async function deleteRevenueRow(id: string): Promise<void> {
   const user = await requireAdminAccess()
