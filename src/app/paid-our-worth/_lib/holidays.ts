@@ -8,7 +8,9 @@
 //     the following Monday.
 //   - Christmas / Boxing / New Year's: weekend-falling days roll forward to
 //     the next available weekday (Mon/Tue) per NSW rules.
-//   - Anzac Day: NO substitute holiday if it falls on a weekend.
+//   - Anzac Day: 25 April is always gazetted. When it falls on a weekend
+//     NSW typically gazettes the following Monday as an additional public
+//     holiday (e.g. Mon 27 Apr 2026 for the 2026 Sat 25 Apr).
 //   - Easter Saturday / Sunday: gazetted as public holidays in NSW but always
 //     fall on a weekend, so they do not affect working-day counts.
 //   - Bank Holiday (1st Mon Aug) is a banks-only holiday and is NOT counted
@@ -101,11 +103,17 @@ export function nswPublicHolidays(year: number): Set<string> {
   out.add(iso(goodFriday.getUTCFullYear(), goodFriday.getUTCMonth() + 1, goodFriday.getUTCDate()))
   out.add(iso(easterMon.getUTCFullYear(),  easterMon.getUTCMonth() + 1,  easterMon.getUTCDate()))
 
-  // Anzac Day — NO substitute if weekend. Skip if Sat/Sun.
+  // Anzac Day — 25 April. Add the substitute Monday when Anzac falls on a
+  // weekend (NSW gazettes the following Monday as an additional public
+  // holiday in those years). The 25th itself is gazetted regardless but
+  // only affects the working-day count when it falls Mon–Fri.
   const anzac = new Date(Date.UTC(year, 3, 25)) // April = month 3 (0-indexed)
   const anzacDow = anzac.getUTCDay()
   if (anzacDow !== 0 && anzacDow !== 6) {
     out.add(iso(year, 4, 25))
+  } else {
+    const sub = shiftToMonday(year, 4, 25)
+    out.add(iso(sub.y, sub.m, sub.d))
   }
 
   // King's Birthday — 2nd Monday in June.
