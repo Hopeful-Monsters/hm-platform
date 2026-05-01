@@ -79,7 +79,7 @@ export default function CurrentWeekTab() {
 
   const totalsByJob = useMemo(() => {
     const m = new Map<string, JobTotal>()
-    for (const t of jobTotals) m.set(t.jobId, t)
+    for (const t of jobTotals) m.set(t.jobNumber, t)
     return m
   }, [jobTotals])
 
@@ -108,9 +108,9 @@ export default function CurrentWeekTab() {
     const list = jobTotals.filter(t => t.isBillable === false)
     const total = list.reduce((s, r) => s + r.currentTime, 0)
     return list
-      .sort((a, b) => Number(a.jobId) - Number(b.jobId))
+      .sort((a, b) => Number(a.jobNumber) - Number(b.jobNumber))
       .map(t => ({
-        jobId:       t.jobId,
+        jobId:       t.jobNumber,
         jobName:     t.jobName,
         currentTime: t.currentTime,
         pctOfTotal:  total > 0 ? t.currentTime / total : 0,

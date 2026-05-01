@@ -14,7 +14,7 @@ export const POST = createApiRoute({
   handler: async ({ body }) => {
     const { dateFrom, dateTo } = body
     const entries = await fetchLoggedEntries(dateFrom, dateTo)
-    const jobTotals = aggregateJobs(entries).sort((a, b) => Number(a.jobId) - Number(b.jobId))
+    const jobTotals = aggregateJobs(entries).sort((a, b) => Number(a.jobNumber) - Number(b.jobNumber))
     const reportTotal = sumCurrentTime(jobTotals)
     return Response.json({ jobTotals, reportTotal })
   },
