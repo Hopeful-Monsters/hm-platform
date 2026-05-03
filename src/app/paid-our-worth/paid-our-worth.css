@@ -156,12 +156,13 @@
   outline-offset: 2px;
 }
 [data-tool="paid-our-worth"] .pow-btn--primary {
-  background: var(--pow-accent);
-  color: var(--bg);
+  background: transparent;
+  color: var(--pow-accent);
   border-color: var(--pow-accent);
 }
 [data-tool="paid-our-worth"] .pow-btn--primary:hover:not(:disabled) {
-  filter: brightness(1.05);
+  background: var(--pow-accent);
+  color: var(--bg);
 }
 [data-tool="paid-our-worth"] .pow-btn--ghost {
   border-color: transparent;
