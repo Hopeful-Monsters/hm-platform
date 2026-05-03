@@ -214,27 +214,29 @@ export default function RevenueConfigTab() {
       {entries.length === 0 && !loading ? (
         <p className="pow-muted">No revenue entries for this month yet. Upload a CSV above.</p>
       ) : (
-        <table className="pow-table">
-          <thead>
-            <tr>
-              <th scope="col">Job No</th>
-              <th scope="col">Job Name</th>
-              <th scope="col" className="pow-num">Revenue</th>
-              <th scope="col" aria-label="Actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map(row => (
-              <EditableRow
-                key={row.id}
-                row={row}
-                onSave={saveRowEdit}
-                onDelete={deleteRow}
-                disabled={pending}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="pow-table-wrap">
+          <table className="pow-table pow-table--config">
+            <thead>
+              <tr>
+                <th scope="col">Job No</th>
+                <th scope="col">Job Name</th>
+                <th scope="col" className="pow-num">Revenue</th>
+                <th scope="col" aria-label="Actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map(row => (
+                <EditableRow
+                  key={row.id}
+                  row={row}
+                  onSave={saveRowEdit}
+                  onDelete={deleteRow}
+                  disabled={pending}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
@@ -242,24 +244,26 @@ export default function RevenueConfigTab() {
 
 function RevenueTableReadonly({ rows }: { rows: Array<{ id: string; jobId: string; jobName: string; revenueAmount: number }> }) {
   return (
-    <table className="pow-table">
-      <thead>
-        <tr>
-          <th scope="col">Job No</th>
-          <th scope="col">Job Name</th>
-          <th scope="col" className="pow-num">Revenue</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r, i) => (
-          <tr key={r.id || i}>
-            <td>{r.jobId}</td>
-            <td>{r.jobName}</td>
-            <td className="pow-num">{fmtCurrency(r.revenueAmount)}</td>
+    <div className="pow-table-wrap">
+      <table className="pow-table pow-table--config">
+        <thead>
+          <tr>
+            <th scope="col">Job No</th>
+            <th scope="col">Job Name</th>
+            <th scope="col" className="pow-num">Revenue</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.id || i}>
+              <td>{r.jobId}</td>
+              <td>{r.jobName}</td>
+              <td className="pow-num">{fmtCurrency(r.revenueAmount)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
