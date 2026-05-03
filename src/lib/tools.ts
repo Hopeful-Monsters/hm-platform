@@ -11,16 +11,25 @@ export const TOOLS = [
     slug: 'expenses-manager',
     label: 'Expenses Manager',
     description: 'Track, categorise, and report on expenses with detailed analytics.',
+    publicVisible: true,
   },
   {
     slug: 'coverage-tracker',
     label: 'Coverage Tracker',
     description: 'Monitor earned media and coverage metrics across clients and campaigns.',
+    publicVisible: true,
   },
   {
     slug: 'streamtime-reviewer',
     label: 'Streamtime Reviewer',
     description: 'Review weekly time entries, billable rates, and team performance from Streamtime.',
+    publicVisible: false,
+  },
+  {
+    slug: 'paid-our-worth',
+    label: 'Paid Our Worth',
+    description: 'Weekly billable time vs revenue tracker per client job.',
+    publicVisible: false,
   },
 ] as const
 

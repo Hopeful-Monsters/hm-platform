@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
+import { TOOLS as TOOL_REGISTRY } from '@/lib/tools'
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -21,11 +22,7 @@ type SortDir = 'asc' | 'desc'
 
 // ── Constants ─────────────────────────────────────────────────────
 
-const TOOLS = [
-  { value: 'coverage-tracker', label: 'Coverage Tracker' },
-  { value: 'expenses-manager', label: 'Expenses Manager' },
-  { value: 'streamtime-reviewer', label: 'Streamtime Reviewer' },
-]
+const TOOLS = TOOL_REGISTRY.map(t => ({ value: t.slug, label: t.label }))
 
 const ROLE_OPTIONS = [
   { value: 'admin',  label: 'Admin'  },

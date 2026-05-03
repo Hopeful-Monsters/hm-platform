@@ -140,7 +140,7 @@ export default async function Home() {
             </div>
 
             <div className="flex flex-col gap-[10px]">
-              {TOOLS.map(tool => (
+              {TOOLS.filter(t => t.publicVisible).map(tool => (
                 <div key={tool.slug} className="hero-preview-card">
                   <p className="hero-preview-eyebrow">Tool</p>
                   <h3 className="hero-preview-title">{tool.label}</h3>
