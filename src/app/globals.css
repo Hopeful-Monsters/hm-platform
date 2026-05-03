@@ -578,21 +578,24 @@ textarea.hm-input {
   color: var(--accent);
 }
 
-/* Mobile-only hamburger trigger — hidden at sm and up */
+/* Mobile-only hamburger trigger — hidden at lg and up.
+   Threshold raised from sm (640px) to lg (1024px) because the desktop
+   nav now carries six items (Expenses, Coverage, Time Analysis, Paid
+   Our Worth, Support, Admin) and wraps below ~1000px. */
 .site-header-mobile-only {
   display: flex;
 }
-@media (min-width: 640px) {
+@media (min-width: 1024px) {
   .site-header-mobile-only {
     display: none !important;
   }
 }
 
-/* Desktop-only nav block — hidden below sm */
+/* Desktop-only nav block — hidden below lg */
 .site-header-desktop-only {
   display: none;
 }
-@media (min-width: 640px) {
+@media (min-width: 1024px) {
   .site-header-desktop-only {
     display: flex;
   }
@@ -810,6 +813,10 @@ textarea.hm-input {
 
 .page-section {
   padding: 48px 32px;
+}
+
+@media (max-width: 640px) {
+  .page-section { padding: 32px 16px; }
 }
 
 .page-section--narrow {
@@ -1041,10 +1048,18 @@ textarea.hm-input {
   padding: 36px 40px;
 }
 
+@media (max-width: 640px) {
+  .admin-content { padding: 24px 16px; }
+}
+
 .support-page {
   padding: 48px 32px;
   max-width: 720px;
   margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .support-page { padding: 32px 16px; }
 }
 
 .support-divider {
@@ -1339,6 +1354,12 @@ textarea.hm-input {
   margin-bottom:         2px;
 }
 
+@media (max-width: 900px) {
+  .users-table-header {
+    display: none;
+  }
+}
+
 .users-sort-btn {
   font-family:    var(--font-heading);
   font-size:      11px;
@@ -1374,6 +1395,18 @@ textarea.hm-input {
   border-bottom:         1px solid var(--border);
   background:            var(--surface);
   margin-bottom:         1px;
+}
+
+@media (max-width: 900px) {
+  .users-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 24px;
+  }
+  .users-role-col,
+  .users-tools-col {
+    padding-right: 0;
+  }
 }
 
 .users-empty {

@@ -29,6 +29,13 @@
   gap: 2px;
   padding: 0 32px;
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  [data-tool="paid-our-worth"] .pow-tabs { padding: 0 16px; }
 }
 
 [data-tool="paid-our-worth"] .pow-tab {
@@ -45,6 +52,8 @@
   color: var(--text-muted);
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 [data-tool="paid-our-worth"] .pow-tab:hover { color: var(--text); }
 [data-tool="paid-our-worth"] .pow-tab:focus-visible {
@@ -246,12 +255,29 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Horizontal-scroll container shared by every PoW table. Below the
+   min-width threshold the table scrolls horizontally instead of squashing
+   into unreadable columns. */
+[data-tool="paid-our-worth"] .pow-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  border-radius: 6px;
+}
+
 /* Aligned column widths across the billable and non-billable tables so
    Current Time, Revenue / %, and Time Left land in the same x-positions. */
 [data-tool="paid-our-worth"] .pow-table--billable,
 [data-tool="paid-our-worth"] .pow-table--nonbillable {
   table-layout: fixed;
   width: 100%;
+  min-width: 880px;
+}
+
+[data-tool="paid-our-worth"] .pow-table--config {
+  width: 100%;
+  min-width: 560px;
 }
 
 [data-tool="paid-our-worth"] .pow-col-jobno   { width: 6%;  }
@@ -279,6 +305,15 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+@media (max-width: 640px) {
+  [data-tool="paid-our-worth"] .pow-current,
+  [data-tool="paid-our-worth"] .pow-config,
+  [data-tool="paid-our-worth"] .pow-history {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 
 [data-tool="paid-our-worth"] .pow-current-head {

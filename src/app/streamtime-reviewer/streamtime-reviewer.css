@@ -188,6 +188,13 @@
   gap: 2px;
   padding: 0 32px;
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  [data-tool="streamtime-reviewer"] .sr-tabs { padding: 0 16px; }
 }
 
 [data-tool="streamtime-reviewer"] .sr-tab {
@@ -204,6 +211,8 @@
   color: var(--text-muted);
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 [data-tool="streamtime-reviewer"] .sr-tab:hover { color: var(--text); }
 [data-tool="streamtime-reviewer"] .sr-tab.is-active { color: var(--text); border-bottom-color: var(--sr-accent); }
@@ -369,7 +378,9 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 [data-tool="streamtime-reviewer"] .sr-table {

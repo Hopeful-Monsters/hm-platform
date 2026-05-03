@@ -233,6 +233,7 @@ export default function CurrentWeekTab() {
       )}
 
       <h3 className="pow-section-title">Billable</h3>
+      <div className="pow-table-wrap">
       <table className="pow-table pow-table--billable">
         <colgroup>
           <col className="pow-col-jobno" />
@@ -291,8 +292,10 @@ export default function CurrentWeekTab() {
           </tr>
         </tbody>
       </table>
+      </div>
 
       <h3 className="pow-section-title">Non-Billable</h3>
+      <div className="pow-table-wrap">
       <table className="pow-table pow-table--nonbillable">
         <colgroup>
           <col className="pow-col-jobno" />
@@ -336,6 +339,7 @@ export default function CurrentWeekTab() {
           </tr>
         </tbody>
       </table>
+      </div>
 
       <section className="pow-summary" aria-label="Reconciliation summary">
         <dl className="pow-summary-grid">
