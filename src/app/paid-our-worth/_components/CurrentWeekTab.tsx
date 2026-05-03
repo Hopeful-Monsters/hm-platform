@@ -233,7 +233,16 @@ export default function CurrentWeekTab() {
       )}
 
       <h3 className="pow-section-title">Billable</h3>
-      <table className="pow-table">
+      <table className="pow-table pow-table--billable">
+        <colgroup>
+          <col className="pow-col-jobno" />
+          <col className="pow-col-jobname" />
+          <col className="pow-col-money" />
+          <col className="pow-col-money" />
+          <col className="pow-col-money" />
+          <col className="pow-col-note" />
+          <col className="pow-col-note" />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Job No</th>
@@ -284,7 +293,14 @@ export default function CurrentWeekTab() {
       </table>
 
       <h3 className="pow-section-title">Non-Billable</h3>
-      <table className="pow-table">
+      <table className="pow-table pow-table--nonbillable">
+        <colgroup>
+          <col className="pow-col-jobno" />
+          <col className="pow-col-jobname" />
+          <col className="pow-col-money" />
+          <col className="pow-col-money" />
+          <col className="pow-col-note" />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Job No</th>

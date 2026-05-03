@@ -71,10 +71,18 @@
 
 [data-tool="paid-our-worth"] .pow-config-head {
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: stretch;
   gap: 16px;
-  flex-wrap: wrap;
-  justify-content: space-between;
+}
+
+[data-tool="paid-our-worth"] .pow-config-head .pow-date-group {
+  align-self: flex-start;
+}
+
+[data-tool="paid-our-worth"] .pow-config-head .pow-drop {
+  width: 100%;
+  max-width: 720px;
 }
 
 [data-tool="paid-our-worth"] .pow-config-actions {
@@ -235,6 +243,26 @@
 [data-tool="paid-our-worth"] .pow-num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Aligned column widths across the billable and non-billable tables so
+   Current Time, Revenue / %, and Time Left land in the same x-positions. */
+[data-tool="paid-our-worth"] .pow-table--billable,
+[data-tool="paid-our-worth"] .pow-table--nonbillable {
+  table-layout: fixed;
+  width: 100%;
+}
+
+[data-tool="paid-our-worth"] .pow-col-jobno   { width: 6%;  }
+[data-tool="paid-our-worth"] .pow-col-jobname { width: 30%; }
+[data-tool="paid-our-worth"] .pow-col-money   { width: 11%; }
+[data-tool="paid-our-worth"] .pow-col-note    { width: 15.5%; }
+[data-tool="paid-our-worth"] .pow-table--nonbillable .pow-col-note { width: 42%; }
+
+[data-tool="paid-our-worth"] .pow-table th,
+[data-tool="paid-our-worth"] .pow-table td {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 [data-tool="paid-our-worth"] .pow-table-total {
